@@ -1,4 +1,4 @@
-# ONYX-OVERRIDE
+# BKLT 黑光 / BLACKLIGHT
 
 <div align="center">
 
@@ -15,7 +15,7 @@
 
 ---
 
-ONYX-OVERRIDE 不是普通聊天机器人，而是一个本地优先的 AI Agent 自动化工作台。它通过 Electron + React + FastAPI 把模型、工具、记忆、任务执行和可视化过程整合在一起，让用户能看到 AI 在做什么、用了什么工具、结果是什么、哪里失败了、下一步准备做什么。
+BKLT 黑光（BLACKLIGHT，旧名/内部兼容名：ONYX-OVERRIDE）不是普通聊天机器人，而是一个本地优先的 AI Agent 自动化工作台。它通过 Electron + React + FastAPI 把模型、工具、记忆、任务执行和可视化过程整合在一起，让用户能看到 AI 在做什么、用了什么工具、结果是什么、哪里失败了、下一步准备做什么。
 
 ## 架构总览
 
@@ -32,7 +32,7 @@ ONYX-OVERRIDE 不是普通聊天机器人，而是一个本地优先的 AI Agent
                    │                       │               │
             ┌──────▼──────┐        ┌───────▼──────┐  ┌────▼─────┐
             │   Ollama    │        │  vLLM / NIM  │  │  F5-TTS  │
-            │ qwen3:14b   │        │ OpenAI兼容接口│  │  语音合成  │
+            │ 可选本地模型 │        │ OpenAI兼容接口│  │  语音合成  │
             └─────────────┘        └──────────────┘  └──────────┘
 ```
 
@@ -54,7 +54,7 @@ ONYX-OVERRIDE 不是普通聊天机器人，而是一个本地优先的 AI Agent
 |------|----------|
 | Python | 3.10 |
 | Node.js | 18 LTS |
-| Ollama **或** vLLM | 最新 |
+| Ollama **或** vLLM/OpenAI-compatible 网关 | 最新 |
 
 ### 一键启动（推荐）
 
@@ -71,8 +71,9 @@ cd frontend && npm install && cd ..
 cp backend/.env.example backend/.env
 # 按需编辑 backend/.env
 
-# 4. 拉取模型（Ollama 路线）
-ollama pull qwen3:14b
+# 4. 准备模型网关
+# 当前 BKLT 黑光推荐：本机 vLLM / OpenAI-compatible 网关，地址 http://127.0.0.1:8001/v1
+# 兼容 Ollama 路线：ollama pull qwen3:14b
 
 # 5. 启动
 python start.py          # 桌面应用
@@ -80,7 +81,7 @@ python start.py dev      # 开发模式
 python start.py mobile   # 手机访问模式
 ```
 
-> **Windows 快捷方式**：双击桌面 `ONYX-OVERRIDE` 快捷方式，等同于 `python start.py app`
+> **Windows 快捷方式**：双击桌面 `BKLT 黑光` 快捷方式。当前旧链路 `Launch-ONYX-OVERRIDE.vbs` 作为兼容入口保留，迁移时不要直接删除。
 
 ### 启动模式
 
@@ -111,7 +112,8 @@ python start.py mobile   # 手机访问模式
 | `/skills` | 技能库 |
 | `/scheduler` | 定时任务 |
 | `/mode chat` / `/mode agent` | 切换模式 |
-| `/model qwen3:14b` | 切换模型 |
+| `/model nvidia/Gemma-4-26B-A4B-NVFP4` | 切换到当前推荐 Gemma 4 模型 |
+| `/model qwen3:14b` | 切换到 Ollama 示例模型 |
 | `/skill <id>` | 挂载指定技能 |
 | `/tools` | 列出 Agent 工具 |
 
@@ -126,10 +128,11 @@ cp backend/.env.example backend/.env
 核心配置项：
 
 ```env
-# LLM 后端（二选一）
-LLM_BACKEND=ollama              # 或 openai_compatible
-OLLAMA_HOST=http://127.0.0.1:11434
-AGENT_DEFAULT_MODEL=qwen3:14b
+# 当前 BKLT 黑光推荐：OpenAI-compatible 本地模型网关
+LLM_BACKEND=openai_compatible
+OPENAI_BASE_URL=http://127.0.0.1:8001/v1
+OPENAI_API_KEY=local
+AGENT_DEFAULT_MODEL=nvidia/Gemma-4-26B-A4B-NVFP4
 
 # 服务端口
 BACKEND_PORT=8000
@@ -159,6 +162,11 @@ HABIT_CHECK_HOURS=9,21
 | GET | `/scheduler/jobs` | 定时任务列表 |
 | GET | `/meta/habit` | 习惯体检状态 |
 | POST | `/meta/habit/run` | 立即执行体检 |
+| GET | `/automation/capabilities` | 自动化能力清单 |
+| GET | `/automation/jobs` | 自动化任务列表 |
+| POST | `/automation/run` | 立即执行一次自动化任务 |
+| GET | `/automation/runs` | 自动化运行记录 |
+| GET | `/automation/events` | 自动化可视化事件流 |
 
 ## Agent 工具系统
 
@@ -196,6 +204,7 @@ python scripts/optimize-agent-skills-deep.py
 
 | 文档 | 说明 |
 |------|------|
+| [`docs/BKLT_BLACKLIGHT_MAINTENANCE.md`](docs/BKLT_BLACKLIGHT_MAINTENANCE.md) | BKLT 黑光维护基线、少确认规则、启动链路和排障顺序 |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 架构与执行链路 |
 | [`docs/TOOLS.md`](docs/TOOLS.md) | 工具系统、风险等级、插件化规范 |
 | [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | 开发、测试、CI、发布流程 |
@@ -218,9 +227,10 @@ docker compose down
 
 | 现象 | 排查 |
 |------|------|
-| 模型不说话 | 看顶部黄条；Ollama 路线检查 11434；vLLM 检查 8001 |
+| 模型不说话 | 先检查 `http://127.0.0.1:8001/v1/models`；Ollama 路线再检查 11434 |
 | Agent 无步骤 | 确认 Agent 模式；`/doctor` 查看模型后端状态 |
 | 工具面板为空 | 检查 `/meta/tools/registry` 是否返回 `ok: true` |
+| 自动化面板为空 | 检查 `/automation/capabilities`、`/automation/events` |
 | 图标不对 | `python scripts/refresh_icon.py` |
 | 端口冲突 | 修改 `backend/.env` 中 `BACKEND_PORT` |
 
@@ -239,7 +249,7 @@ ai-agent-project/
 ├── docs/             架构、工具、开发与进化路线文档
 ├── scripts/          工具脚本（vLLM、图标、打包…）
 ├── assets/branding/  品牌图资源
-├── start.py          ★ 统一启动器（替代所有 .bat）
+├── start.py          ★ 统一启动器（保留旧脚本兼容）
 └── docker-compose.yml
 ```
 
