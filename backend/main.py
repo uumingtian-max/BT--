@@ -17,6 +17,7 @@ from fastapi.responses import JSONResponse
 
 from a2a_bridge import router as a2a_router
 from agent import router as agent_router
+from automation_routes import router as automation_router
 from chat import router as chat_router
 from local_agent_api import init_legacy_db, router as local_agent_router
 from memory_store import background_memory_maintenance
@@ -212,6 +213,7 @@ app.include_router(observe_router, prefix="/observe", tags=["observe"])
 app.include_router(orchestrator_router, prefix="/agent", tags=["orchestrator"])
 app.include_router(workflow_router, tags=["workflow"])
 app.include_router(scheduler_router, prefix="/scheduler", tags=["scheduler"])
+app.include_router(automation_router, prefix="/automation", tags=["automation"])
 app.include_router(gateway_router, prefix="/gateway", tags=["gateway"])
 app.include_router(mcp_router, prefix="/mcp", tags=["mcp"])
 app.include_router(local_agent_router)
