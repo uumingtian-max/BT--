@@ -26,7 +26,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install -r requirements-agent-api.txt
           pip install ruff pytest pytest-asyncio httpx
 
@@ -36,13 +36,21 @@ jobs:
       - name: Format check (ruff format)
         run: ruff format --check backend/
 
+      - name: Compile Python entrypoints
+        run: python -m py_compile start.py backend/main.py backend/agent.py backend/env_bootstrap.py
+
       - name: Run tests
         env:
           LLM_BACKEND: ollama
           OLLAMA_HOST: http://127.0.0.1:11434   # 不会真正连接，单测 mock
           AGENT_DEFAULT_MODEL: qwen3:14b
           HABIT_CHECK_ENABLED: "false"
-        run: pytest backend/tests/ -v --tb=short 2>/dev/null || echo "No tests yet — add tests under backend/tests/"
+        run: |
+          if [ -d backend/tests ]; then
+            pytest backend/tests/ -v --tb=short
+          else
+            echo "No backend/tests directory yet — add tests under backend/tests/"
+          fi
 
   # ─── 前端检测 ─────────────────────────────────────────────
   frontend:
