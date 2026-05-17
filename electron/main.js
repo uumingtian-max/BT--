@@ -44,7 +44,8 @@ function backendPort() {
 
 const BACKEND_PORT = backendPort()
 const BACKEND_URL = `http://127.0.0.1:${BACKEND_PORT}`
-process.env.ONYX_BACKEND_URL = BACKEND_URL
+process.env.BKLT_BACKEND_URL = BACKEND_URL
+process.env.ONYX_BACKEND_URL = BACKEND_URL // compatibility for older frontend/scripts
 
 // vLLM 模式下跳过 Ollama 检查（LLM_BACKEND=openai_compatible）
 const isVllmMode =
@@ -205,7 +206,7 @@ function createWindow() {
     frame: false,
     backgroundColor: '#0a0a0f',
     icon: appIcon,
-    title: 'ONYX-OVERRIDE',
+    title: 'BKLT 黑光',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -228,7 +229,7 @@ function createWindow() {
 
 app.whenReady().then(async () => {
   if (process.platform === 'win32' && !appIcon.isEmpty()) {
-    app.setAppUserModelId('com.onyxoverride.desktop')
+    app.setAppUserModelId('com.bklt.blacklight.desktop')
   }
   showSplash()
   ensureOllama()
