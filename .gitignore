@@ -25,6 +25,7 @@ tmp/pytest-tmp/
 tmp/
 CLINE_MEMORY.md
 backend/.skill_embedding_index.json
+backend/agent_skills/learned_habit_auto.md
 # 保留 outputs 目录结构，忽略文件内容
 !outputs/.gitkeep
 
