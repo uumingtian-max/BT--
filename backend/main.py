@@ -33,6 +33,7 @@ from habit_pipeline import background_habit_loop, ensure_scheduler_habit_jobs
 from scheduler_routes import router as scheduler_router
 from gateway_routes import router as gateway_router
 from mcp_routes import router as mcp_router
+from tool_registry_routes import router as tool_registry_router
 from agent_runtime import get_runtime
 
 
@@ -201,6 +202,7 @@ if request_log_enabled():
     app.add_middleware(RequestLogMiddleware)
 
 app.include_router(meta_router, prefix="/meta", tags=["meta"])
+app.include_router(tool_registry_router, prefix="/meta", tags=["tools"])
 app.include_router(telegraf_router)
 app.include_router(notebook_router, prefix="/notebook", tags=["notebook"])
 app.include_router(a2a_router, prefix="/a2a", tags=["a2a"])
