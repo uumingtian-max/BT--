@@ -37,14 +37,16 @@ ONYX-OVERRIDE 应该成为一个本机环境里的 Agent Control Plane：
 | 工具风险等级 | 已完成 | `safe / confirm / dangerous` |
 | UI 工具元数据接口 | 已完成 | `GET /meta/tools/registry` |
 | 工具风险摘要接口 | 已完成 | `GET /meta/tools/risks` |
+| Agent Run 事件 schema | 已完成 | `backend/agent_run_events.py` |
 | 工具注册表测试 | 已完成 | `backend/tests/test_tool_registry.py` |
+| 时间线事件测试 | 已完成 | `backend/tests/test_agent_run_events.py` |
 | 架构文档 | 已完成 | `docs/ARCHITECTURE.md` |
 | 工具文档 | 已完成 | `docs/TOOLS.md` |
 | 开发文档 | 已完成 | `docs/DEVELOPMENT.md` |
 
 ## 下一阶段：执行时间线
 
-前端应该把 `/agent/run` 的 SSE 事件渲染成 Agent Run Timeline：
+前端已经具备 `AgentStepsMessage`、`TimelineStep`、`ExecutionProgress` 等时间线展示组件。下一步要把后端 `/agent/run` 的 SSE 步骤统一 enrich 成 `agent_run_events.py` 定义的事件结构，让每一步都有稳定的 `run_id`、`step_id`、`status`、`risk_level`、`started_at` 和 `ended_at`。
 
 ```text
 [用户目标]
@@ -62,16 +64,20 @@ ONYX-OVERRIDE 应该成为一个本机环境里的 Agent Control Plane：
 [写入记忆 / playbook]
 ```
 
-建议事件结构：
+标准事件结构：
 
 ```json
 {
   "run_id": "uuid",
   "step_id": "uuid",
+  "index": 0,
   "type": "tool_call",
+  "event_type": "tool_call",
   "status": "running",
   "tool": "read_file",
   "risk_level": "safe",
+  "tool_group": "files_code",
+  "tool_display_name": "读取本地文件内容。",
   "params": {},
   "started_at": "2026-05-17T12:00:00Z",
   "ended_at": null,
@@ -79,6 +85,15 @@ ONYX-OVERRIDE 应该成为一个本机环境里的 Agent Control Plane：
   "error": null
 }
 ```
+
+`backend/agent_run_events.py` 当前提供：
+
+| 函数 | 用途 |
+| --- | --- |
+| `event_from_legacy_step()` | 把旧 step 转成标准时间线事件 |
+| `enrich_legacy_steps()` | 批量 enrich `/agent/run` 旧步骤 |
+| `summarize_timeline()` | 统计一次运行的工具数、失败数、风险分布 |
+| `new_run_id()` / `new_step_id()` | 生成运行与步骤 ID |
 
 ## 下一阶段：工具提示机制
 
@@ -180,10 +195,8 @@ backend/plugins/
 ## 推荐实施顺序
 
 1. 前端读取 `/meta/tools/registry`，做工具面板和风险徽章。
-2. 给 `/agent/run` 每次执行生成 `run_id` 和 `step_id`。
-3. 把 SSE 步骤统一成事件 schema。
-4. 做 Agent Run Timeline 组件。
-5. 给需要确认的工具增加执行前提示。
-6. 把运行日志持久化到本地 SQLite。
-7. 做记忆树检索和上下文压缩面板。
-8. 把工具从 `TOOL_MAP` 逐步迁移到 plugins 目录。
+2. 在 `/agent/run` 里调用 `enrich_legacy_steps()`，让 SSE 输出带标准时间线字段。
+3. 把运行日志持久化到本地 SQLite，支持历史回放。
+4. 给需要确认的工具增加执行前提示。
+5. 做记忆树检索和上下文压缩面板。
+6. 把工具从 `TOOL_MAP` 逐步迁移到 plugins 目录。
