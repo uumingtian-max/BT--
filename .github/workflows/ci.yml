@@ -37,7 +37,15 @@ jobs:
         run: ruff format --check backend/
 
       - name: Compile Python entrypoints
-        run: python -m py_compile start.py backend/main.py backend/agent.py backend/env_bootstrap.py
+        run: >-
+          python -m py_compile
+          start.py
+          backend/main.py
+          backend/agent.py
+          backend/env_bootstrap.py
+          backend/tool_registry.py
+          backend/tool_registry_routes.py
+          backend/agent_events.py
 
       - name: Run tests
         env:
