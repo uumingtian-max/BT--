@@ -1,0 +1,4 @@
+# 可选扩展（浏览器自动化）
+# pip install -r requirements.txt -r requirements-extras.txt
+# playwright install chromium
+playwright>=1.49.0

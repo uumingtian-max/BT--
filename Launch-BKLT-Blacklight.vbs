@@ -1,5 +1,7 @@
-' BKLT 黑光桌面快捷方式启动器 — 隐藏窗口运行，便于绑定高清 .ico（避免 .bat 图标被系统忽略）
+' Legacy BKLT launcher wrapper
+Set fso = CreateObject("Scripting.FileSystemObject")
+projectRoot = fso.GetParentFolderName(WScript.ScriptFullName)
 Set sh = CreateObject("WScript.Shell")
-root = Replace(WScript.ScriptFullName, "Launch-BKLT-Blacklight.vbs", "")
-sh.CurrentDirectory = root
-sh.Run "cmd /c """ & root & "START_APP.bat""", 0, False
+sh.CurrentDirectory = projectRoot
+sh.Run "cmd /c """ & projectRoot & "\launcher\START_APP.bat""", 0, False
+

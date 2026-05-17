@@ -1,7 +1,7 @@
-# 桌面快捷方式 — ONYX-OVERRIDE（高清图标，经 VBS 启动避免 .bat 图标失效）
+# 桌面快捷方式 — BT（黑光）（高清图标，经 VBS 启动避免 .bat 图标失效）
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-$launcher = Join-Path $root "Launch-ONYX-OVERRIDE.vbs"
+$launcher = Join-Path $root "Launch-BT-Heiguang.vbs"
 $py = "$env:USERPROFILE\miniconda3\python.exe"
 $icon = Join-Path $root "electron\icon.ico"
 $brandIco = Join-Path $root "assets\branding\desktop-icon.ico"
@@ -19,13 +19,13 @@ function New-Shortcut($name) {
     $sc.Arguments = "`"$launcher`""
     $sc.WorkingDirectory = $root
     $sc.WindowStyle = 1
-    $sc.Description = "ONYX-OVERRIDE — 本地智能助手"
+    $sc.Description = "BT（黑光） — 本地智能助手"
     if (Test-Path $icon) { $sc.IconLocation = "$icon,0" }
     $sc.Save()
     Write-Host "  $lnk" -ForegroundColor Green
 }
 
-Write-Host "ONYX-OVERRIDE 桌面快捷方式" -ForegroundColor Cyan
-New-Shortcut "ONYX-OVERRIDE"
-New-Shortcut "打开 ONYX-OVERRIDE"
+Write-Host "BT（黑光）桌面快捷方式" -ForegroundColor Cyan
+New-Shortcut "BT（黑光）"
+New-Shortcut "打开 BT（黑光）"
 if (Test-Path $icon) { Write-Host "图标: $icon" }

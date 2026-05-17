@@ -44,9 +44,20 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);overfl
 .app-tag{font-size:10px;color:var(--text3);letter-spacing:.08em;font-weight:600}
 .sidebar-brand{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:4px 2px 12px;border-bottom:1px solid var(--border);margin-bottom:4px}
 .sidebar-brand-button{width:100%;border:none;background:transparent;cursor:pointer;text-align:left}
-.sidebar-brand-button:hover .sidebar-brand-hero{box-shadow:0 0 24px rgba(0,255,255,.22),0 0 32px rgba(138,43,226,.24)}
-.sidebar-brand-hero{width:100%;max-width:168px;height:auto;margin:0 auto;border-radius:10px;object-fit:contain;box-shadow:0 0 20px rgba(0,255,255,.15),0 0 28px rgba(138,43,226,.18)}
-.sidebar-brand-tag{display:block;text-align:center;font-size:10px;color:var(--text3);letter-spacing:.02em}
+.sidebar-brand-frame{position:relative;width:100%;max-width:178px;margin:0 auto;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#090b14;box-shadow:0 0 18px rgba(0,255,255,.12),0 0 24px rgba(138,43,226,.12);transition:transform .18s ease,box-shadow .2s ease,border-color .2s ease}
+.sidebar-brand-button:hover .sidebar-brand-frame{transform:translateY(-1px);border-color:rgba(138,43,226,.35);box-shadow:0 0 22px rgba(0,255,255,.16),0 0 30px rgba(138,43,226,.18)}
+.sidebar-brand-hero{display:block;width:100%;height:auto;aspect-ratio:1/1;object-fit:cover;filter:saturate(1.05)}
+.sidebar-brand-plate{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-height:104px;padding:46px 14px 14px;background:linear-gradient(180deg,rgba(4,5,12,0) 0%,rgba(4,5,12,.84) 38%,rgba(4,5,12,.98) 62%,rgba(4,5,12,1) 100%);text-align:left}
+.sidebar-brand-name{display:block;font-size:21px;line-height:1.02;font-weight:800;color:#f5f3ff;letter-spacing:.03em;text-shadow:0 0 18px rgba(138,43,226,.2)}
+.sidebar-brand-tag{display:block;font-size:10px;color:#a8b0c7;letter-spacing:.08em;line-height:1.35;text-transform:uppercase}
+.sidebar-brand-busy{position:absolute;top:10px;right:10px;display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:999px;background:rgba(8,11,19,.74);border:1px solid rgba(255,255,255,.12);font-size:10px;font-weight:700;letter-spacing:.06em;color:#c6d0ea;backdrop-filter:blur(8px)}
+.sidebar-brand.is-thinking .sidebar-brand-frame{border-color:rgba(251,146,60,.34);box-shadow:0 0 26px rgba(251,146,60,.12),0 0 34px rgba(138,43,226,.22)}
+.sidebar-brand.is-thinking .sidebar-brand-frame::before{content:'';position:absolute;inset:-34%;background:conic-gradient(from 0deg,rgba(34,211,238,0) 0deg,rgba(34,211,238,.18) 82deg,rgba(138,43,226,.2) 180deg,rgba(251,146,60,.18) 286deg,rgba(34,211,238,0) 360deg);filter:blur(16px);opacity:.72;animation:brand-orbit-spin 4.8s linear infinite;pointer-events:none}
+.sidebar-brand.is-thinking .sidebar-brand-hero{animation:brand-hero-breathe 2.2s ease-in-out infinite}
+.sidebar-brand.is-thinking .sidebar-brand-name{text-shadow:0 0 22px rgba(251,146,60,.18),0 0 28px rgba(138,43,226,.22)}
+.sidebar-brand.is-thinking .sidebar-brand-busy{color:#ffd9aa;border-color:rgba(251,146,60,.28)}
+@keyframes brand-orbit-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes brand-hero-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
 .titlebar-controls{display:flex;gap:4px;-webkit-app-region:no-drag}
 .titlebar-controls button{width:28px;height:22px;border:none;background:transparent;color:var(--text3);cursor:pointer;border-radius:5px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .titlebar-controls button:hover{background:var(--bg3);color:var(--text)}

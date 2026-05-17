@@ -4,10 +4,19 @@ const path = require('path')
 const http = require('http')
 const { spawn, execSync } = require('child_process')
 
+// Some Windows laptops crash Electron's dedicated GPU process before the app UI appears.
+// Falling back to software rendering is slower, but it keeps the desktop app launchable.
+app.disableHardwareAcceleration()
+app.commandLine.appendSwitch('disable-gpu')
+app.commandLine.appendSwitch('disable-gpu-compositing')
+app.commandLine.appendSwitch('use-angle', 'swiftshader')
+app.commandLine.appendSwitch('enable-unsafe-swiftshader')
+
 let mainWindow
 let splashWindow
 let backendProcess
 const isDev = process.env.NODE_ENV === 'development'
+const RUN_RENDERER_SELFTEST = process.env.BKLT_RENDERER_SELFTEST === '1'
 
 function loadBackendEnv() {
   const envPath = path.join(__dirname, '..', 'backend', '.env')
@@ -173,6 +182,16 @@ function startBackend() {
   })
 }
 
+function setSplashStatus(text) {
+  if (!splashWindow || splashWindow.isDestroyed()) return
+  const line = JSON.stringify(String(text))
+  splashWindow.webContents
+    .executeJavaScript(
+      `(() => { const el = document.getElementById('status'); if (el) el.textContent = ${line}; })()`
+    )
+    .catch(() => {})
+}
+
 function showSplash() {
   splashWindow = new BrowserWindow({
     width: 400,
@@ -196,6 +215,60 @@ function closeSplash() {
   }
 }
 
+async function runRendererSelfTest() {
+  if (!RUN_RENDERER_SELFTEST || !mainWindow || mainWindow.isDestroyed()) return
+  const logsDir = path.join(__dirname, '..', 'logs')
+  const outPath = path.join(logsDir, 'renderer-selftest.json')
+  fs.mkdirSync(logsDir, { recursive: true })
+  try {
+    const result = await mainWindow.webContents.executeJavaScript(
+      `new Promise((resolve) => {
+        const started = Date.now();
+        const collect = () => {
+          const body = document.body?.innerText || '';
+          const banner = document.querySelector('.system-banner');
+          const pills = Array.from(document.querySelectorAll('.dash-pill'))
+            .map((el) => el.textContent?.trim())
+            .filter(Boolean);
+          const metrics = Array.from(document.querySelectorAll('.dash-stat-card'))
+            .map((el) => el.textContent?.trim())
+            .filter(Boolean);
+          const ready = body.includes('Operator Dashboard') || body.includes('本地 Agent 指挥台');
+          if (ready || Date.now() - started > 15000) {
+            resolve({
+              ready,
+              bannerText: banner ? banner.textContent.trim() : '',
+              pills,
+              metrics,
+              href: location.href,
+              ts: new Date().toISOString(),
+            });
+            return;
+          }
+          setTimeout(collect, 500);
+        };
+        collect();
+      })`,
+      true
+    )
+    fs.writeFileSync(outPath, JSON.stringify(result, null, 2), 'utf8')
+  } catch (error) {
+    fs.writeFileSync(
+      outPath,
+      JSON.stringify(
+        {
+          error: String(error),
+          stack: error?.stack || '',
+          ts: new Date().toISOString(),
+        },
+        null,
+        2
+      ),
+      'utf8'
+    )
+  }
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -206,7 +279,7 @@ function createWindow() {
     frame: false,
     backgroundColor: '#0a0a0f',
     icon: appIcon,
-    title: 'BKLT 黑光',
+    title: 'BT（黑光）',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -217,6 +290,7 @@ function createWindow() {
     closeSplash()
     mainWindow.show()
     mainWindow.focus()
+    runRendererSelfTest().catch(() => {})
   })
   if (isDev) {
     mainWindow.loadURL('http://localhost:3000')
@@ -229,20 +303,27 @@ function createWindow() {
 
 app.whenReady().then(async () => {
   if (process.platform === 'win32' && !appIcon.isEmpty()) {
-    app.setAppUserModelId('com.bklt.blacklight.desktop')
+    app.setAppUserModelId('com.bt.heiguang.desktop')
   }
   showSplash()
+  setSplashStatus(
+    isVllmMode ? '正在检查 llama.cpp / OpenAI 网关…' : '正在检查 Ollama…'
+  )
   ensureOllama()
+  setSplashStatus('正在连接后端…')
   const backendReady = await pingBackend()
   if (!backendReady) {
+    setSplashStatus('正在启动后端…')
     startBackend()
     const ready = await waitForBackend()
     if (!ready) {
+      setSplashStatus('后端启动较慢，仍在加载界面…')
       console.warn(`[Backend] 健康检查超时，界面仍会打开；请确认后端 ${BACKEND_PORT} 端口已启动`)
     }
   } else {
     console.log(`[Backend] reusing existing backend on 127.0.0.1:${BACKEND_PORT}`)
   }
+  setSplashStatus('正在加载界面…')
   createWindow()
 })
 

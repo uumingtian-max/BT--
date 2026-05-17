@@ -1,11 +1,11 @@
 {
-  "name": "bklt-blacklight-desktop",
-  "productName": "BKLT 黑光",
+  "name": "bt-heiguang-desktop",
+  "productName": "BT（黑光）",
   "version": "1.2.0",
   "main": "electron/main.js",
   "scripts": {
     "start": "npm run electron",
-    "electron": "electron .",
+    "electron": "electron --disable-gpu --disable-gpu-compositing --in-process-gpu --use-angle=swiftshader --enable-unsafe-swiftshader .",
     "app": "npm run build --prefix frontend && electron .",
     "branding": "python scripts/build-branding.py",
     "dev": "concurrently \"npm run frontend-dev\" \"wait-on http://localhost:3000 && set NODE_ENV=development&& electron .\"",

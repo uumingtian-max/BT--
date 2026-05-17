@@ -1,10 +1,9 @@
 /**
- * 与 backend/.env 中 LOCKED_MODEL_ID 保持一致。
- * 当前模式：LLM_BACKEND=openai_compatible，vLLM 跑在 WSL localhost:8001
- * 若切回 Ollama 路线，改为 Ollama tag（如 'qwen3:14b'）并更新 LABEL。
+ * 与 backend/.env 中 LOCKED_MODEL_ID / LLAMA_CPP_ALIAS 保持一致。
+ * 当前：LLM_BACKEND=openai_compatible，本机 llama-server @ http://127.0.0.1:8001/v1
  */
-export const LOCKED_MODEL_ID = '/mnt/d/models/Gemma-4-26B-A4B-NVFP4';
-export const LOCKED_MODEL_LABEL = 'Gemma 4 26B · vLLM (本地)';
+export const LOCKED_MODEL_ID = 'Gemma4-26B-A4B-Uncensored-HauhauCS-Balanced-Q5_K_P';
+export const LOCKED_MODEL_LABEL = 'Gemma 4 26B 多模态 · llama.cpp';
 
 export const UI_MODEL_OPTIONS = [{ id: LOCKED_MODEL_ID, label: LOCKED_MODEL_LABEL }];
 
@@ -16,6 +15,7 @@ export function labelForModel(modelId = '') {
   if (!modelId) return '后端默认模型';
   if (modelId.startsWith('gpt-') || modelId.startsWith('o')) return `OpenAI · ${modelId}`;
   if (modelId.includes('Gemma') || modelId.includes('gemma')) return `Gemma · ${modelId}`;
+  if (modelId.includes('Llama') || modelId.includes('llama')) return `Llama · ${modelId}`;
   return modelId;
 }
 

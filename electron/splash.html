@@ -1,36 +1,86 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>BT（黑光）</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; height: 100%; background: transparent; font-family: "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+      overflow: hidden;
+      color-scheme: dark;
+    }
     .shell {
-      width: 100%; height: 100%; border-radius: 16px;
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
       border: 1px solid rgba(0, 255, 255, 0.25);
       background: linear-gradient(165deg, #080810 0%, #10101a 50%, #06060c 100%);
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      -webkit-app-region: drag;
+      app-region: drag;
+    }
+    .shell .no-drag {
+      -webkit-app-region: no-drag;
+      app-region: no-drag;
     }
     .logo {
-      width: 128px; height: 128px; border-radius: 20px;
+      width: 128px;
+      height: 128px;
+      border-radius: 20px;
       image-rendering: -webkit-optimize-contrast;
-      image-rendering: crisp-edges;
     }
-    h1 { font-size: 17px; font-weight: 800; letter-spacing: 0.14em; color: #e8e8f0; }
-    .subtitle { font-size: 11px; color: #8a8aa0; letter-spacing: 0.08em; }
-    .bar-wrap { width: 200px; height: 3px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
-    .bar { height: 100%; width: 40%; background: linear-gradient(90deg, #8a2be2, #00ffff); animation: slide 1.2s ease-in-out infinite; }
-    @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
-    #status { font-size: 11px; color: #5a5a70; }
+    h1 {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      color: #e8e8f0;
+    }
+    .subtitle {
+      font-size: 11px;
+      color: #8a8aa0;
+      letter-spacing: 0.08em;
+    }
+    .bar-wrap {
+      width: 200px;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .bar {
+      height: 100%;
+      width: 40%;
+      background: linear-gradient(90deg, #8a2be2, #00ffff);
+      animation: slide 1.2s ease-in-out infinite;
+    }
+    @keyframes slide {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(350%); }
+    }
+    #status {
+      font-size: 11px;
+      color: #5a5a70;
+      min-height: 1.2em;
+    }
   </style>
 </head>
 <body>
-  <div class="shell">
-    <img class="logo" src="icon-128.png" width="128" height="128" alt="BKLT 黑光" />
-    <h1>BKLT 黑光</h1>
-    <p class="subtitle">BLACKLIGHT</p>
-    <div class="bar-wrap"><div class="bar"></div></div>
-    <p id="status">正在启动…</p>
+  <div class="shell" role="status" aria-live="polite" aria-busy="true" aria-label="BT（黑光）正在启动">
+    <img class="logo no-drag" src="icon-128.png" width="128" height="128" alt="BT（黑光）" draggable="false" />
+    <h1 class="no-drag">BT（黑光）</h1>
+    <p class="subtitle no-drag">本地 AI Agent 自动化工作台</p>
+    <div class="bar-wrap no-drag" aria-hidden="true"><div class="bar"></div></div>
+    <p id="status" class="no-drag">正在启动…</p>
   </div>
 </body>
 </html>

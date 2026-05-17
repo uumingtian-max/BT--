@@ -1,0 +1,35 @@
+{
+  "name": "ai-agent-frontend",
+  "version": "1.1.0",
+  "private": true,
+  "homepage": ".",
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
+    "react-scripts": "5.0.1",
+    "react-syntax-highlighter": "^15.6.6",
+    "uuid": "^11.1.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead"
+    ],
+    "development": [
+      "last 1 chrome version"
+    ]
+  },
+  "overrides": {
+    "@tootallnate/once": "3.0.1",
+    "nth-check": "2.1.1",
+    "prismjs": "1.30.0",
+    "postcss": "8.5.10",
+    "serialize-javascript": "7.0.5",
+    "underscore": "1.13.8"
+  }
+}

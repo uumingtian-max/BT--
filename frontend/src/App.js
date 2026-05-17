@@ -5,12 +5,16 @@ import './App.css';
 import BrandLogo, { BrandHero } from './BrandLogo';
 import { DashboardPanel, SystemPanel, SkillsPanel, SchedulerPanel } from './OperatorPanels';
 import { LOCKED_MODEL_ID, LOCKED_MODEL_LABEL, labelForModel } from './modelCatalog';
+import { extractClipboardFiles } from './clipboardAttachments';
 
-// 从环境变量读取 API 地址，构建时可通过 REACT_APP_API_URL 覆盖；
-// 默认 http://localhost:8000（开发 / Electron 本机模式）。
-const API = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-const APP_NAME = 'ONYX-OVERRIDE';
-const APP_TAGLINE = '本地智能助手';
+// Electron 通过 preload 注入真实后端地址；其余场景可由构建环境覆盖。
+const API =
+  (typeof window !== 'undefined' && window.electronAPI?.backendUrl) ||
+  process.env.REACT_APP_API_URL ||
+  'http://127.0.0.1:8000';
+const APP_NAME = 'BT（黑光）';
+const APP_TAGLINE = '本地 AI Agent 工作台';
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const Icon = ({ name, size = 16 }) => {
   const icons = {
@@ -567,9 +571,9 @@ export default function App() {
     return null;
   };
 
-  const refreshOperatorSurfaces = async () => {
+  const refreshOperatorSurfaces = async (healthOptions) => {
     await Promise.all([
-      loadSystemHealth(),
+      loadSystemHealth(healthOptions),
       loadOperatorDashboard(),
       loadLogs(),
     ]);
@@ -641,28 +645,36 @@ export default function App() {
     return false;
   };
 
-  const loadSystemHealth = async () => {
-    try {
-      const [dr, mr, hr] = await Promise.all([
-        fetch(API + '/meta/doctor'),
-        fetch(API + '/meta/models'),
-        fetch(API + '/meta/habit'),
-      ]);
-      const doctor = dr.ok ? await dr.json() : null;
-      const modelsJson = mr.ok ? await mr.json() : null;
-      const habit = hr.ok ? await hr.json() : null;
-      const firstModel = (modelsJson?.models || [])
-        .map((m) => (typeof m === 'string' ? m : m?.id || m?.model || m?.name))
-        .filter(Boolean)[0];
-      if (firstModel) {
-        setModel(firstModel);
-        setModelLabel(labelForModel(firstModel));
+  const loadSystemHealth = async (options = {}) => {
+    const retries = Number.isInteger(options.retries) ? options.retries : 0;
+    const retryDelayMs = Number.isInteger(options.retryDelayMs) ? options.retryDelayMs : 500;
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      try {
+        const [dr, mr, hr] = await Promise.all([
+          fetch(API + '/meta/doctor'),
+          fetch(API + '/meta/models'),
+          fetch(API + '/meta/habit'),
+        ]);
+        const doctor = dr.ok ? await dr.json() : null;
+        const modelsJson = mr.ok ? await mr.json() : null;
+        const habit = hr.ok ? await hr.json() : null;
+        const firstModel = (modelsJson?.models || [])
+          .map((m) => (typeof m === 'string' ? m : m?.id || m?.model || m?.name))
+          .filter(Boolean)[0];
+        if (firstModel) {
+          setModel(firstModel);
+          setModelLabel(labelForModel(firstModel));
+        }
+        setSystemHealth({ doctor, modelsJson, habit, at: Date.now() });
+        return { doctor, modelsJson, habit };
+      } catch (_) {
+        if (attempt < retries) {
+          await wait(retryDelayMs);
+          continue;
+        }
+        setSystemHealth({ doctor: null, modelsJson: null, habit: null, backendDown: true, at: Date.now() });
+        return null;
       }
-      setSystemHealth({ doctor, modelsJson, habit, at: Date.now() });
-      return { doctor, modelsJson, habit };
-    } catch (_) {
-      setSystemHealth({ doctor: null, modelsJson: null, habit: null, backendDown: true, at: Date.now() });
-      return null;
     }
   };
 
@@ -692,7 +704,7 @@ export default function App() {
       let cfg = {};
       try {
         const [health] = await Promise.all([
-          loadSystemHealth(),
+          loadSystemHealth({ retries: 12, retryDelayMs: 500 }),
           loadOperatorDashboard(),
           loadLogs(),
         ]);
@@ -834,6 +846,14 @@ export default function App() {
 
   const removeAttachment = (idx) => {
     setAttachments((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleComposerPaste = (e) => {
+    const files = extractClipboardFiles(e.clipboardData);
+    if (!files.length || loading || uploading) return;
+    const pastedText = e.clipboardData?.getData?.('text/plain') || '';
+    if (!pastedText) e.preventDefault();
+    void addAttachments(files);
   };
 
   const sendMessage = async () => {
@@ -1011,7 +1031,7 @@ export default function App() {
   const ollamaOk = ollamaCheck ? ollamaCheck.status === 'ok' : null;
   const healthBanner = (() => {
     if (systemHealth?.backendDown) {
-      return { tone: 'err', text: '后端未连接（端口 8000）。请重新打开 ONYX-OVERRIDE 或运行 START_APP.bat。' };
+      return { tone: 'err', text: '后端未连接（端口 8000）。请重新打开 BT（黑光）或运行 START_APP.bat。' };
     }
     if (ollamaOk === false) {
       return {
@@ -1024,6 +1044,7 @@ export default function App() {
     }
     return null;
   })();
+  const agentBusy = loading && mode === 'agent';
 
   const onKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1051,15 +1072,23 @@ export default function App() {
         <div className="sidebar">
           <button
             type="button"
-            className="sidebar-brand sidebar-brand-button"
+            className={`sidebar-brand sidebar-brand-button${agentBusy ? ' is-thinking' : ''}`}
             onClick={() => {
               setPanel('chat');
               setShowToolPanel(false);
               refreshOperatorSurfaces();
             }}
           >
-            <BrandHero className="sidebar-brand-hero" alt={APP_NAME} />
-            <span className="sidebar-brand-tag">{APP_TAGLINE}</span>
+            <div className="sidebar-brand-frame">
+              <BrandHero className="sidebar-brand-hero" alt={APP_NAME} />
+              <div className="sidebar-brand-plate">
+                <strong className="sidebar-brand-name">{APP_NAME}</strong>
+                <span className="sidebar-brand-tag">
+                  {agentBusy ? 'Agent 推理中，正在处理任务…' : APP_TAGLINE}
+                </span>
+              </div>
+              <span className="sidebar-brand-busy">{agentBusy ? '推理中' : '待命'}</span>
+            </div>
           </button>
           <button type="button" className="new-chat-btn" onClick={newSession}><Icon name="plus" size={14} /> New Chat</button>
           <div className="mode-toggle">
@@ -1308,6 +1337,7 @@ export default function App() {
                     ref={textareaRef}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
+                    onPaste={handleComposerPaste}
                     onKeyDown={onKey}
                     placeholder={placeholderForMode()}
                     rows={1}

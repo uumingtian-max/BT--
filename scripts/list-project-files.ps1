@@ -1,6 +1,7 @@
 $ErrorActionPreference = 'SilentlyContinue'
 $root = Resolve-Path (Join-Path $PSScriptRoot '..')
-$out = Join-Path $root 'PROJECT_FILE_INDEX.txt'
+$outDir = Join-Path $root 'docs\archive'
+$out = Join-Path $outDir 'PROJECT_FILE_INDEX.txt'
 $skip = @('node_modules', '.git', '__pycache__', '.cursor', 'agent-transcripts', 'mcps', 'frontend\build', 'frontend/build')
 
 function Test-SkipPath([string]$p) {
@@ -8,6 +9,10 @@ function Test-SkipPath([string]$p) {
     if ($p -like "*\$s\*" -or $p -like "*/$s/*") { return $true }
   }
   return $false
+}
+
+if (-not (Test-Path $outDir)) {
+  New-Item -ItemType Directory -Path $outDir -Force | Out-Null
 }
 
 $lines = Get-ChildItem -LiteralPath $root -Recurse -File |

@@ -1,0 +1,30 @@
+---
+description: ONYX/Cursor 技能与 Agent 质量（Skill Creator 精简，无评测脚本）
+globs: backend/agent_skills/**/*.md,.cursor/skills/**/SKILL.md
+alwaysApply: false
+---
+
+# Agent 技能质量
+
+编辑 `backend/agent_skills/*.md` 或 `.cursor/skills/**/SKILL.md` 时：
+
+## 结构
+
+- 保留 `Triggers:` 行（ONYX）或 YAML `description`（Cursor SKILL.md）
+- 正文含：**何时使用 / 执行步骤 / 避免**；可验证任务加 **自测用语** 2–3 条
+- 单条技能 <500 行；过长拆 `references/` 或拆 stem
+
+## 触发
+
+- description/Triggers 略「主动」：用户未点名技能但意图明显也要命中
+- 中英 + 工具名 + 口语同义；避免仅生僻英文
+
+## 执行
+
+- 步骤可验证（路径、API、命令输出）；无依据不声称已完成
+- 不写 `.env`/token 进技能正文；恶意与未授权访问走 `trust_and_decline` 思路
+
+## ONYX 本仓库
+
+- 批量提质：`python scripts/optimize-agent-skills-deep.py --force`
+- 计数以 `GET /meta/skills` 为准；勿手改 `learned_habit_auto.md`

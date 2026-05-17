@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-BKLT 黑光 / BLACKLIGHT 统一启动器
-旧名 ONYX-OVERRIDE 作为历史兼容名保留。
+BT（黑光）统一启动器
+旧名 BKLT 黑光、ONYX-OVERRIDE 作为历史兼容名保留。
 
 用法：python start.py [mode]
 

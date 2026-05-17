@@ -38,7 +38,11 @@ backend/agent_skills/learned_habit_auto.md
 imported-assets/model_v6/
 imported-assets/
 knowledge-vault/
+data/imported-assets/
+data/knowledge-vault/
+data/*.db
 _upgrade_staging/
+archive/_upgrade_staging/
 
 # ── Python ───────────────────────────────────────────────────────────────────────
 __pycache__/

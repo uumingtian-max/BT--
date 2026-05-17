@@ -182,7 +182,7 @@ def main() -> int:
 
     export_png_set(mark_master, BRAND, "icon", UI_LOGO_SIZES)
     export_png_set(full_master, BRAND, "brand-full", UI_LOGO_SIZES)
-    export_png_set(mark_master, ELECTRON, "icon", (256, 512, 1024))
+    export_png_set(mark_master, ELECTRON, "icon", (128, 256, 512, 1024))
 
     # UI：小图用脑标，≥128 用完整品牌图
     PUBLIC.mkdir(parents=True, exist_ok=True)
