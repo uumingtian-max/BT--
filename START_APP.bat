@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-title ONYX-OVERRIDE
+title BKLT 黑光
 cd /d "%~dp0"
 if not defined PLAYWRIGHT_BROWSERS_PATH set "PLAYWRIGHT_BROWSERS_PATH=%LOCALAPPDATA%\ms-playwright"
 
@@ -40,7 +40,7 @@ if errorlevel 1 (
   echo 检查 Ollama（模型服务）…
   powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\ensure-ollama.ps1"
 ) else (
-  echo [ONYX] LLM_BACKEND=openai_compatible — 跳过 Ollama；请保持 OPENAI_BASE_URL 网关已就绪（如 vLLM :8001）。
+  echo [BKLT] LLM_BACKEND=openai_compatible — 跳过 Ollama；请保持 OPENAI_BASE_URL 网关已就绪（如 vLLM :8001）。
   set SKIP_OLLAMA=1
 )
 
