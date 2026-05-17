@@ -1,0 +1,11 @@
+# 可选：本地 Stable Diffusion（需 NVIDIA 显卡与较大磁盘）
+# pip install -r requirements.txt -r requirements-media.txt
+# 并在 backend/.env 设置 ENABLE_LOCAL_SD=1
+torch>=2.0.0
+diffusers>=0.30.0
+transformers>=4.40.0
+accelerate>=0.33.0
+safetensors>=0.4.0
+moviepy>=1.0.3
+imageio-ffmpeg>=0.4.9
+imageio>=2.34.0
