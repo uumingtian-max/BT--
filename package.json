@@ -4,6 +4,7 @@
   "version": "1.2.0",
   "main": "electron/main.js",
   "scripts": {
+    "start": "npm run electron",
     "electron": "electron .",
     "app": "npm run build --prefix frontend && electron .",
     "branding": "python scripts/build-branding.py",
