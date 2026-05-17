@@ -1,0 +1,29 @@
+---
+description: Secure code review and threat thinking — OWASP, secrets, authz, fail-secure; agency-agents Security Engineer.
+alwaysApply: false
+---
+
+# Security Review（agency-agents / Security Engineer）
+
+来源：[agency-agents](https://github.com/msitarzewski/agency-agents) `engineering-security-engineer`（压缩）。
+
+## 必问
+
+1. 什么可被滥用？2. 失败时是否安全？3. 爆炸半径多大？
+
+## 硬规则
+
+- 所有用户输入视为不可信；每个信任边界校验
+- 不用自研 crypto；密钥只来自环境/密钥库，不进日志/前端/聊天
+- 默认拒绝（CORS、ACL、CSP）；错误不泄露栈/路径/版本
+- 最小权限（DB 用户、IAM、API scope）
+- **禁止**用「关掉安全控制」当修复
+
+## 输出
+
+每条发现：**严重度** + **可利用路径** + **可粘贴的修复**（优先 diff/代码块）。
+
+## 本仓库
+
+- 与 `security_local_audit` 一致：勿提交 `.env`/token；合法范围限于用户自有项目
+- FastAPI：Pydantic 边界、参数化查询、生产关闭 debug docs

@@ -1,6 +1,6 @@
 # 技能总目录（本仓库）
 
-Triggers: 技能库,全部技能,有多少技能,skill catalog,skills list,meta/skills,技能太少,技能包,skill pack,多少个技能
+Triggers: 技能库,全部技能,有多少技能,skill catalog,skills list,meta/skills,技能太少,技能包,skill pack,多少个技能,skills_master_index,skills master index,skills-master-index,技能总目录,本仓库,技能列表,86
 
 ---
 
@@ -22,6 +22,8 @@ Triggers: 技能库,全部技能,有多少技能,skill catalog,skills list,meta/
 | 工具专精 | `tool_*` | 每个 Agent 工具一条 playbook |
 | 能力/API | `feature_*` | 记忆、定时、网关、观测、习惯体检等 |
 | 工程/本应用 | `onyx_*`, `fastapi_route_debug` | ONYX 前后端与运维 |
+| agency 工程向 | `agency_*` | 来自 [agency-agents](https://github.com/msitarzewski/agency-agents) 压缩；审查/安全/验收/编排/MCP |
+| 外仓对照 | `bt_external_repos` | 仅 **agency-agents + gstack**（默认 clone）；superpowers 可选；见 `vendor/README.md` |
 | 自动学习 | `learned_habit_auto` | **由 habit_pipeline 覆盖**，勿手改 |
 
 ## 避免

@@ -1,0 +1,30 @@
+---
+description: Evidence-based ship gate — default NEEDS WORK; no fantasy "production ready" without proof (agency Reality Checker).
+alwaysApply: false
+---
+
+# Ship Readiness（agency-agents / Reality Checker）
+
+来源：[agency-agents](https://github.com/msitarzewski/agency-agents) `testing-reality-checker`（压缩）。
+
+## 默认立场
+
+**NEEDS WORK**，除非有压倒性证据。拒绝无依据的「零问题 / A+ / 已可上线」。
+
+## 必须有的证据
+
+- 声明的功能：对应文件/路由/测试或截图
+- 用户主路径：逐步可复现（本仓库可用 `run_project_check`、`pytest`、手动启动 `launcher/START_APP.bat`）
+- 规格对照：原需求引用 vs 实际交付（列 gap）
+
+## 自动 FAIL
+
+- 前序 agent 声称完美但无证据
+- 规格未实现却标 production ready
+- 关键路径断（API 500、前端白屏、Electron 起不来）
+
+## 输出模板
+
+- 质量：C+ ~ B+（诚实）
+- 上线：**FAILED / NEEDS WORK / READY**
+- 必修项：编号 + 如何验证已修

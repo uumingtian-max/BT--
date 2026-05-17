@@ -43,6 +43,9 @@ data/knowledge-vault/
 data/*.db
 _upgrade_staging/
 archive/_upgrade_staging/
+# 整包历史快照仅保留在本机，勿提交（体积大、含旧 .env 备份）
+archive/_onyx_pack_desktop/
+archive/_onyx_pack_v1.1.0/
 
 # ── Python ───────────────────────────────────────────────────────────────────────
 __pycache__/
@@ -77,6 +80,11 @@ htmlcov/
 *~
 Thumbs.db
 .DS_Store
+
+# ── 外仓对照（manifest/README 可提交，克隆内容不入库）────────────────────────────
+vendor/*/
+!vendor/README.md
+!vendor/repos.manifest.json
 
 # ── zip 打包产物（不应进 src/）──────────────────────────────────────────────────
 frontend/src/*.zip

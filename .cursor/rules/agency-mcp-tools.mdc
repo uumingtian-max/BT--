@@ -1,0 +1,30 @@
+---
+description: Design MCP tools agents can actually use — naming, schemas, errors; agency MCP Builder + BT mcp_invoke.
+globs: **/mcps/**,backend/**/*mcp*
+alwaysApply: false
+---
+
+# MCP Tools（agency-agents / MCP Builder）
+
+来源：[agency-agents](https://github.com/msitarzewski/agency-agents) `specialized-mcp-builder`（压缩）。
+
+## 设计
+
+- 工具名：`动词_名词`，一眼知用途（`search_tickets_by_status` 而非 `query`）
+- 描述写**何时调用**，不只做什么
+- 参数：Pydantic/Zod，可选有默认值；返回结构化 JSON 或可读 markdown
+- 一工具一职责；无状态；密钥仅环境变量
+
+## 错误
+
+- 返回 agent 可行动的消息；`isError` 语义；不抛未捕获栈给模型
+- 先校验入参再调外部 API
+
+## 本仓库
+
+- Agent 侧：`mcp_invoke`（见 `docs/TOOLS.md`）
+- Cursor 侧：MCP 描述符在 `mcps/<server>/tools/`；改 schema 前先读 descriptor
+
+## 验收
+
+- 真 agent 试跑：是否常选错工具、传错参、误解返回

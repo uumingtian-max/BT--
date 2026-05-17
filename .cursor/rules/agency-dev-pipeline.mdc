@@ -1,0 +1,26 @@
+---
+description: Multi-phase dev pipeline — plan → implement → review loop → ship gate; agency Orchestrator adapted for this repo.
+alwaysApply: false
+---
+
+# Dev Pipeline（agency-agents / Orchestrator）
+
+来源：[agency-agents](https://github.com/msitarzewski/agency-agents) `agents-orchestrator`（压缩，对齐本仓库工具）。
+
+## 阶段
+
+1. **范围**：5 条内目标 + 不做清单（见 `gstack_agent_roles` CEO 镜头）
+2. **拆解**：`spec_minimal_steps`；复杂任务 `run_task_orchestration`
+3. **实现**：读代码 → 最小 diff；后端 `backend/`，前端 `frontend/` + `npm run build` 在**项目根**
+4. **审查**：只读 + `run_project_check` / `pytest`；按 `agency-code-review`、`agency-security`
+5. **上线门禁**：`agency-ship-readiness`；默认 NEEDS WORK
+
+## 质量环
+
+- 子任务未验证通过不进入下一项
+- 失败最多 3 轮：带**具体**错误摘要再实现，仍失败则标 blocked 并上报
+- 交接写清：假设、已完成、阻塞、下一步最小动作（见 `orchestration_handoff`）
+
+## 角色选型（复杂任务）
+
+经理 → 实现 → 审查；未指定时默认三拍，每拍结束征求继续/修改。

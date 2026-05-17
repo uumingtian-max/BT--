@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "clone_root": "vendor",
+  "notes": "仅保留 BT 最常用对照仓；运行时仍以 backend/agent_skills 为准，不直接加载 vendor 内文件。",
+  "repos": [
+    {
+      "id": "agency-agents",
+      "label": "Agency Agents（工程人设）",
+      "url": "https://github.com/msitarzewski/agency-agents.git",
+      "path": "vendor/agency-agents",
+      "clone_default": true,
+      "shallow": true,
+      "bt_local": [
+        "backend/agent_skills/agency_*.md",
+        ".cursor/rules/agency-*.mdc"
+      ],
+      "use": "代码审查/安全/验收/编排；对照 engineering-*、testing-*、specialized-* 更新本地 agency_* 技能"
+    },
+    {
+      "id": "gstack",
+      "label": "gstack（多角色工具链）",
+      "url": "https://github.com/garrytan/gstack.git",
+      "path": "vendor/gstack",
+      "clone_default": true,
+      "shallow": true,
+      "bt_local": [
+        "backend/agent_skills/gstack_agent_roles.md",
+        "backend/agent_skills/agency_dev_orchestrator.md"
+      ],
+      "use": "CEO→实现→审查分工；与 run_task_orchestration 对照，不照搬外仓 CLI"
+    },
+    {
+      "id": "superpowers",
+      "label": "obra/superpowers（技能写法）",
+      "url": "https://github.com/obra/superpowers.git",
+      "path": "vendor/superpowers",
+      "clone_default": false,
+      "shallow": true,
+      "bt_local": [
+        "backend/agent_skills/tool_skill_authoring.md",
+        "backend/skill_pack.py"
+      ],
+      "use": "新建或优化 agent_skills/*.md 时对照 Triggers + 短 playbook 结构"
+    }
+  ]
+}

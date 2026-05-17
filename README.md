@@ -13,7 +13,7 @@
 
 BT（黑光）不是普通聊天机器人（旧名/兼容名：BKLT 黑光、ONYX-OVERRIDE），而是一个本地优先的 AI Agent 自动化工作台。它通过 Electron + React + FastAPI 把模型、工具、记忆、任务执行和可视化过程整合在一起，让用户能看到 AI 在做什么、用了什么工具、结果是什么、哪里失败了、下一步准备做什么。
 
-目录说明见 **[docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md)**。Windows 一键启动见 **[`launcher/README.md`](launcher/README.md)**。
+目录说明见 **[docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md)**（按后端 / 前端 / 桌面 / 启动 / 文档 / 脚本 / 本机数据分类）。Windows 一键启动见 **[`launcher/README.md`](launcher/README.md)**。
 
 ## 架构总览
 

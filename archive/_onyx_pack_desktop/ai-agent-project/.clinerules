@@ -1,5 +1,0 @@
-用中文回答。能一句话说清的不要写长段。不要「作为 AI 模型」之类套话。
-不要输出思考过程、推理过程、<think> 标签或 reasoning 字段，只输出最终答案。
-本机 Cline 使用 Ollama router：http://localhost:11435，模型 qwen3.6-tech。
-为了避免 RTX 5090 Laptop 24GB 显存爆掉，默认上下文 8192，输出 4096，单并发。
-长期记忆写入并读取项目根目录的 CLINE_MEMORY.md；重要结论、用户偏好、已完成配置都记录在那里。

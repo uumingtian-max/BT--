@@ -584,6 +584,7 @@ def community_alignment():
         ],
         "notes": [
             "Themes are inspirational only; this API does not clone or call third-party repos.",
+            "Curated vendor clones (reference only): agency-agents, gstack — see vendor/repos.manifest.json and skill bt_external_repos.",
             "For GitHub Trending Developers ask Agent: 热榜 / trending developers / github trending — loads github_trending_developers + weekly_trend_map.",
             "Full skill list: GET /meta/skills",
         ],
