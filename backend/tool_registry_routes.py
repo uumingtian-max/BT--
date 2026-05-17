@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from agent_events import timeline_contract
 from tool_registry import TOOL_GROUPS, list_tool_metadata, validate_tool_registry
 
 router = APIRouter()
@@ -35,3 +36,9 @@ def tool_risk_summary():
         "risk_levels": buckets,
         "counts": {key: len(value) for key, value in buckets.items()},
     }
+
+
+@router.get("/agent/timeline/contract")
+def agent_timeline_contract():
+    """Frontend contract for rendering Agent run timelines."""
+    return {"ok": True, **timeline_contract()}
