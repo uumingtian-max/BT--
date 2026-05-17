@@ -1,6 +1,6 @@
 {
-  "name": "onyx-override-desktop",
-  "productName": "ONYX-OVERRIDE",
+  "name": "bklt-blacklight-desktop",
+  "productName": "BKLT 黑光",
   "version": "1.2.0",
   "main": "electron/main.js",
   "scripts": {
