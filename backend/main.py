@@ -19,6 +19,7 @@ from a2a_bridge import router as a2a_router
 from agent import router as agent_router
 from automation_routes import router as automation_router
 from chat import router as chat_router
+from content_routes import router as content_router
 from local_agent_api import init_legacy_db, router as local_agent_router
 from memory_store import background_memory_maintenance
 from meta_routes import router as meta_router
@@ -91,12 +92,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="AI Agent Backend",
-    version="1.1.0",
+    title="BKLT Blacklight Backend",
+    version="1.2.0",
     description=(
-        "合并服务：Ollama 或 OpenAI 兼容网关 /chat、工具 Agent /agent/run、编排 /agent/orchestrate；"
-        "行为采样 /observe；Telegraf 可抓取指标 /telegraf/prometheus；遗留 Local API（POST /agent 任务分解、图像/视频/语音）。"
-        "社区风向对照见 GET /meta/alignment；技能包 backend/agent_skills。运行时环境变量见 backend/.env.example。"
+        "BKLT 黑光合并服务：Ollama 或 OpenAI 兼容网关 /chat、工具 Agent /agent/run、编排 /agent/orchestrate；"
+        "内容处理 /content/process；行为采样 /observe；Telegraf 可抓取指标 /telegraf/prometheus；"
+        "遗留 Local API（POST /agent 任务分解、图像/视频/语音）。"
+        "技能包 backend/agent_skills。运行时环境变量见 backend/.env.example。"
     ),
     lifespan=lifespan,
 )
@@ -206,6 +208,7 @@ app.include_router(meta_router, prefix="/meta", tags=["meta"])
 app.include_router(tool_registry_router, prefix="/meta", tags=["tools"])
 app.include_router(telegraf_router)
 app.include_router(notebook_router, prefix="/notebook", tags=["notebook"])
+app.include_router(content_router, prefix="/content", tags=["content"])
 app.include_router(a2a_router, prefix="/a2a", tags=["a2a"])
 app.include_router(chat_router, prefix="/chat", tags=["chat"])
 app.include_router(agent_router, prefix="/agent", tags=["agent"])
