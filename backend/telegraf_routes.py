@@ -22,7 +22,12 @@ _LABEL_SAFE = re.compile(r"[^a-zA-Z0-9_]")
 
 
 def _enabled() -> bool:
-    return os.environ.get("TELEGRAF_METRICS", "1").strip().lower() not in ("0", "false", "off", "no")
+    return os.environ.get("TELEGRAF_METRICS", "1").strip().lower() not in (
+        "0",
+        "false",
+        "off",
+        "no",
+    )
 
 
 def _label(s: str) -> str:
@@ -39,9 +44,7 @@ def _prometheus_lines(data: dict[str, Any]) -> list[str]:
     ]
     if not _enabled():
         lines.append("agent_backend_up 0")
-        lines.append(
-            "# HELP agent_telegraf_metrics_disabled Telegraf scrape disabled via TELEGRAF_METRICS=0."
-        )
+        lines.append("# HELP agent_telegraf_metrics_disabled Telegraf scrape disabled via TELEGRAF_METRICS=0.")
         lines.append("# TYPE agent_telegraf_metrics_disabled gauge")
         lines.append("agent_telegraf_metrics_disabled 1")
         return lines
@@ -72,9 +75,7 @@ def _prometheus_lines(data: dict[str, Any]) -> list[str]:
             for status in ("success", "failed"):
                 n = int(bucket.get(status) or 0)
                 if n:
-                    lines.append(
-                        f'agent_task_outcomes_by_type_24h{{task_type="{tt}",status="{status}"}} {n}'
-                    )
+                    lines.append(f'agent_task_outcomes_by_type_24h{{task_type="{tt}",status="{status}"}} {n}')
 
     lines += [
         "# HELP agent_activity_samples_1h Behavior DB activity_samples rows in last 1h.",

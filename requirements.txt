@@ -1,0 +1,3 @@
+# BT（黑光）Python 依赖
+# 安装：pip install -r requirements.txt
+-r backend/requirements.txt

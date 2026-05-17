@@ -30,6 +30,8 @@ os.environ["LLM_BACKEND"] = "ollama"
 os.environ["OLLAMA_HOST"] = "http://127.0.0.1:11434"
 os.environ["TASK_DECOMPOSE_BACKEND"] = "ollama"
 os.environ["ENABLE_IMAGE_PLACEHOLDER"] = "1"
+# 单测需要习惯体检 API 为启用态（CI workflow 可能设 HABIT_CHECK_ENABLED=false）
+os.environ["HABIT_CHECK_ENABLED"] = "1"
 
 
 @pytest.fixture(scope="module")

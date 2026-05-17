@@ -15,7 +15,6 @@ confirm-level tool because it sends user content to a third-party service.
 
 from __future__ import annotations
 
-import json
 import re
 from dataclasses import dataclass
 from datetime import datetime
@@ -131,7 +130,15 @@ def _detect_source_type(source: str, source_type: SourceType) -> SourceType:
 
 def _looks_unreadable(text: str) -> bool:
     low = (text or "").lower()
-    blocked_markers = ["login", "sign in", "enable javascript", "access denied", "captcha", "403", "401"]
+    blocked_markers = [
+        "login",
+        "sign in",
+        "enable javascript",
+        "access denied",
+        "captcha",
+        "403",
+        "401",
+    ]
     return len((text or "").strip()) < 120 or any(m in low for m in blocked_markers)
 
 
@@ -159,7 +166,13 @@ def _extract_sections(text: str) -> list[dict[str, object]]:
     for i, para in enumerate(paragraphs[:12], 1):
         title = _section_title(para, i)
         bullets = _bulletize(para)
-        sections.append({"title": title, "summary": _compress_sentence(para, 260), "bullets": bullets})
+        sections.append(
+            {
+                "title": title,
+                "summary": _compress_sentence(para, 260),
+                "bullets": bullets,
+            }
+        )
     return sections
 
 
@@ -226,7 +239,16 @@ def _render_report(source: ContentSource, sections: list[dict[str, object]]) -> 
         for item in sec["bullets"]:
             lines.append(f"- {item}")
         lines.append("")
-    lines.extend(["## 行动建议", "", "- 把关键结论写入 BKLT 知识库。", "- 如需演示，继续用 slides 输出生成 PPT 大纲。", "- 如需复习，继续用 quiz 输出生成题库。", ""])
+    lines.extend(
+        [
+            "## 行动建议",
+            "",
+            "- 把关键结论写入 BKLT 知识库。",
+            "- 如需演示，继续用 slides 输出生成 PPT 大纲。",
+            "- 如需复习，继续用 quiz 输出生成题库。",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -238,7 +260,14 @@ def _render_notes(source: ContentSource, sections: list[dict[str, object]]) -> s
 
 
 def _render_slides(source: ContentSource, sections: list[dict[str, object]]) -> str:
-    lines = ["## PPT 大纲", "", "### Slide 1：标题", f"- {source.title}", "- BKLT 黑光自动整理", ""]
+    lines = [
+        "## PPT 大纲",
+        "",
+        "### Slide 1：标题",
+        f"- {source.title}",
+        "- BKLT 黑光自动整理",
+        "",
+    ]
     for i, sec in enumerate(sections[:10], 2):
         lines.append(f"### Slide {i}：{sec['title']}")
         lines.append(f"- {sec['summary']}")
@@ -252,7 +281,13 @@ def _render_slides(source: ContentSource, sections: list[dict[str, object]]) -> 
 
 
 def _render_mindmap(source: ContentSource, sections: list[dict[str, object]]) -> str:
-    lines = ["## Mermaid 思维导图", "", "```mermaid", "mindmap", f"  root(({_escape_mermaid(source.title)}))"]
+    lines = [
+        "## Mermaid 思维导图",
+        "",
+        "```mermaid",
+        "mindmap",
+        f"  root(({_escape_mermaid(source.title)}))",
+    ]
     for sec in sections[:8]:
         lines.append(f"    {_escape_mermaid(str(sec['title']))}")
         for item in sec["bullets"][:3]:

@@ -29,7 +29,18 @@ class _ReadableHTMLParser(HTMLParser):
         if tag in {"script", "style", "noscript", "svg", "canvas"}:
             self._skip_depth += 1
             return
-        if tag in {"p", "div", "section", "article", "br", "li", "tr", "h1", "h2", "h3"}:
+        if tag in {
+            "p",
+            "div",
+            "section",
+            "article",
+            "br",
+            "li",
+            "tr",
+            "h1",
+            "h2",
+            "h3",
+        }:
             self.parts.append("\n")
         if tag == "a":
             for key, value in attrs:

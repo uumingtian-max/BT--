@@ -105,7 +105,7 @@ async def gateway_inbound(body: InboundMessage, token: str | None = None):
 async def telegram_webhook(update: dict, token: str | None = None):
     """最小 Telegram 兼容：从 update.message.text 取用户话。"""
     _check_token("telegram", token)
-    msg = (update.get("message") or update.get("edited_message") or {})
+    msg = update.get("message") or update.get("edited_message") or {}
     text = (msg.get("text") or "").strip()
     chat = msg.get("chat") or {}
     user = msg.get("from") or {}

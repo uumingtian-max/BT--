@@ -51,7 +51,11 @@ def mcp_invoke(server: str, tool: str, arguments: dict[str, Any] | None = None) 
         try:
             timeout = min(120.0, max(5.0, float(srv.get("timeout", 120))))
             with httpx.Client(timeout=timeout) as client:
-                r = client.post(f"{base}/tools/call", json={"name": tool, "arguments": args}, headers=headers)
+                r = client.post(
+                    f"{base}/tools/call",
+                    json={"name": tool, "arguments": args},
+                    headers=headers,
+                )
                 r.raise_for_status()
                 return json.dumps(r.json(), ensure_ascii=False)[:16000]
         except Exception as e:

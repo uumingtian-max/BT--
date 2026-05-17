@@ -25,7 +25,14 @@ def content_capabilities():
     return {
         "ok": True,
         "source_types": ["auto", "url", "path", "text"],
-        "output_types": ["report", "slides", "mindmap", "quiz", "podcast_script", "notes"],
+        "output_types": [
+            "report",
+            "slides",
+            "mindmap",
+            "quiz",
+            "podcast_script",
+            "notes",
+        ],
         "safe_policy": [
             "public URL, user-provided text, or local files only",
             "no login bypass, subscription bypass, or access-control bypass",

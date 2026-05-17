@@ -94,12 +94,6 @@ def web_search(query: str) -> str:
         legacy = _legacy_http_search(q)
         if legacy and legacy != "No results":
             return legacy
-        return (
-            legacy
-            + "\n\n提示：若经常无结果，请执行 `pip install ddgs==9.14.4` 后重启后端。"
-        )
+        return legacy + "\n\n提示：若经常无结果，请执行 `pip install ddgs==9.14.4` 后重启后端。"
     except Exception as e:
-        return (
-            f"Search error: {e}\n"
-            "可安装依赖后重试：cd backend && pip install ddgs==9.14.4"
-        )
+        return f"Search error: {e}\n可安装依赖后重试：cd backend && pip install ddgs==9.14.4"

@@ -21,7 +21,12 @@ ROOT = Path(__file__).resolve().parent.parent
 BACKEND_DIR = ROOT / "backend"
 FRONTEND_DIR = ROOT / "frontend"
 
-ALLOWED_TASK_KINDS = {"project_check", "backend_compile", "frontend_build", "repo_health"}
+ALLOWED_TASK_KINDS = {
+    "project_check",
+    "backend_compile",
+    "frontend_build",
+    "repo_health",
+}
 ALLOWED_TARGETS = {"all", "backend", "frontend"}
 
 
@@ -49,7 +54,9 @@ def normalize_target(target: str | None) -> str:
     return value
 
 
-def run_automation_task(*, task_kind: str = "project_check", target: str = "all", job_id: str | None = None) -> dict[str, Any]:
+def run_automation_task(
+    *, task_kind: str = "project_check", target: str = "all", job_id: str | None = None
+) -> dict[str, Any]:
     """Run one maintenance automation synchronously and persist the run."""
     task_kind = normalize_task_kind(task_kind)
     target = normalize_target(target)
@@ -117,7 +124,14 @@ def _execute_allowed_task(task_kind: str, target: str) -> dict[str, Any]:
 
 
 def _backend_compile() -> dict[str, Any]:
-    files = ["main.py", "agent.py", "env_bootstrap.py", "tool_registry.py", "agent_run_events.py", "automation_store.py"]
+    files = [
+        "main.py",
+        "agent.py",
+        "env_bootstrap.py",
+        "tool_registry.py",
+        "agent_run_events.py",
+        "automation_store.py",
+    ]
     return _run_command(
         label="backend_compile",
         cmd=[sys.executable, "-m", "py_compile", *files],

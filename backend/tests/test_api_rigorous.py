@@ -131,9 +131,7 @@ def test_meta_models_ollama_mock_http_error(client: TestClient) -> None:
     import meta_routes
 
     with meta_routes._OLLAMA_TAGS_CACHE_LOCK:
-        meta_routes._OLLAMA_TAGS_CACHE.update(
-            {"key": None, "fetched_at": 0.0, "payload": None, "refreshing": False}
-        )
+        meta_routes._OLLAMA_TAGS_CACHE.update({"key": None, "fetched_at": 0.0, "payload": None, "refreshing": False})
     with patch("meta_routes.httpx.Client", return_value=BadCtx()):
         r = client.get("/meta/models")
     assert r.status_code == 200
@@ -149,7 +147,10 @@ def test_notebook_ingest_validation(client: TestClient) -> None:
 
 
 def test_notebook_ingest_ok(client: TestClient) -> None:
-    r = client.post("/notebook/ingest", json={"title": "RigorousTest", "text": "corpus line one\ncorpus line two"})
+    r = client.post(
+        "/notebook/ingest",
+        json={"title": "RigorousTest", "text": "corpus line one\ncorpus line two"},
+    )
     assert r.status_code == 200
     j = r.json()
     assert j["ok"] is True
@@ -339,7 +340,9 @@ def test_backend_port_default_matches_desktop(monkeypatch: pytest.MonkeyPatch) -
     assert env_bootstrap.get_backend_listen_port() == 8000
 
 
-def test_scheduler_agent_job_uses_run_agent_list(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_scheduler_agent_job_uses_run_agent_list(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     import scheduler_runner
     import scheduler_store
 

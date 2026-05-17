@@ -45,16 +45,12 @@ def _migrate_chat_from_legacy_memory(conn: sqlite3.Connection) -> None:
     try:
         conn.execute(f"ATTACH DATABASE '{path}' AS mem")
         attached = True
-        row = conn.execute(
-            "SELECT 1 FROM mem.sqlite_master WHERE type='table' AND name='messages'"
-        ).fetchone()
+        row = conn.execute("SELECT 1 FROM mem.sqlite_master WHERE type='table' AND name='messages'").fetchone()
         if not row:
             return
         if conn.execute("SELECT COUNT(*) FROM mem.messages").fetchone()[0] == 0:
             return
-        sess = conn.execute(
-            "SELECT 1 FROM mem.sqlite_master WHERE type='table' AND name='sessions'"
-        ).fetchone()
+        sess = conn.execute("SELECT 1 FROM mem.sqlite_master WHERE type='table' AND name='sessions'").fetchone()
         if sess:
             conn.execute("INSERT OR REPLACE INTO sessions SELECT * FROM mem.sessions")
         conn.execute(
@@ -63,9 +59,7 @@ def _migrate_chat_from_legacy_memory(conn: sqlite3.Connection) -> None:
             SELECT session_id, role, content, created_at FROM mem.messages
             """
         )
-        pref = conn.execute(
-            "SELECT 1 FROM mem.sqlite_master WHERE type='table' AND name='preferences'"
-        ).fetchone()
+        pref = conn.execute("SELECT 1 FROM mem.sqlite_master WHERE type='table' AND name='preferences'").fetchone()
         if pref:
             conn.execute("INSERT OR REPLACE INTO preferences SELECT * FROM mem.preferences")
     except sqlite3.OperationalError:
@@ -90,9 +84,7 @@ def init_db():
         )
     """)
     # 复合索引：WHERE session_id=? ORDER BY created_at DESC 更易走索引（需 SQLite 3.30+ 支持 DESC）
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_messages_session_created ON messages(session_id, created_at DESC)"
-    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_messages_session_created ON messages(session_id, created_at DESC)")
     conn.execute("""
         CREATE TABLE IF NOT EXISTS sessions (
             id TEXT PRIMARY KEY,
@@ -117,9 +109,7 @@ def init_db():
 def _init_messages_fts(conn: sqlite3.Connection) -> None:
     """FTS5 index for cross-session chat search."""
     try:
-        row = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='messages_fts'"
-        ).fetchone()
+        row = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='messages_fts'").fetchone()
         if not row:
             conn.execute(
                 """
@@ -158,8 +148,7 @@ def _init_messages_fts(conn: sqlite3.Connection) -> None:
                 """
             )
             conn.execute(
-                "INSERT INTO messages_fts(rowid, content, session_id) "
-                "SELECT id, content, session_id FROM messages"
+                "INSERT INTO messages_fts(rowid, content, session_id) SELECT id, content, session_id FROM messages"
             )
             conn.commit()
     except sqlite3.OperationalError:
@@ -167,6 +156,7 @@ def _init_messages_fts(conn: sqlite3.Connection) -> None:
 
 
 init_db()
+
 
 class ChatRequest(BaseModel):
     session_id: str
@@ -179,16 +169,18 @@ class PreferenceUpdate(BaseModel):
     key: str
     value: str
 
+
 def get_history(session_id: str, limit: int | None = None):
     if limit is None:
         limit = get_runtime().chat_history_max_messages
     conn = sqlite3.connect(DB_PATH)
     rows = conn.execute(
         "SELECT role, content FROM messages WHERE session_id=? ORDER BY created_at DESC LIMIT ?",
-        (session_id, limit)
+        (session_id, limit),
     ).fetchall()
     conn.close()
     return [{"role": r[0], "content": r[1]} for r in reversed(rows)]
+
 
 def _cap_message_content(content: str) -> str:
     text = str(content or "")
@@ -204,10 +196,17 @@ def _cap_message_content(content: str) -> str:
 def save_message(session_id: str, role: str, content: str):
     content = _cap_message_content(content)
     conn = sqlite3.connect(DB_PATH)
-    conn.execute("INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)", (session_id, role, content))
-    conn.execute("INSERT OR IGNORE INTO sessions (id, title) VALUES (?, ?)", (session_id, content[:40]))
+    conn.execute(
+        "INSERT INTO messages (session_id, role, content) VALUES (?, ?, ?)",
+        (session_id, role, content),
+    )
+    conn.execute(
+        "INSERT OR IGNORE INTO sessions (id, title) VALUES (?, ?)",
+        (session_id, content[:40]),
+    )
     conn.commit()
     conn.close()
+
 
 async def stream_llm(messages: list, model: str):
     async for chunk in chat_stream_async(messages, model, temperature=0.1):
@@ -316,12 +315,14 @@ async def chat(req: ChatRequest):
         },
     )
 
+
 @router.get("/sessions")
 def list_sessions():
     conn = sqlite3.connect(DB_PATH)
     rows = conn.execute("SELECT id, title, created_at FROM sessions ORDER BY created_at DESC LIMIT 50").fetchall()
     conn.close()
     return [{"id": r[0], "title": r[1], "created_at": r[2]} for r in rows]
+
 
 # ⚠️ /sessions/search 必须在 /sessions/{session_id}/messages 之前注册：
 # FastAPI 按顺序匹配，顺序颠倒时“search”会被当作 session_id 参数，导致搜索接口永远失效。
@@ -368,6 +369,7 @@ def search_sessions(q: str, limit: int = 20):
 @router.get("/sessions/{session_id}/messages")
 def get_session_messages(session_id: str):
     return get_history(session_id, limit=100)
+
 
 @router.delete("/sessions/{session_id}")
 def delete_session(session_id: str):

@@ -58,9 +58,24 @@ def init_workflow_store() -> None:
 DEFAULT_TEMPLATES = [
     {
         "name": "deployment_troubleshooting",
-        "trigger_keywords": ["部署", "启动", "端口", "uvicorn", "electron", "api", "后端", "前端"],
+        "trigger_keywords": [
+            "部署",
+            "启动",
+            "端口",
+            "uvicorn",
+            "electron",
+            "api",
+            "后端",
+            "前端",
+        ],
         "system_hint": "这是部署/启动排障任务。先确认真实状态，再给最短排查链路，不要泛讲。",
-        "steps": ["确认当前报错", "确认进程/端口", "确认配置文件", "给最短修复路径", "说明如何复测"],
+        "steps": [
+            "确认当前报错",
+            "确认进程/端口",
+            "确认配置文件",
+            "给最短修复路径",
+            "说明如何复测",
+        ],
     },
     {
         "name": "desktop_file_organization",
@@ -76,15 +91,33 @@ DEFAULT_TEMPLATES = [
     },
     {
         "name": "coding_agent_skills",
-        "trigger_keywords": ["技能", "插件", "claude", "codex", "cursor", "最佳实践", "脚手架"],
+        "trigger_keywords": [
+            "技能",
+            "插件",
+            "claude",
+            "codex",
+            "cursor",
+            "最佳实践",
+            "脚手架",
+        ],
         "system_hint": "这是编码助手/技能包类问题：先对齐目标与约束，再给可复制的命令或最小代码块。",
-        "steps": ["确认语言与运行环境", "给出最小可运行示例", "说明如何验证", "列出常见坑"],
+        "steps": [
+            "确认语言与运行环境",
+            "给出最小可运行示例",
+            "说明如何验证",
+            "列出常见坑",
+        ],
     },
     {
         "name": "research_and_stack_scan",
         "trigger_keywords": ["趋势", "github", "开源", "对比", "选型", "benchmark"],
         "system_hint": "这是调研/选型任务：先定义评价维度，再给对比表式结论与参考链接占位（由搜索工具补齐）。",
-        "steps": ["列出必须对比的维度", "用搜索抓最新信息", "汇总表格", "给出推荐与取舍理由"],
+        "steps": [
+            "列出必须对比的维度",
+            "用搜索抓最新信息",
+            "汇总表格",
+            "给出推荐与取舍理由",
+        ],
     },
     {
         "name": "model_asset_management",
@@ -123,7 +156,16 @@ def seed_default_templates() -> None:
 def _classify_task_type(text: str) -> str:
     lower = (text or "").lower()
     mapping = {
-        "deployment": ["部署", "启动", "端口", "uvicorn", "electron", "api", "后端", "前端"],
+        "deployment": [
+            "部署",
+            "启动",
+            "端口",
+            "uvicorn",
+            "electron",
+            "api",
+            "后端",
+            "前端",
+        ],
         "files": ["桌面", "文件", "目录", "读取", "整理", "清单"],
         "agent_upgrade": ["agent", "升级", "记忆", "自进化", "工具", "electron"],
         "models": ["模型", "ollama", "gguf", "训练", "lora", "量化", "权重"],
@@ -191,7 +233,13 @@ def touch_template_usage(name: str) -> None:
 _TASK_REVIEWS_TTL_DAYS = 30
 
 
-def record_task_review(task_text: str, status: str, tool_name: str = "", final_answer: str = "", detail_text: str = "") -> dict[str, Any]:
+def record_task_review(
+    task_text: str,
+    status: str,
+    tool_name: str = "",
+    final_answer: str = "",
+    detail_text: str = "",
+) -> dict[str, Any]:
     task_type = _classify_task_type(task_text)
     template = _match_template(task_text)
     template_name = template["name"] if template else ""
@@ -205,7 +253,17 @@ def record_task_review(task_text: str, status: str, tool_name: str = "", final_a
             created_at, task_text, task_type, status, tool_name, final_answer, detail_text, lessons, template_name
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (ts, task_text, task_type, status, tool_name, final_answer[:1000], detail_text[:1000], lessons, template_name),
+        (
+            ts,
+            task_text,
+            task_type,
+            status,
+            tool_name,
+            final_answer[:1000],
+            detail_text[:1000],
+            lessons,
+            template_name,
+        ),
     )
     # 清理超过 30 天的旧复盘，防止 workflow.db 无限增长
     conn.execute("DELETE FROM task_reviews WHERE created_at < ?", (cutoff,))

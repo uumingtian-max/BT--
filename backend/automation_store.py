@@ -64,7 +64,14 @@ def list_jobs() -> list[dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
-def create_job(*, name: str, task_kind: str, target: str = "all", params_json: str = "{}", enabled: bool = True) -> dict[str, Any]:
+def create_job(
+    *,
+    name: str,
+    task_kind: str,
+    target: str = "all",
+    params_json: str = "{}",
+    enabled: bool = True,
+) -> dict[str, Any]:
     init_automation_db()
     now = _now_iso()
     job_id = str(uuid4())
@@ -74,7 +81,16 @@ def create_job(*, name: str, task_kind: str, target: str = "all", params_json: s
             INSERT INTO automation_jobs (id, name, task_kind, target, enabled, params_json, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (job_id, name.strip() or task_kind, task_kind, target or "all", 1 if enabled else 0, params_json or "{}", now, now),
+            (
+                job_id,
+                name.strip() or task_kind,
+                task_kind,
+                target or "all",
+                1 if enabled else 0,
+                params_json or "{}",
+                now,
+                now,
+            ),
         )
         conn.commit()
     return get_job(job_id) or {}
@@ -121,7 +137,14 @@ def start_run(*, task_kind: str, target: str = "all", job_id: str | None = None)
     return get_run(run_id) or {}
 
 
-def finish_run(run_id: str, *, status: str, summary: str, result_json: str = "{}", duration_ms: int | None = None) -> dict[str, Any]:
+def finish_run(
+    run_id: str,
+    *,
+    status: str,
+    summary: str,
+    result_json: str = "{}",
+    duration_ms: int | None = None,
+) -> dict[str, Any]:
     init_automation_db()
     with _conn() as conn:
         conn.execute(
@@ -130,7 +153,14 @@ def finish_run(run_id: str, *, status: str, summary: str, result_json: str = "{}
             SET status=?, summary=?, result_json=?, ended_at=?, duration_ms=?
             WHERE id=?
             """,
-            (status, summary or "", result_json or "{}", _now_iso(), duration_ms, run_id),
+            (
+                status,
+                summary or "",
+                result_json or "{}",
+                _now_iso(),
+                duration_ms,
+                run_id,
+            ),
         )
         conn.commit()
     return get_run(run_id) or {}

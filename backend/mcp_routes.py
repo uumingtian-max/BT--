@@ -15,7 +15,11 @@ router = APIRouter()
 
 
 def _mcp_enabled() -> bool:
-    return os.environ.get("MCP_BRIDGE_ENABLED", "1").strip() not in ("0", "false", "off")
+    return os.environ.get("MCP_BRIDGE_ENABLED", "1").strip() not in (
+        "0",
+        "false",
+        "off",
+    )
 
 
 def _load_remote_servers() -> list[dict[str, Any]]:
@@ -78,7 +82,12 @@ async def mcp_call(body: McpCallBody):
             result = await asyncio.to_thread(fn, norm.get("parameters") or args)
         except Exception as e:
             return {"ok": False, "error": str(e)}
-        return {"ok": True, "server": "builtin", "tool": tool, "result": str(result)[:16000]}
+        return {
+            "ok": True,
+            "server": "builtin",
+            "tool": tool,
+            "result": str(result)[:16000],
+        }
 
     for srv in _load_remote_servers():
         if (srv.get("name") or "") != server:

@@ -9,13 +9,15 @@ import sqlite_wal as sqlite3
 import threading
 import time
 from collections import Counter
-from pathlib import Path
 from typing import Any
 
 _logger = logging.getLogger(__name__)
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "memory.db")
-VAULT_DIR = Path(__file__).resolve().parent.parent / "knowledge-vault"
+from paths import LEGACY_VAULT_DIR, VAULT_DIR
+
+if not VAULT_DIR.is_dir() and LEGACY_VAULT_DIR.is_dir():
+    VAULT_DIR = LEGACY_VAULT_DIR
 
 
 def init_memory_store() -> None:
@@ -37,15 +39,9 @@ def init_memory_store() -> None:
         )
         """
     )
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_long_term_memories_updated_at ON long_term_memories(updated_at)"
-    )
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_long_term_memories_category ON long_term_memories(category)"
-    )
-    row = conn.execute(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='long_term_memories_fts'"
-    ).fetchone()
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_long_term_memories_updated_at ON long_term_memories(updated_at)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_long_term_memories_category ON long_term_memories(category)")
+    row = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='long_term_memories_fts'").fetchone()
     if not row:
         conn.execute(
             """
@@ -163,8 +159,27 @@ def _is_bad_memory(text: str) -> bool:
 def _extract_tags(text: str) -> list[str]:
     tokens = re.findall(r"[A-Za-z0-9_.:+#-]{2,}|[\u4e00-\u9fff]{2,8}", text.lower())
     stop = {
-        "这个", "那个", "我们", "你们", "他们", "然后", "因为", "所以", "现在", "最近",
-        "就是", "一个", "已经", "可以", "需要", "希望", "桌面", "文档", "下载", "图片", "视频",
+        "这个",
+        "那个",
+        "我们",
+        "你们",
+        "他们",
+        "然后",
+        "因为",
+        "所以",
+        "现在",
+        "最近",
+        "就是",
+        "一个",
+        "已经",
+        "可以",
+        "需要",
+        "希望",
+        "桌面",
+        "文档",
+        "下载",
+        "图片",
+        "视频",
     }
     counter = Counter(t for t in tokens if t not in stop)
     return [token for token, _ in counter.most_common(8)]
@@ -185,11 +200,48 @@ def _classify_memory(text: str) -> tuple[str, int]:
         return "playbook", 5
     if any(k in text for k in ["我叫", "我的名字", "我是", "You are", "Always call the user"]):
         return "identity", 5
-    if any(k in text for k in ["我喜欢", "我习惯", "偏好", "默认", "以后都", "记住", "prefers", "Reply in"]):
+    if any(
+        k in text
+        for k in [
+            "我喜欢",
+            "我习惯",
+            "偏好",
+            "默认",
+            "以后都",
+            "记住",
+            "prefers",
+            "Reply in",
+        ]
+    ):
         return "preference", 5
-    if any(k in text for k in ["我现在在做", "最近在做", "项目", "任务", "正在做", "要做", "building", "local AI Agent"]):
+    if any(
+        k in text
+        for k in [
+            "我现在在做",
+            "最近在做",
+            "项目",
+            "任务",
+            "正在做",
+            "要做",
+            "building",
+            "local AI Agent",
+        ]
+    ):
         return "project", 4
-    if any(k in text for k in ["我的设备", "显卡", "RTX", "GPU", "CPU", "内存", "Ollama", "vLLM", "model is served"]):
+    if any(
+        k in text
+        for k in [
+            "我的设备",
+            "显卡",
+            "RTX",
+            "GPU",
+            "CPU",
+            "内存",
+            "Ollama",
+            "vLLM",
+            "model is served",
+        ]
+    ):
         return "device", 4
     return "fact", 3
 
@@ -198,9 +250,30 @@ def _looks_memorable(text: str) -> bool:
     if len(text) < 6:
         return False
     rules = [
-        "记住", "以后", "默认", "偏好", "习惯", "我叫", "我是", "我喜欢",
-        "我的设备", "我现在在做", "最近在做", "项目", "任务", "显卡", "GPU", "CPU", "Ollama",
-        "You are", "Always call the user", "Reply in", "prefers", "building", "local AI Agent", "vLLM",
+        "记住",
+        "以后",
+        "默认",
+        "偏好",
+        "习惯",
+        "我叫",
+        "我是",
+        "我喜欢",
+        "我的设备",
+        "我现在在做",
+        "最近在做",
+        "项目",
+        "任务",
+        "显卡",
+        "GPU",
+        "CPU",
+        "Ollama",
+        "You are",
+        "Always call the user",
+        "Reply in",
+        "prefers",
+        "building",
+        "local AI Agent",
+        "vLLM",
     ]
     return any(rule in text for rule in rules)
 
@@ -270,7 +343,12 @@ def store_memory(
     finally:
         if own_conn:
             conn.close()
-    return {"category": category, "content": text, "importance": importance, "tags": tags}
+    return {
+        "category": category,
+        "content": text,
+        "importance": importance,
+        "tags": tags,
+    }
 
 
 def remember_from_message(session_id: str, role: str, content: str) -> list[dict[str, Any]]:
@@ -344,7 +422,13 @@ def store_playbook_entry(
         )
         conn.commit()
         conn.close()
-        return {"category": category, "content": text, "importance": new_imp, "tags": tags, "merged": True}
+        return {
+            "category": category,
+            "content": text,
+            "importance": new_imp,
+            "tags": tags,
+            "merged": True,
+        }
 
     conn.execute(
         """
@@ -368,7 +452,12 @@ def store_playbook_entry(
     )
     conn.commit()
     conn.close()
-    return {"category": category, "content": text, "importance": importance, "tags": tags}
+    return {
+        "category": category,
+        "content": text,
+        "importance": importance,
+        "tags": tags,
+    }
 
 
 def list_playbook_entries(limit: int = 40) -> list[dict[str, Any]]:
@@ -434,7 +523,7 @@ def _fts_memory_query(raw: str) -> str | None:
     q = _normalize_text(raw)
     if len(q) < 2:
         return None
-    q = re.sub(r'[\"\'*]', " ", q).strip()
+    q = re.sub(r"[\"\'*]", " ", q).strip()
     return q or None
 
 
@@ -540,9 +629,7 @@ def build_memory_context(query: str, limit: int = 6) -> str:
         return ""
     lines = ["## 相关长期记忆"]
     for item in memories:
-        lines.append(
-            f"- [{item['category']}] {item['content']} (重要度 {item['importance']}/5)"
-        )
+        lines.append(f"- [{item['category']}] {item['content']} (重要度 {item['importance']}/5)")
     return "\n".join(lines)
 
 
@@ -651,8 +738,7 @@ def consolidate_memories() -> dict[str, Any]:
         )
 
     overall_summary = (
-        "这段时间形成的长期记忆重点：\n"
-        + "\n".join(f"- [{item['category']}] {item['content']}" for item in items[:10])
+        "这段时间形成的长期记忆重点：\n" + "\n".join(f"- [{item['category']}] {item['content']}" for item in items[:10])
         if items
         else "目前还没有足够的长期记忆。"
     )
@@ -937,7 +1023,12 @@ def refresh_integrated_knowledge() -> dict[str, Any]:
         parent_scope="root",
     )
     vault = export_memory_vault()
-    return {"tree": tree_info, "vault": vault, "has_workflow": bool(workflow_dash), "has_evolution": bool(evo)}
+    return {
+        "tree": tree_info,
+        "vault": vault,
+        "has_workflow": bool(workflow_dash),
+        "has_evolution": bool(evo),
+    }
 
 
 def get_memory_dashboard() -> dict[str, Any]:

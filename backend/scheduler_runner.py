@@ -62,7 +62,11 @@ async def run_job_now(job: dict[str, Any]) -> dict[str, Any]:
             async with httpx.AsyncClient(timeout=30) as client:
                 await client.post(
                     webhook,
-                    json={"job_id": job.get("id"), "name": job.get("name"), "result": text[:8000]},
+                    json={
+                        "job_id": job.get("id"),
+                        "name": job.get("name"),
+                        "result": text[:8000],
+                    },
                 )
         except Exception as e:
             logger.warning("scheduler webhook failed: %s", e)

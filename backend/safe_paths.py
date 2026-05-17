@@ -15,7 +15,7 @@ OUTPUTS_DIR = (PROJECT_ROOT / "outputs").resolve()
 
 
 def safe_output_path(output_path: str | Path, *, default_name: str) -> Path:
-    raw = str(output_path or "").strip().strip('"\'')
+    raw = str(output_path or "").strip().strip("\"'")
     if not raw:
         raw = default_name
     candidate = Path(raw)

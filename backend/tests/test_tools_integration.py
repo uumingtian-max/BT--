@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import importlib
 import sys
 from pathlib import Path
 
@@ -197,12 +196,12 @@ def test_http_request_rejects_unsupported_method():
 
 
 def test_web_search_live_optional():
-  """Runs when INTEGRATION_NETWORK=1 (e.g. local verify script)."""
-  import os
+    """Runs when INTEGRATION_NETWORK=1 (e.g. local verify script)."""
+    import os
 
-  if os.environ.get("INTEGRATION_NETWORK") != "1":
-      pytest.skip("set INTEGRATION_NETWORK=1 to run live search")
-  from tools.search import web_search
+    if os.environ.get("INTEGRATION_NETWORK") != "1":
+        pytest.skip("set INTEGRATION_NETWORK=1 to run live search")
+    from tools.search import web_search
 
-  out = web_search("Python programming language")
-  assert out and len(out) > 20
+    out = web_search("Python programming language")
+    assert out and len(out) > 20

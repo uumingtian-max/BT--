@@ -71,7 +71,13 @@ def _build_runtime_from_env() -> AgentRuntime:
 
     raw_backend = _env_str("LLM_BACKEND", "ollama").lower()
     oa_url = _env_str("OPENAI_BASE_URL", "").strip()
-    want_openai = raw_backend in ("openai", "openai_compatible", "vllm", "litellm", "localai")
+    want_openai = raw_backend in (
+        "openai",
+        "openai_compatible",
+        "vllm",
+        "litellm",
+        "localai",
+    )
     llm_backend = "openai_compatible" if want_openai and oa_url else "ollama"
 
     _default_model = _VLLM_DEFAULT if llm_backend == "openai_compatible" else _OLLAMA_DEFAULT
@@ -117,10 +123,12 @@ def validate_llm_config() -> list[str]:
             "LLM_BACKEND 为网关类但未设置 OPENAI_BASE_URL；后端会回退 Ollama，"
             "锁定模型 id（如 /mnt/d/models/...）将与 Ollama tag 不匹配。"
         )
-    if rt.llm_backend == "openai_compatible" and rt.openai_base_url and not rt.openai_base_url.rstrip("/").endswith("/v1"):
-        warnings.append(
-            f"OPENAI_BASE_URL 建议以 /v1 结尾（当前：{rt.openai_base_url}）。"
-        )
+    if (
+        rt.llm_backend == "openai_compatible"
+        and rt.openai_base_url
+        and not rt.openai_base_url.rstrip("/").endswith("/v1")
+    ):
+        warnings.append(f"OPENAI_BASE_URL 建议以 /v1 结尾（当前：{rt.openai_base_url}）。")
     return warnings
 
 

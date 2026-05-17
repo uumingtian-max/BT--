@@ -27,11 +27,21 @@ LEARNED_SKILL_NAME = "learned_habit_auto.md"
 
 
 def _habit_enabled() -> bool:
-    return os.environ.get("HABIT_CHECK_ENABLED", "1").strip().lower() not in ("0", "false", "off", "no")
+    return os.environ.get("HABIT_CHECK_ENABLED", "1").strip().lower() not in (
+        "0",
+        "false",
+        "off",
+        "no",
+    )
 
 
 def _auto_skill_enabled() -> bool:
-    return os.environ.get("HABIT_AUTO_SKILL", "1").strip().lower() not in ("0", "false", "off", "no")
+    return os.environ.get("HABIT_AUTO_SKILL", "1").strip().lower() not in (
+        "0",
+        "false",
+        "off",
+        "no",
+    )
 
 
 def _parse_check_hours() -> list[int]:
@@ -212,7 +222,11 @@ def run_habit_check(*, phase: str = "manual", slot_key: str | None = None) -> di
     """
     一次完整习惯流水线：doctor → 行为推断 → 日报 → playbook → 可选 learned 技能。
     """
-    from observe import get_evolution_profile_text, infer_behavior_patterns, upsert_daily_report
+    from observe import (
+        get_evolution_profile_text,
+        infer_behavior_patterns,
+        upsert_daily_report,
+    )
 
     if slot_key is None:
         now = datetime.now()
@@ -256,11 +270,15 @@ def run_habit_check(*, phase: str = "manual", slot_key: str | None = None) -> di
     summary_lines.extend(["", "## 行为摘要", *[f"- {p}" for p in patterns[:6]]])
     summary = "\n".join(summary_lines)
 
-    playbook_line = (
-        f"[习惯体检·{phase}] 体检={'OK' if doctor_ok else f'FAIL({doctor_failed})'}；"
-        + (patterns[0][:80] if patterns else "无显著模式")
+    playbook_line = f"[习惯体检·{phase}] 体检={'OK' if doctor_ok else f'FAIL({doctor_failed})'}；" + (
+        patterns[0][:80] if patterns else "无显著模式"
     )
-    store_playbook_entry(playbook_line, source_session_id="habit", source_role="habit_check", importance=4)
+    store_playbook_entry(
+        playbook_line,
+        source_session_id="habit",
+        source_role="habit_check",
+        importance=4,
+    )
 
     HABIT_REPORT_DIR.mkdir(parents=True, exist_ok=True)
     report_path = HABIT_REPORT_DIR / f"{slot_key.replace(':', '-')}.md"
@@ -276,7 +294,12 @@ def run_habit_check(*, phase: str = "manual", slot_key: str | None = None) -> di
         summary=summary,
     )
 
-    webhook = (os.environ.get("HABIT_WEBHOOK_URL") or os.environ.get("SCHEDULER_WEBHOOK_URL") or os.environ.get("WEBHOOK_URL") or "").strip()
+    webhook = (
+        os.environ.get("HABIT_WEBHOOK_URL")
+        or os.environ.get("SCHEDULER_WEBHOOK_URL")
+        or os.environ.get("WEBHOOK_URL")
+        or ""
+    ).strip()
     if webhook:
         try:
             import httpx
@@ -300,8 +323,16 @@ def run_habit_check(*, phase: str = "manual", slot_key: str | None = None) -> di
         "ok": True,
         "phase": phase,
         "slot_key": slot_key,
-        "doctor": {"ok": doctor_ok, "failed_count": doctor_failed, "failed": failed_names},
-        "behavior": {"patterns": patterns, "signals": signals, "adjustments": adjustments},
+        "doctor": {
+            "ok": doctor_ok,
+            "failed_count": doctor_failed,
+            "failed": failed_names,
+        },
+        "behavior": {
+            "patterns": patterns,
+            "signals": signals,
+            "adjustments": adjustments,
+        },
         "daily_report": report,
         "skill_written": skill_written,
         "learned_skill": LEARNED_SKILL_NAME if skill_written else None,

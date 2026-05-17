@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
 
 from agent_runtime import get_runtime
 from llm_client import chat_complete_async

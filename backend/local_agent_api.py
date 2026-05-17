@@ -21,6 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from agent_runtime import get_runtime
 from llm_client import chat_complete_sync
+from paths import legacy_agent_db_path
 from safe_paths import safe_output_path
 
 router = APIRouter(tags=["local-agent"])
@@ -42,7 +43,7 @@ MAX_UPLOAD_BYTES = int(os.environ.get("MAX_UPLOAD_BYTES", str(100 * 1024 * 1024)
 
 
 def init_legacy_db() -> None:
-    conn = sqlite3.connect(ROOT / "agent_tasks.db")
+    conn = sqlite3.connect(legacy_agent_db_path())
     cur = conn.cursor()
     cur.execute(
         """
@@ -59,7 +60,7 @@ def init_legacy_db() -> None:
 
 
 def _store_task(task_name: str, priority: int) -> None:
-    conn = sqlite3.connect(ROOT / "agent_tasks.db")
+    conn = sqlite3.connect(legacy_agent_db_path())
     conn.execute(
         "INSERT INTO tasks (name, priority, status) VALUES (?, ?, ?)",
         (task_name, priority, "待执行"),
@@ -112,7 +113,11 @@ def _get_llm():
             return _llm
         import torch
         from langchain_community.llms import HuggingFacePipeline
-        from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline as hf_pipeline
+        from transformers import (
+            AutoModelForCausalLM,
+            AutoTokenizer,
+            pipeline as hf_pipeline,
+        )
 
         kw = _hf_pretrained_kwargs()
         last_err: Exception | None = None
@@ -189,8 +194,7 @@ def _decompose_tasks_llm(query: str) -> list[_LegacyTask]:
     rt = get_runtime()
     model = os.environ.get("OLLAMA_TASK_MODEL", "").strip() or rt.default_chat_model
     system = (
-        "你是任务分解助手。把用户描述拆成可执行的子任务。"
-        "每行一条，以短横线 - 开头；不要编号；不要其它前缀；不要解释。"
+        "你是任务分解助手。把用户描述拆成可执行的子任务。每行一条，以短横线 - 开头；不要编号；不要其它前缀；不要解释。"
     )
     messages = [
         {"role": "system", "content": system},
@@ -324,7 +328,16 @@ def run_legacy_task_agent(body: TaskDecomposeBody) -> dict[str, Any]:
         tasks = _decompose_rules_only(body.query)
     else:
         backend = os.environ.get("TASK_DECOMPOSE_BACKEND", "ollama").strip().lower()
-        if backend in ("ollama", "local", "openhuman", "openai", "openai_compatible", "vllm", "litellm", "localai"):
+        if backend in (
+            "ollama",
+            "local",
+            "openhuman",
+            "openai",
+            "openai_compatible",
+            "vllm",
+            "litellm",
+            "localai",
+        ):
             try:
                 tasks = _decompose_tasks_llm(body.query)
             except Exception as e:
@@ -341,7 +354,11 @@ def run_legacy_task_agent(body: TaskDecomposeBody) -> dict[str, Any]:
 
 @router.post("/generate_image")
 def generate_image(body: GenImageBody) -> dict[str, Any]:
-    from media_fallback import generate_placeholder_image, local_sd_enabled, placeholder_enabled
+    from media_fallback import (
+        generate_placeholder_image,
+        local_sd_enabled,
+        placeholder_enabled,
+    )
 
     pipe = _get_sd_pipeline()
     if pipe is None:
@@ -349,7 +366,7 @@ def generate_image(body: GenImageBody) -> dict[str, Any]:
             return generate_placeholder_image(body.prompt, body.output_path)
         return {
             "status": "skipped",
-            "hint": '未开启本地 SD。设置 ENABLE_LOCAL_SD=1 并 pip install -r requirements-media.txt；或保持 ENABLE_IMAGE_PLACEHOLDER=1 使用占位图',
+            "hint": "未开启本地 SD。设置 ENABLE_LOCAL_SD=1 并 pip install -r requirements-media.txt；或保持 ENABLE_IMAGE_PLACEHOLDER=1 使用占位图",
         }
     try:
         out = safe_output_path(body.output_path, default_name="sd_out.png")

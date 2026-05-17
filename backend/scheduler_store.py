@@ -45,9 +45,7 @@ def _now_iso() -> str:
 
 def list_jobs() -> list[dict[str, Any]]:
     with _conn() as conn:
-        rows = conn.execute(
-            "SELECT * FROM scheduled_jobs ORDER BY created_at DESC"
-        ).fetchall()
+        rows = conn.execute("SELECT * FROM scheduled_jobs ORDER BY created_at DESC").fetchall()
     return [dict(r) for r in rows]
 
 

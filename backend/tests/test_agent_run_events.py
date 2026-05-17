@@ -5,7 +5,11 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from agent_run_events import enrich_legacy_steps, event_from_legacy_step, summarize_timeline  # noqa: E402
+from agent_run_events import (
+    enrich_legacy_steps,
+    event_from_legacy_step,
+    summarize_timeline,
+)  # noqa: E402
 
 
 def test_event_from_tool_call_has_timeline_metadata():
@@ -30,7 +34,11 @@ def test_event_from_tool_call_has_timeline_metadata():
 
 def test_tool_result_error_is_marked_failed():
     event = event_from_legacy_step(
-        {"type": "tool_result", "tool": "execute_python", "result": "Tool error: timeout"},
+        {
+            "type": "tool_result",
+            "tool": "execute_python",
+            "result": "Tool error: timeout",
+        },
         run_id="run-1",
         index=1,
         timestamp="2026-05-17T00:00:01Z",
@@ -60,7 +68,11 @@ def test_summarize_timeline_counts_tools_and_risks():
         [
             {"type": "tool_call", "tool": "read_file", "params": {"path": "README.md"}},
             {"type": "tool_result", "tool": "read_file", "result": "ok"},
-            {"type": "tool_call", "tool": "write_file", "params": {"path": "x", "content": "y"}},
+            {
+                "type": "tool_call",
+                "tool": "write_file",
+                "params": {"path": "x", "content": "y"},
+            },
             {"type": "final_answer", "content": "done"},
         ],
         run_id="run-3",

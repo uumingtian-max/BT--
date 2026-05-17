@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import os
 import sqlite_wal as sqlite3
 import time
@@ -286,8 +285,7 @@ def _decompose_task(message: str, profile: ModelProfile, evolution_context: str 
                     "model_name": profile.reviewer_model,
                     "prompt": (
                         "请从测试、错误处理、边界情况角度检查这个任务，并指出最可能踩坑处。\n"
-                        f"{evolution_context}\n\n{workflow_context}\n\n任务：{message}"
-                        + research_tail
+                        f"{evolution_context}\n\n{workflow_context}\n\n任务：{message}" + research_tail
                     ),
                 },
             ]
@@ -371,7 +369,11 @@ def run_orchestration(message: str, payload: dict[str, Any] | None = None) -> di
     )
 
     rt = get_runtime()
-    evolution_context = compress_for_llm(str(payload.get("evolution_context", "")), rt.context_block_max_chars, "evolution")
+    evolution_context = compress_for_llm(
+        str(payload.get("evolution_context", "")),
+        rt.context_block_max_chars,
+        "evolution",
+    )
     profile = route_model_profile(message, profile, evolution_context)
     subtasks = _decompose_task(message, profile, evolution_context)
     results: list[dict[str, Any]] = []
@@ -388,7 +390,11 @@ def run_orchestration(message: str, payload: dict[str, Any] | None = None) -> di
             input_text=sub["prompt"],
         )
         try:
-            output, retry_count = _call_with_retry(sub["model_name"], f"你是负责{sub['title']}的本地 Agent 子模型。请直接输出结果。", sub["prompt"])
+            output, retry_count = _call_with_retry(
+                sub["model_name"],
+                f"你是负责{sub['title']}的本地 Agent 子模型。请直接输出结果。",
+                sub["prompt"],
+            )
             _save_task(
                 task_id=task_id,
                 parent_id=parent_id,
@@ -402,7 +408,14 @@ def run_orchestration(message: str, payload: dict[str, Any] | None = None) -> di
             )
             record_task_outcome("orchestrator_subtask", "success", sub["kind"], sub["title"])
             record_task_review(message, "success", sub["kind"], output, sub["title"])
-            results.append({"kind": sub["kind"], "title": sub["title"], "model_name": sub["model_name"], "output": output})
+            results.append(
+                {
+                    "kind": sub["kind"],
+                    "title": sub["title"],
+                    "model_name": sub["model_name"],
+                    "output": output,
+                }
+            )
         except Exception as exc:
             _save_task(
                 task_id=task_id,
@@ -417,7 +430,14 @@ def run_orchestration(message: str, payload: dict[str, Any] | None = None) -> di
             )
             record_task_outcome("orchestrator_subtask", "failed", sub["kind"], str(exc))
             record_task_review(message, "failed", sub["kind"], f"子任务失败：{exc}", sub["title"])
-            results.append({"kind": sub["kind"], "title": sub["title"], "model_name": sub["model_name"], "output": f"子任务失败：{exc}"})
+            results.append(
+                {
+                    "kind": sub["kind"],
+                    "title": sub["title"],
+                    "model_name": sub["model_name"],
+                    "output": f"子任务失败：{exc}",
+                }
+            )
 
     synthesis_prompt = (
         f"原始任务：{message}\n\n"

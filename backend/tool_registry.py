@@ -141,10 +141,18 @@ TOOL_RISK_LEVELS: dict[str, RiskLevel] = {
     "mcp_invoke": "dangerous",
 }
 
-_DEFAULT_SCHEMA: dict[str, Any] = {"type": "object", "properties": {}, "additionalProperties": True}
+_DEFAULT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": True,
+}
 
 TOOL_INPUT_SCHEMAS: dict[str, dict[str, Any]] = {
-    "web_search": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]},
+    "web_search": {
+        "type": "object",
+        "properties": {"query": {"type": "string"}},
+        "required": ["query"],
+    },
     "local_search": {
         "type": "object",
         "properties": {
@@ -154,16 +162,32 @@ TOOL_INPUT_SCHEMAS: dict[str, dict[str, Any]] = {
         },
         "required": ["query"],
     },
-    "local_scrape_url": {"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"]},
-    "read_file": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]},
+    "local_scrape_url": {
+        "type": "object",
+        "properties": {"url": {"type": "string"}},
+        "required": ["url"],
+    },
+    "read_file": {
+        "type": "object",
+        "properties": {"path": {"type": "string"}},
+        "required": ["path"],
+    },
     "write_file": {
         "type": "object",
         "properties": {"path": {"type": "string"}, "content": {"type": "string"}},
         "required": ["path", "content"],
     },
     "list_files": {"type": "object", "properties": {"directory": {"type": "string"}}},
-    "execute_python": {"type": "object", "properties": {"code": {"type": "string"}}, "required": ["code"]},
-    "run_task_orchestration": {"type": "object", "properties": {"message": {"type": "string"}}, "required": ["message"]},
+    "execute_python": {
+        "type": "object",
+        "properties": {"code": {"type": "string"}},
+        "required": ["code"],
+    },
+    "run_task_orchestration": {
+        "type": "object",
+        "properties": {"message": {"type": "string"}},
+        "required": ["message"],
+    },
     "notebook_ingest": {
         "type": "object",
         "properties": {"title": {"type": "string"}, "text": {"type": "string"}},
@@ -188,21 +212,59 @@ TOOL_INPUT_SCHEMAS: dict[str, dict[str, Any]] = {
             "fps": {"type": "number"},
         },
     },
-    "generate_ai_video": {"type": "object", "properties": {"prompt": {"type": "string"}}, "required": ["prompt"]},
-    "text_to_speech": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]},
-    "run_project_check": {"type": "object", "properties": {"target": {"enum": ["backend", "frontend", "all"]}}},
-    "open_url": {"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"]},
-    "open_path": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]},
-    "focus_window": {"type": "object", "properties": {"title": {"type": "string"}}, "required": ["title"]},
-    "send_hotkey": {"type": "object", "properties": {"keys": {"type": "string"}}, "required": ["keys"]},
-    "type_text": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]},
+    "generate_ai_video": {
+        "type": "object",
+        "properties": {"prompt": {"type": "string"}},
+        "required": ["prompt"],
+    },
+    "text_to_speech": {
+        "type": "object",
+        "properties": {"text": {"type": "string"}},
+        "required": ["text"],
+    },
+    "run_project_check": {
+        "type": "object",
+        "properties": {"target": {"enum": ["backend", "frontend", "all"]}},
+    },
+    "open_url": {
+        "type": "object",
+        "properties": {"url": {"type": "string"}},
+        "required": ["url"],
+    },
+    "open_path": {
+        "type": "object",
+        "properties": {"path": {"type": "string"}},
+        "required": ["path"],
+    },
+    "focus_window": {
+        "type": "object",
+        "properties": {"title": {"type": "string"}},
+        "required": ["title"],
+    },
+    "send_hotkey": {
+        "type": "object",
+        "properties": {"keys": {"type": "string"}},
+        "required": ["keys"],
+    },
+    "type_text": {
+        "type": "object",
+        "properties": {"text": {"type": "string"}},
+        "required": ["text"],
+    },
     "click_screen": {
         "type": "object",
         "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}},
         "required": ["x", "y"],
     },
-    "browser_navigate": {"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"]},
-    "browser_playwright": {"type": "object", "properties": {"url": {"type": "string"}, "action": {"type": "string"}}},
+    "browser_navigate": {
+        "type": "object",
+        "properties": {"url": {"type": "string"}},
+        "required": ["url"],
+    },
+    "browser_playwright": {
+        "type": "object",
+        "properties": {"url": {"type": "string"}, "action": {"type": "string"}},
+    },
     "browser_screenshot": {
         "type": "object",
         "properties": {"url": {"type": "string"}, "output_path": {"type": "string"}},
@@ -210,24 +272,48 @@ TOOL_INPUT_SCHEMAS: dict[str, dict[str, Any]] = {
     },
     "browser_click_and_extract": {
         "type": "object",
-        "properties": {"url": {"type": "string"}, "selector": {"type": "string"}, "extract_selector": {"type": "string"}},
+        "properties": {
+            "url": {"type": "string"},
+            "selector": {"type": "string"},
+            "extract_selector": {"type": "string"},
+        },
         "required": ["url", "selector"],
     },
     "browser_fill_form": {
         "type": "object",
-        "properties": {"url": {"type": "string"}, "fields": {"type": "object"}, "submit_selector": {"type": "string"}},
+        "properties": {
+            "url": {"type": "string"},
+            "fields": {"type": "object"},
+            "submit_selector": {"type": "string"},
+        },
         "required": ["url", "fields"],
     },
-    "run_parallel_subagents": {"type": "object", "properties": {"tasks": {"type": "array", "items": {"type": "string"}}}, "required": ["tasks"]},
-    "http_request": {"type": "object", "properties": {"url": {"type": "string"}, "method": {"type": "string"}}, "required": ["url"]},
+    "run_parallel_subagents": {
+        "type": "object",
+        "properties": {"tasks": {"type": "array", "items": {"type": "string"}}},
+        "required": ["tasks"],
+    },
+    "http_request": {
+        "type": "object",
+        "properties": {"url": {"type": "string"}, "method": {"type": "string"}},
+        "required": ["url"],
+    },
     "query_database": {
         "type": "object",
-        "properties": {"path": {"type": "string"}, "sql": {"type": "string"}, "limit": {"type": "integer"}},
+        "properties": {
+            "path": {"type": "string"},
+            "sql": {"type": "string"},
+            "limit": {"type": "integer"},
+        },
         "required": ["sql"],
     },
     "mcp_invoke": {
         "type": "object",
-        "properties": {"server": {"type": "string"}, "tool": {"type": "string"}, "arguments": {"type": "object"}},
+        "properties": {
+            "server": {"type": "string"},
+            "tool": {"type": "string"},
+            "arguments": {"type": "object"},
+        },
         "required": ["tool"],
     },
 }

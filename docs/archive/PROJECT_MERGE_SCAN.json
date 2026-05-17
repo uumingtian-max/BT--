@@ -1,0 +1,460 @@
+[
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\ai-agent-project",
+    "score": 13,
+    "reasons": [
+      "name",
+      "features:START.bat,START_DEV.bat,backend,electron,frontend,package.json",
+      "desktop-app"
+    ],
+    "files": 179,
+    "size_mb": 2.46,
+    "mtime": 1778820737.7562647
+  },
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\ai-agent-project\\backend",
+    "score": 7,
+    "reasons": [
+      "features:agent.py,chat.py,local_agent_api.py,main.py,memory_store.py,observe.py"
+    ],
+    "files": 57,
+    "size_mb": 1.58,
+    "mtime": 1778824192.5457027
+  },
+  {
+    "path": "C:\\Users\\ROG\\.vscode\\extensions\\anthropic.claude-code-2.1.140-win32-x64",
+    "score": 3,
+    "reasons": [
+      "name",
+      "features:package.json"
+    ],
+    "files": 28,
+    "size_mb": 225.85,
+    "mtime": 1778664678.7573173
+  },
+  {
+    "path": "C:\\Users\\ROG\\.vscode\\extensions\\anthropic.claude-code-2.1.141-win32-x64",
+    "score": 3,
+    "reasons": [
+      "name",
+      "features:package.json"
+    ],
+    "files": 28,
+    "size_mb": 226.77,
+    "mtime": 1778783474.4212074
+  },
+  {
+    "path": "C:\\Users\\ROG\\.vscode\\extensions\\saoudrizwan.claude-dev-3.82.0",
+    "score": 3,
+    "reasons": [
+      "name",
+      "features:package.json"
+    ],
+    "files": 132,
+    "size_mb": 0.72,
+    "mtime": 1778602239.9872048
+  },
+  {
+    "path": "C:\\Users\\ROG\\.vscode\\extensions\\saoudrizwan.claude-dev-3.83.0",
+    "score": 3,
+    "reasons": [
+      "name",
+      "features:package.json"
+    ],
+    "files": 100,
+    "size_mb": 0.55,
+    "mtime": 1778783445.7968438
+  },
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\ai-agent-project\\legacy\\root-local-agent",
+    "score": 3,
+    "reasons": [
+      "name",
+      "features:main.py"
+    ],
+    "files": 4,
+    "size_mb": 0.01,
+    "mtime": 1778798154.5557308
+  },
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\ai-agent-project\\legacy\\root-local-agent\\local-agent-desktop",
+    "score": 3,
+    "reasons": [
+      "name",
+      "features:package.json"
+    ],
+    "files": 3,
+    "size_mb": 0.0,
+    "mtime": 1778798154.5567303
+  },
+  {
+    "path": "C:\\Users\\ROG\\.cagent",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 5,
+    "size_mb": 2.25,
+    "mtime": 1778512406.6716673
+  },
+  {
+    "path": "C:\\Users\\ROG\\.claude",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 5,
+    "size_mb": 0.28,
+    "mtime": 1778706598.5077195
+  },
+  {
+    "path": "C:\\Users\\ROG\\.codex",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 3784,
+    "size_mb": 697.41,
+    "mtime": 1778825510.2800667
+  },
+  {
+    "path": "C:\\Users\\ROG\\.codex\\cache\\codex_apps_tools",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 3,
+    "size_mb": 0.95,
+    "mtime": 1778662700.4130428
+  },
+  {
+    "path": "C:\\Users\\ROG\\.config\\cagent",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 2,
+    "size_mb": 0.0,
+    "mtime": 1778511954.3424268
+  },
+  {
+    "path": "C:\\Users\\ROG\\.cursor",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 3038,
+    "size_mb": 281.9,
+    "mtime": 1778533457.9813988
+  },
+  {
+    "path": "C:\\Users\\ROG\\.cursor\\extensions\\anysphere.cursorpyright-1.0.10",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 0,
+    "size_mb": 0.0,
+    "mtime": 1778502065.0160234
+  },
+  {
+    "path": "C:\\Users\\ROG\\.cursor\\projects\\c-Users-ROG-Desktop-ai-agent-project",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 125,
+    "size_mb": 3.41,
+    "mtime": 1778809204.2211683
+  },
+  {
+    "path": "C:\\Users\\ROG\\.cursor\\projects\\c-Users-ROG-Desktop-ai-agent-system",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 194,
+    "size_mb": 10.56,
+    "mtime": 1778805144.4540443
+  },
+  {
+    "path": "C:\\Users\\ROG\\.cursor\\skills-cursor",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 28,
+    "size_mb": 0.14,
+    "mtime": 1778825128.9647427
+  },
+  {
+    "path": "C:\\Users\\ROG\\.cursor\\skills-cursor\\create-subagent",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 1,
+    "size_mb": 0.01,
+    "mtime": 1778503259.3715172
+  },
+  {
+    "path": "C:\\Users\\ROG\\.cursor\\skills-cursor\\update-cursor-settings",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 1,
+    "size_mb": 0.0,
+    "mtime": 1778503259.3826916
+  },
+  {
+    "path": "C:\\Users\\ROG\\.docker\\cagent",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 1,
+    "size_mb": 0.0,
+    "mtime": 1778512210.3804147
+  },
+  {
+    "path": "C:\\Users\\ROG\\.docker\\models",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 2,
+    "size_mb": 0.0,
+    "mtime": 1778511643.4021943
+  },
+  {
+    "path": "C:\\Users\\ROG\\.ollama",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 27,
+    "size_mb": 29032.68,
+    "mtime": 1778706217.7424984
+  },
+  {
+    "path": "C:\\Users\\ROG\\.ollama\\models",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 20,
+    "size_mb": 29032.67,
+    "mtime": 1778601523.0347474
+  },
+  {
+    "path": "C:\\Users\\ROG\\AppData\\Local\\Claude-3p",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 0,
+    "size_mb": 0.0,
+    "mtime": 1778532222.0546439
+  },
+  {
+    "path": "C:\\Users\\ROG\\AppData\\Local\\Ollama",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 16,
+    "size_mb": 8.75,
+    "mtime": 1778806608.5118024
+  },
+  {
+    "path": "C:\\Users\\ROG\\AppData\\Roaming\\Cursor",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 3561,
+    "size_mb": 2170.12,
+    "mtime": 1778821624.9976852
+  },
+  {
+    "path": "C:\\Users\\ROG\\AppData\\Roaming\\ai-agent-desktop",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 223,
+    "size_mb": 23.58,
+    "mtime": 1778821687.2892373
+  },
+  {
+    "path": "C:\\Users\\ROG\\AppData\\Roaming\\ollama app.exe",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 609,
+    "size_mb": 57.88,
+    "mtime": 1778505905.447617
+  },
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\ai-agent-project\\backend\\agent_skills",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 19,
+    "size_mb": 0.01,
+    "mtime": 1778811282.7064764
+  },
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\ai-agent-system",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 97,
+    "size_mb": 6016.49,
+    "mtime": 1778798163.5009499
+  },
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\ai-agent-system\\.vs\\ai-agent-system",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 6,
+    "size_mb": 15.64,
+    "mtime": 1778533662.615398
+  },
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\ai-agent-system\\.vs\\ai-agent-system.slnx",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 9,
+    "size_mb": 9.35,
+    "mtime": 1778533682.0180428
+  },
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\ai-agent-system\\models",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 0,
+    "size_mb": 0.0,
+    "mtime": 1778601521.5433803
+  },
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\ai-agent-system\\ollama-cn-panel",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 2,
+    "size_mb": 0.01,
+    "mtime": 1778690154.6968236
+  },
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\ai-agent-system\\ollama-standalone-v0.23.3-test",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 19,
+    "size_mb": 3491.85,
+    "mtime": 1778688422.7255313
+  },
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\ai-agent-system\\ollama-standalone-v0.23.3-test\\lib\\ollama",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 17,
+    "size_mb": 3426.91,
+    "mtime": 1778688422.1820743
+  },
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\daily-self-learning",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 0,
+    "size_mb": 0.0,
+    "mtime": 1778780991.1543028
+  },
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\llama.cpp\\external\\workbench-example-agentic-rag",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 69,
+    "size_mb": 4.34,
+    "mtime": 1778502562.8705657
+  },
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\llama.cpp\\external\\workbench-example-agentic-rag\\agentic-rag-docs",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 3,
+    "size_mb": 0.02,
+    "mtime": 1778502561.7120223
+  },
+  {
+    "path": "C:\\Users\\ROG\\Desktop\\llama.cpp\\external\\workbench-example-agentic-rag\\models",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 1,
+    "size_mb": 0.0,
+    "mtime": 1778502562.86897
+  },
+  {
+    "path": "C:\\Users\\ROG\\Documents\\Codex",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 81,
+    "size_mb": 15.73,
+    "mtime": 1778502403.2409415
+  },
+  {
+    "path": "C:\\Users\\ROG\\miniconda3\\envs\\ai-agent",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 3430,
+    "size_mb": 123.38,
+    "mtime": 1778792641.9052732
+  },
+  {
+    "path": "C:\\Users\\ROG\\miniconda3\\pkgs\\colorama-0.4.6-py313haa95532_0",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 15,
+    "size_mb": 0.03,
+    "mtime": 1778667928.7200384
+  },
+  {
+    "path": "C:\\Users\\ROG\\model_v6",
+    "score": 2,
+    "reasons": [
+      "name"
+    ],
+    "files": 4,
+    "size_mb": 1.83,
+    "mtime": 1778686408.152432
+  }
+]

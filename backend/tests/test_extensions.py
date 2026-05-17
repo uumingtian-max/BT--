@@ -58,7 +58,11 @@ def test_gateway_status(client: TestClient) -> None:
 def test_mcp_builtin_call_list_files(client: TestClient) -> None:
     r = client.post(
         "/mcp/call",
-        json={"server": "builtin", "tool": "list_files", "arguments": {"directory": "~/Desktop"}},
+        json={
+            "server": "builtin",
+            "tool": "list_files",
+            "arguments": {"directory": "~/Desktop"},
+        },
     )
     assert r.status_code == 200
     j = r.json()
@@ -120,7 +124,12 @@ def test_meta_logs(client: TestClient) -> None:
 
 
 def test_skill_pack_trigger_match() -> None:
-    from skill_pack import build_skill_pack_context, _load_all_skills, _score_skill, _message_tokens
+    from skill_pack import (
+        build_skill_pack_context,
+        _load_all_skills,
+        _score_skill,
+        _message_tokens,
+    )
 
     skills = _load_all_skills()
     text = "帮我上网查一下 python 3.13 发布日期".lower()

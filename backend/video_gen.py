@@ -16,7 +16,7 @@ from safe_paths import safe_output_path
 
 
 def _resolve_input_image(root: Path, raw: str) -> Path:
-    p = Path(str(raw or "").strip().strip('"\''))
+    p = Path(str(raw or "").strip().strip("\"'"))
     if not p.is_absolute():
         p = root / p
     return p.resolve()
@@ -40,13 +40,21 @@ def _render_prompt_frames(prompt: str, frame_count: int = 24) -> list[Any]:
         img = Image.new("RGB", (768, 432), (8, 10, 20))
         draw = ImageDraw.Draw(img)
         offset = int(40 + i * 4)
-        for r, color in [(180, (38, 161, 123)), (130, (86, 108, 214)), (80, (220, 160, 72))]:
+        for r, color in [
+            (180, (38, 161, 123)),
+            (130, (86, 108, 214)),
+            (80, (220, 160, 72)),
+        ]:
             draw.ellipse((offset - r, 216 - r, offset + r, 216 + r), fill=color)
         img = img.filter(ImageFilter.GaussianBlur(radius=18))
         draw = ImageDraw.Draw(img)
         draw.rectangle((0, 320, 768, 432), fill=(5, 7, 13))
         draw.text((32, 344), text, fill=(230, 236, 255))
-        draw.text((32, 388), "placeholder video - configure VIDEO_GEN_BACKEND for model generation", fill=(142, 154, 178))
+        draw.text(
+            (32, 388),
+            "placeholder video - configure VIDEO_GEN_BACKEND for model generation",
+            fill=(142, 154, 178),
+        )
         frames.append(img)
     return frames
 
@@ -92,7 +100,12 @@ def _render_slideshow(root: Path, image_paths: list[str], out: Path, fps: float)
 
 
 def _render_prompt_placeholder(prompt: str, out: Path, fps: float) -> dict[str, Any]:
-    if os.environ.get("ENABLE_VIDEO_PLACEHOLDER", "1").strip().lower() in ("0", "false", "off", "no"):
+    if os.environ.get("ENABLE_VIDEO_PLACEHOLDER", "1").strip().lower() in (
+        "0",
+        "false",
+        "off",
+        "no",
+    ):
         return {
             "status": "skipped",
             "hint": "文生视频需要配置 VIDEO_GEN_BACKEND=wan|cogvideox|auto，或开启 ENABLE_VIDEO_PLACEHOLDER=1。",

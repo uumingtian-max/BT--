@@ -110,7 +110,7 @@ def browser_fill_form(url: str, fields: dict, submit_selector: str | None = None
                 if not raw.startswith(("#", ".", "[", "input", "textarea", "select")):
                     candidates = [
                         f'[name="{raw}"]',
-                        f'#{raw}',
+                        f"#{raw}",
                         f'input[name="{raw}"]',
                         f'textarea[name="{raw}"]',
                         f'select[name="{raw}"]',
@@ -179,7 +179,4 @@ def browser_playwright(
     if action in {"fill", "fill_form", "submit"}:
         fields = {selector: text} if selector else {}
         return browser_fill_form(url, fields)
-    return (
-        "browser_playwright error: action 必须是 navigate/screenshot/click/fill 之一；"
-        f"收到 {action!r}"
-    )
+    return f"browser_playwright error: action 必须是 navigate/screenshot/click/fill 之一；收到 {action!r}"

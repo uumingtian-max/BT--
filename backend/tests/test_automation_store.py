@@ -25,7 +25,13 @@ def test_automation_job_and_run_lifecycle(tmp_path):
 
         run = automation_store.start_run(task_kind="repo_health", target="all", job_id=job["id"])
         assert run["status"] == "running"
-        finished = automation_store.finish_run(run["id"], status="success", summary="ok", result_json='{"ok": true}', duration_ms=12)
+        finished = automation_store.finish_run(
+            run["id"],
+            status="success",
+            summary="ok",
+            result_json='{"ok": true}',
+            duration_ms=12,
+        )
         assert finished["status"] == "success"
         assert finished["summary"] == "ok"
         assert finished["duration_ms"] == 12

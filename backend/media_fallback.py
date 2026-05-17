@@ -15,12 +15,20 @@ def generate_placeholder_image(prompt: str, output_path: str) -> dict:
     img = Image.new("RGBA", (size, size), (8, 10, 20, 255))
     draw = ImageDraw.Draw(img)
     cx, cy = size // 2, size // 2 - 20
-    for r, color in [(180, (138, 43, 226, 40)), (120, (0, 255, 255, 50)), (70, (167, 139, 250, 90))]:
+    for r, color in [
+        (180, (138, 43, 226, 40)),
+        (120, (0, 255, 255, 50)),
+        (70, (167, 139, 250, 90)),
+    ]:
         draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=color)
     draw.ellipse((cx - 28, cy - 28, cx + 28, cy + 28), fill=(220, 240, 255, 220))
     text = (prompt or "ONYX-OVERRIDE")[:80]
     draw.text((24, size - 72), text, fill=(200, 210, 255, 255))
-    draw.text((24, size - 48), "placeholder · set ENABLE_LOCAL_SD=1 for SD", fill=(120, 130, 160, 255))
+    draw.text(
+        (24, size - 48),
+        "placeholder · set ENABLE_LOCAL_SD=1 for SD",
+        fill=(120, 130, 160, 255),
+    )
     img = img.filter(ImageFilter.UnsharpMask(radius=1.2, percent=120, threshold=3))
     img.save(out, "PNG")
     return {
@@ -32,8 +40,18 @@ def generate_placeholder_image(prompt: str, output_path: str) -> dict:
 
 
 def local_sd_enabled() -> bool:
-    return os.environ.get("ENABLE_LOCAL_SD", "0").strip().lower() in ("1", "true", "yes", "on")
+    return os.environ.get("ENABLE_LOCAL_SD", "0").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
 
 
 def placeholder_enabled() -> bool:
-    return os.environ.get("ENABLE_IMAGE_PLACEHOLDER", "1").strip().lower() not in ("0", "false", "off", "no")
+    return os.environ.get("ENABLE_IMAGE_PLACEHOLDER", "1").strip().lower() not in (
+        "0",
+        "false",
+        "off",
+        "no",
+    )

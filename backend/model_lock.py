@@ -9,7 +9,12 @@ def locked_model_id() -> str:
     explicit = os.environ.get("LOCKED_MODEL_ID", "").strip()
     if explicit:
         return explicit
-    if os.environ.get("LOCK_SINGLE_MODEL", "").strip().lower() in ("1", "true", "yes", "on"):
+    if os.environ.get("LOCK_SINGLE_MODEL", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    ):
         return os.environ.get("AGENT_DEFAULT_MODEL", "qwen3:14b").strip()
     return ""
 

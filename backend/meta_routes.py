@@ -26,12 +26,21 @@ from skill_pack import (
 
 router = APIRouter()
 _OLLAMA_TAGS_CACHE_LOCK = Lock()
-_OLLAMA_TAGS_CACHE: dict[str, object] = {"key": None, "fetched_at": 0.0, "payload": None, "refreshing": False}
+_OLLAMA_TAGS_CACHE: dict[str, object] = {
+    "key": None,
+    "fetched_at": 0.0,
+    "payload": None,
+    "refreshing": False,
+}
 _OLLAMA_TAGS_TTL_SEC = 8.0
 
 # OpenAI-compatible /v1/models 缓存（避免 scheduler 每 tick 双次轮询）
 _OPENAI_MODELS_CACHE_LOCK = Lock()
-_OPENAI_MODELS_CACHE: dict[str, object] = {"key": None, "fetched_at": 0.0, "payload": None}
+_OPENAI_MODELS_CACHE: dict[str, object] = {
+    "key": None,
+    "fetched_at": 0.0,
+    "payload": None,
+}
 _OPENAI_MODELS_TTL_SEC = 45.0
 
 
@@ -66,7 +75,11 @@ def _refresh_ollama_tags(base: str) -> dict[str, object]:
                 r = c.get(f"{key}/api/tags")
                 r.raise_for_status()
                 data = r.json()
-            result = {"ok": True, "models": data.get("models") or [], "status_code": 200}
+            result = {
+                "ok": True,
+                "models": data.get("models") or [],
+                "status_code": 200,
+            }
         except Exception as e:
             result = {"ok": False, "error": str(e), "models": []}
         with _OLLAMA_TAGS_CACHE_LOCK:
@@ -78,7 +91,11 @@ def _refresh_ollama_tags(base: str) -> dict[str, object]:
     except Exception:
         _OLLAMA_TAGS_CACHE["key"] = key
         _OLLAMA_TAGS_CACHE["fetched_at"] = time.monotonic()
-        _OLLAMA_TAGS_CACHE["payload"] = {"ok": False, "error": "unexpected refresh failure", "models": []}
+        _OLLAMA_TAGS_CACHE["payload"] = {
+            "ok": False,
+            "error": "unexpected refresh failure",
+            "models": [],
+        }
         _OLLAMA_TAGS_CACHE["refreshing"] = False
         raise
 
@@ -110,7 +127,9 @@ def _get_ollama_tags(base: str, *, allow_background: bool = False) -> dict[str, 
     refreshing = bool(_OLLAMA_TAGS_CACHE.get("refreshing"))
     if cached_key == key and payload is not None:
         if (now - fetched_at) <= _OLLAMA_TAGS_TTL_SEC:
-            return payload if isinstance(payload, dict) else {"ok": False, "error": "invalid cache payload", "models": []}
+            return (
+                payload if isinstance(payload, dict) else {"ok": False, "error": "invalid cache payload", "models": []}
+            )
         if allow_background:
             _schedule_ollama_tags_refresh(key)
             if isinstance(payload, dict):
@@ -131,7 +150,10 @@ def _fetch_openai_compatible_models(base_url: str) -> list[dict[str, str]]:
         return []
     now = time.monotonic()
     with _OPENAI_MODELS_CACHE_LOCK:
-        if _OPENAI_MODELS_CACHE.get("key") == base and (now - float(_OPENAI_MODELS_CACHE.get("fetched_at") or 0)) < _OPENAI_MODELS_TTL_SEC:
+        if (
+            _OPENAI_MODELS_CACHE.get("key") == base
+            and (now - float(_OPENAI_MODELS_CACHE.get("fetched_at") or 0)) < _OPENAI_MODELS_TTL_SEC
+        ):
             return list(_OPENAI_MODELS_CACHE.get("payload") or [])
     url = base if base.endswith("/v1") else f"{base}/v1"
     try:
@@ -156,7 +178,14 @@ def _fetch_openai_compatible_models(base_url: str) -> list[dict[str, str]]:
 def _runtime_model_entries(rt) -> list[dict[str, str]]:
     seen: set[str] = set()
     out: list[dict[str, str]] = []
-    for mid in (rt.default_chat_model, rt.planner_model, rt.coder_model, rt.reviewer_model, rt.vision_model, rt.speech_model):
+    for mid in (
+        rt.default_chat_model,
+        rt.planner_model,
+        rt.coder_model,
+        rt.reviewer_model,
+        rt.vision_model,
+        rt.speech_model,
+    ):
         m = (mid or "").strip()
         if m and m not in seen:
             seen.add(m)
@@ -183,7 +212,11 @@ def _list_models_payload(*, strict_probe: bool = True) -> dict[str, object]:
                     out.append({"id": str(name), "source": "ollama"})
             stale = bool(payload.get("stale"))
         elif strict_probe:
-            return {"ok": False, "error": payload.get("error", "unknown error"), "models": []}
+            return {
+                "ok": False,
+                "error": payload.get("error", "unknown error"),
+                "models": [],
+            }
         else:
             warming = bool(payload.get("warming"))
             out.extend(_runtime_model_entries(rt))
@@ -214,7 +247,13 @@ def _meta_doctor_payload(*, strict_probe: bool = True) -> dict[str, object]:
 
     def add(name: str, ok: bool, detail: str = "", *, optional: bool = False) -> None:
         if optional and not ok:
-            checks.append({"name": name, "status": "skip", "detail": detail or "optional (not configured)"})
+            checks.append(
+                {
+                    "name": name,
+                    "status": "skip",
+                    "detail": detail or "optional (not configured)",
+                }
+            )
         else:
             checks.append({"name": name, "status": "ok" if ok else "fail", "detail": detail})
 
@@ -222,9 +261,18 @@ def _meta_doctor_payload(*, strict_probe: bool = True) -> dict[str, object]:
     if rt.llm_backend == "ollama":
         payload = _get_ollama_tags(rt.ollama_base, allow_background=not strict_probe)
         if payload.get("ok"):
-            add("ollama_reachable", True, f"{rt.ollama_base.rstrip('/')} HTTP {payload.get('status_code', 200)}")
+            add(
+                "ollama_reachable",
+                True,
+                f"{rt.ollama_base.rstrip('/')} HTTP {payload.get('status_code', 200)}",
+            )
         elif payload.get("warming") and not strict_probe:
-            add("ollama_reachable", False, "warming up; probe running in background", optional=True)
+            add(
+                "ollama_reachable",
+                False,
+                "warming up; probe running in background",
+                optional=True,
+            )
         else:
             add("ollama_reachable", False, str(payload.get("error", "unknown error")))
     else:
@@ -240,21 +288,38 @@ def _meta_doctor_payload(*, strict_probe: bool = True) -> dict[str, object]:
             )
             add("openai_compatible_gateway", gw_ok, detail)
 
-    for db_name in ("memory.db", "chat.db", "workflow.db", "behavior.db", "scheduler.db", "orchestrator.db"):
+    for db_name in (
+        "memory.db",
+        "chat.db",
+        "workflow.db",
+        "behavior.db",
+        "scheduler.db",
+        "orchestrator.db",
+    ):
         p = backend / db_name
         add(f"db:{db_name}", p.is_file(), str(p))
 
     webhook_url = (rt.webhook_url or "").strip()
-    webhook_required = os.environ.get("WEBHOOK_REQUIRED", "").strip().lower() in ("1", "true", "yes")
+    webhook_required = os.environ.get("WEBHOOK_REQUIRED", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
     if webhook_url:
         add("webhook", True, "configured")
     elif webhook_required:
         add("webhook", False, "WEBHOOK_URL empty but WEBHOOK_REQUIRED=1")
     else:
         add("webhook", False, "optional (not configured)", optional=True)
-    add("scheduler", os.environ.get("SCHEDULER_ENABLED", "1") not in ("0", "false", "off"))
+    add(
+        "scheduler",
+        os.environ.get("SCHEDULER_ENABLED", "1") not in ("0", "false", "off"),
+    )
     add("gateway", os.environ.get("GATEWAY_ENABLED", "1") not in ("0", "false", "off"))
-    add("mcp_bridge", os.environ.get("MCP_BRIDGE_ENABLED", "1") not in ("0", "false", "off"))
+    add(
+        "mcp_bridge",
+        os.environ.get("MCP_BRIDGE_ENABLED", "1") not in ("0", "false", "off"),
+    )
 
     try:
         import playwright  # noqa: F401
@@ -262,7 +327,12 @@ def _meta_doctor_payload(*, strict_probe: bool = True) -> dict[str, object]:
         add("playwright", True, "installed")
     except ImportError:
         # 浏览器自动化非对话核心；未安装不应把整页打成「后端告警」
-        add("playwright", False, "pip install playwright && playwright install chromium", optional=True)
+        add(
+            "playwright",
+            False,
+            "pip install playwright && playwright install chromium",
+            optional=True,
+        )
 
     pw_root = (os.environ.get("PLAYWRIGHT_BROWSERS_PATH") or "").strip()
     if not pw_root:
@@ -409,12 +479,20 @@ def community_alignment():
                 "id": "spec_driven",
                 "label": "Spec-driven delivery",
                 "repos_public": ["github/spec-kit"],
-                "local": ["agent_skills/spec_minimal_steps.md", "chat + agent system prompts"],
+                "local": [
+                    "agent_skills/spec_minimal_steps.md",
+                    "chat + agent system prompts",
+                ],
             },
             {
                 "id": "agent_skills",
                 "label": "Discoverable agent skills",
-                "repos_public": ["obra/superpowers", "mattpocock/skills", "K-Dense-AI/scientific-agent-skills", "alirezarezvani/claude-skills"],
+                "repos_public": [
+                    "obra/superpowers",
+                    "mattpocock/skills",
+                    "K-Dense-AI/scientific-agent-skills",
+                    "alirezarezvani/claude-skills",
+                ],
                 "local": [
                     "backend/agent_skills/*.md (83+ playbooks)",
                     "GET /meta/skills",
@@ -433,7 +511,12 @@ def community_alignment():
                 "id": "feature_api_playbooks",
                 "label": "Feature API playbooks (memory, scheduler, gateway)",
                 "repos_public": ["managed agent platforms"],
-                "local": ["agent_skills/feature_*.md", "/chat/memories/*", "/scheduler/*", "/gateway/*"],
+                "local": [
+                    "agent_skills/feature_*.md",
+                    "/chat/memories/*",
+                    "/scheduler/*",
+                    "/gateway/*",
+                ],
             },
             {
                 "id": "persistent_memory",
@@ -445,7 +528,11 @@ def community_alignment():
                 "id": "personal_local_ai",
                 "label": "Private local super-agent stack",
                 "repos_public": ["tinyhumansai/openhuman"],
-                "local": ["/agent/run", "/agent/orchestrate", "OLLAMA_HOST / LLM_BACKEND"],
+                "local": [
+                    "/agent/run",
+                    "/agent/orchestrate",
+                    "OLLAMA_HOST / LLM_BACKEND",
+                ],
             },
             {
                 "id": "metrics_observability",
@@ -473,7 +560,11 @@ def community_alignment():
                 "id": "a2a_interop",
                 "label": "Agent2Agent interop",
                 "repos_public": ["holtskinner/A2AWalkthrough"],
-                "local": ["/a2a/v1/agent-card", "/a2a/v1/message:send", "agent_skills/a2a_interop_lite.md"],
+                "local": [
+                    "/a2a/v1/agent-card",
+                    "/a2a/v1/message:send",
+                    "agent_skills/a2a_interop_lite.md",
+                ],
             },
             {
                 "id": "plan_review",
@@ -485,7 +576,10 @@ def community_alignment():
                 "id": "recursive_long_doc",
                 "label": "Recursive long-document reasoning",
                 "repos_public": ["zircote/rlm-rs"],
-                "local": ["agent_skills/recursive_long_document.md", "run_parallel_subagents"],
+                "local": [
+                    "agent_skills/recursive_long_document.md",
+                    "run_parallel_subagents",
+                ],
             },
         ],
         "notes": [
@@ -559,17 +653,20 @@ def operator_dashboard():
             "SELECT id, COALESCE(title, ''), created_at FROM sessions ORDER BY created_at DESC LIMIT 8"
         ).fetchall()
         conn.close()
-        chat_summary["recent_sessions"] = [
-            {"id": row[0], "title": row[1], "created_at": row[2]}
-            for row in rows
-        ]
+        chat_summary["recent_sessions"] = [{"id": row[0], "title": row[1], "created_at": row[2]} for row in rows]
     except Exception as e:
         chat_summary["error"] = str(e)
 
     failures = []
     for check in doctor.get("checks", []):
         if check.get("status") == "fail":
-            failures.append({"source": "doctor", "name": check.get("name"), "detail": check.get("detail", "")})
+            failures.append(
+                {
+                    "source": "doctor",
+                    "name": check.get("name"),
+                    "detail": check.get("detail", ""),
+                }
+            )
     for item in workflow.get("recent_reviews", [])[:12]:
         if item.get("status") == "failed":
             failures.append(

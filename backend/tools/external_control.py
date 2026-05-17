@@ -4,7 +4,6 @@ import subprocess
 import sys
 import time
 import webbrowser
-from pathlib import Path
 
 from .file_ops import assert_known_user_path, resolve_user_path
 

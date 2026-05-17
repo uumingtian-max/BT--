@@ -1,38 +1,38 @@
 # BKLT 黑光维护基线
 
-> 本文件是 ai-agent-project / BKLT 黑光 的长期维护规则。旧名 ONYX-OVERRIDE 只作为历史兼容名保留；对外统一使用 **BKLT 黑光 / BLACKLIGHT**。
+> 维护基线（品牌对外为 **BT（黑光）**；BKLT / ONYX 为历史兼容名）。启动脚本在 **`launcher/`**。
 
 ## 项目定位
 
-BKLT 黑光是一个本地优先的 AI Agent 自动化可视化工作台，不是普通聊天机器人。目标是让 AI 在用户电脑上自动规划、调用工具、执行任务、运行测试、整理记忆、同步 GitHub，并把执行过程可视化。
+BT（黑光）是一个本地优先的 AI Agent 自动化可视化工作台，不是普通聊天机器人。目标是让 AI 在用户电脑上自动规划、调用工具、执行任务、运行测试、整理记忆、同步 GitHub，并把执行过程可视化。
 
 ## 当前固定信息
 
 - 本地路径：`C:\Users\ROG\Desktop\ai-agent-project`
 - GitHub 仓库：`https://github.com/uumingtian-max/ai-agent-project`
-- 桌面快捷方式：`C:\Users\ROG\Desktop\BKLT 黑光.lnk`
+- 桌面快捷方式：指向 `launcher\Launch-BT-Heiguang.vbs`
 - 后端地址：`http://127.0.0.1:8000`
-- 本地 OpenAI-compatible 模型网关：`http://127.0.0.1:8001/v1`
-- 当前主要模型 ID：`nvidia/Gemma-4-26B-A4B-NVFP4`
-- 本地模型目录：`D:\models\Gemma-4-26B-A4B-NVFP4`
+- 本地 OpenAI 兼容网关（llama.cpp）：`http://127.0.0.1:8001/v1`
+- 当前主要模型 ID：`Gemma4-26B-A4B-Uncensored-HauhauCS-Balanced-Q5_K_P`（须与 `backend\.env` 及 `/v1/models` 一致）
+- 配置模板：`backend\.env.local-llamacpp.example`
 
 ## 启动链路
 
-当前启动链路仍带有旧名，迁移时必须保证可回滚、不断启动：
-
 ```text
-BKLT 黑光.lnk
-  -> wscript.exe
-  -> C:\Users\ROG\Desktop\ai-agent-project\Launch-ONYX-OVERRIDE.vbs
-  -> START.bat
-  -> scripts\launch-agent.ps1
+桌面快捷方式
+  -> launcher\Launch-BT-Heiguang.vbs
+  -> launcher\START_APP.bat
+  -> scripts\ensure-llama-cpp.ps1（LLM_BACKEND=openai_compatible 时）
+  -> Electron
 ```
+
+兼容：`launcher\Launch-BKLT-Blacklight.vbs`、`launcher\Launch-ONYX-OVERRIDE.vbs` 仍可作为旧快捷方式入口。
 
 迁移策略：
 
-1. 先新增 BKLT 命名脚本或别名，不删除旧 ONYX 文件。
-2. 确认新链路能启动后，再把快捷方式目标迁到 BKLT 文件。
-3. 最后只保留旧文件作为兼容入口或带提示的转发脚本。
+1. 新脚本放在 `launcher\`，根目录 `START_APP.bat` 仅转发到 launcher。
+2. 确认新链路能启动后，再把桌面快捷方式改到 `Launch-BT-Heiguang.vbs`。
+3. 旧名文件保留为兼容转发，不直接删除。
 
 ## 少确认维护规则
 
@@ -63,20 +63,22 @@ BKLT 黑光.lnk
 
 ## 下一阶段优先级
 
-1. 品牌迁移：README、启动器、窗口标题、manifest、图标、快捷方式链路从 ONYX-OVERRIDE 逐步迁到 BKLT 黑光。
-2. 模型 ID 统一：确保 `.env`、后端运行时、前端展示、vLLM `/models` 一致使用 `nvidia/Gemma-4-26B-A4B-NVFP4`。
+1. 品牌统一：对外统一 **BT（黑光）**（README、启动器、窗口标题、manifest、图标）。
+2. 模型 ID 统一：`.env`、`frontend/src/modelCatalog.js`、`http://127.0.0.1:8001/v1/models` 三者一致。
 3. 手机端入口：展示局域网地址、Tailscale 地址、二维码、token 登录状态。
 4. 自动化可视化：项目健康检查流水线、工具调用时间线、日志、GitHub 同步状态。
 5. 记忆与上下文：完成上下文压缩报告和记忆树增强，避免覆盖本地未提交半成品。
 
 ## 排障顺序
 
-如果 BKLT 黑光启动后不能正常回答，优先检查：
+如果 BT（黑光）启动后不能正常回答，优先检查：
 
-1. `http://127.0.0.1:8001/v1/models` 是否可用。
-2. 本地 vLLM / Gemma OpenAI-compatible 网关是否运行。
+1. `http://127.0.0.1:8001/v1/models` 是否可用（llama-server）。
+2. `backend\.env` 中 `LLAMA_CPP_*`、`OPENAI_BASE_URL` 是否正确；日志 `logs\llama-server.log`。
 3. `http://127.0.0.1:8000/health` 是否返回 `ok`。
-4. 后端 `/meta/info` 中模型 ID 是否和本地网关一致。
-5. 前端是否连接到正确后端地址。
+4. 后端 `/meta/doctor` 或 `/meta/info` 中模型 ID 是否与 8001 网关一致。
+5. 前端是否连接到正确后端；改 `frontend` 后须 `npm run build --prefix frontend`（在项目根目录执行）。
+
+实验性 vLLM 路线见 `launcher\START_VLLM_GEMMA4.bat`，非当前默认。
 
 不要误判为 ChatGPT 没连上：ChatGPT 项目只做记录、交接和维护协作，不负责本地推理。

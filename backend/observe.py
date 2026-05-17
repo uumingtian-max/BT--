@@ -327,7 +327,13 @@ def desktop_recent_files(limit: int = 28) -> list[dict[str, Any]]:
 _TASK_OUTCOMES_TTL_DAYS = 30
 
 
-def record_task_outcome(task_type: str, status: str, tool_name: str = "", detail: str = "", latency_ms: float | None = None) -> None:
+def record_task_outcome(
+    task_type: str,
+    status: str,
+    tool_name: str = "",
+    detail: str = "",
+    latency_ms: float | None = None,
+) -> None:
     ts = int(time.time())
     cutoff = ts - _TASK_OUTCOMES_TTL_DAYS * 86400
     conn = sqlite3.connect(BEHAVIOR_DB)
@@ -419,13 +425,34 @@ def get_runtime_adjustments() -> dict[str, Any]:
     if "organize" in signals:
         preferred_tools += ["list_files", "read_file", "get_recent_desktop_files"]
     if "deployment" in signals:
-        preferred_tools += ["get_device_profile", "run_task_orchestration", "execute_python"]
+        preferred_tools += [
+            "get_device_profile",
+            "run_task_orchestration",
+            "execute_python",
+        ]
     if "models" in signals:
-        preferred_tools += ["get_device_profile", "get_recent_work_summary", "run_task_orchestration"]
+        preferred_tools += [
+            "get_device_profile",
+            "get_recent_work_summary",
+            "run_task_orchestration",
+        ]
     if "agent" in signals:
-        preferred_tools += ["get_evolution_profile", "run_task_orchestration", "read_file"]
+        preferred_tools += [
+            "get_evolution_profile",
+            "run_task_orchestration",
+            "read_file",
+        ]
 
-    preferred_tools += ["list_files", "read_file", "get_recent_work_summary", "get_device_profile", "run_task_orchestration", "web_search", "execute_python", "write_file"]
+    preferred_tools += [
+        "list_files",
+        "read_file",
+        "get_recent_work_summary",
+        "get_device_profile",
+        "run_task_orchestration",
+        "web_search",
+        "execute_python",
+        "write_file",
+    ]
 
     deduped: list[str] = []
     for tool in preferred_tools:
@@ -446,7 +473,10 @@ def get_runtime_adjustments() -> dict[str, Any]:
         prompt_hints.append("代码执行失败偏多：缩小脚本范围、先打印中间结果再扩展。")
     if tool_stats.get("run_task_orchestration", {}).get("success_rate", 0) >= 60:
         prompt_hints.append("多模型编排效果稳定：复杂任务可优先走编排再汇总。")
-    if tool_stats.get("list_files", {}).get("success_rate", 0) >= 60 or tool_stats.get("read_file", {}).get("success_rate", 0) >= 60:
+    if (
+        tool_stats.get("list_files", {}).get("success_rate", 0) >= 60
+        or tool_stats.get("read_file", {}).get("success_rate", 0) >= 60
+    ):
         prompt_hints.append("文件类工具命中率高：桌面/文档类任务优先列目录再读文件。")
 
     return {
@@ -469,7 +499,13 @@ def _upsert_pattern(scope: str, summary: str, adjustments: list[str], signals: l
             signals_json = excluded.signals_json,
             updated_at = excluded.updated_at
         """,
-        (scope, summary, json.dumps(adjustments, ensure_ascii=False), json.dumps(signals, ensure_ascii=False), int(time.time())),
+        (
+            scope,
+            summary,
+            json.dumps(adjustments, ensure_ascii=False),
+            json.dumps(signals, ensure_ascii=False),
+            int(time.time()),
+        ),
     )
     conn.commit()
     conn.close()
@@ -486,10 +522,38 @@ def infer_behavior_patterns() -> dict[str, Any]:
     adjustments: list[str] = []
     signals: list[str] = []
 
-    model_tokens = ("ollama", "model", "gguf", "safetensors", "comfy", "whisper", "train", "lora", "qwen")
-    deploy_tokens = ("docker", "uvicorn", "electron", "frontend", "backend", "deploy", "端口", "启动", "api")
+    model_tokens = (
+        "ollama",
+        "model",
+        "gguf",
+        "safetensors",
+        "comfy",
+        "whisper",
+        "train",
+        "lora",
+        "qwen",
+    )
+    deploy_tokens = (
+        "docker",
+        "uvicorn",
+        "electron",
+        "frontend",
+        "backend",
+        "deploy",
+        "端口",
+        "启动",
+        "api",
+    )
     agent_tokens = ("agent", "codex", "cline", "continue", "cursor")
-    organize_tokens = ("desktop", "桌面", "assets", "文档", "memory", "report", "workspace")
+    organize_tokens = (
+        "desktop",
+        "桌面",
+        "assets",
+        "文档",
+        "memory",
+        "report",
+        "workspace",
+    )
 
     blob = (title_text + "\n" + "\n".join(proc_names) + "\n" + "\n".join(file_names)).lower()
 
@@ -535,7 +599,11 @@ def infer_behavior_patterns() -> dict[str, Any]:
         patterns.append(
             f"近一周工具调用总体成功率约 {rate}%，成功 {outcome.get('total_success', 0)} / 失败 {outcome.get('total_fail', 0)}。"
         )
-        low_tools = [name for name, stat in outcome.get("by_tool", {}).items() if stat.get("failed", 0) >= 2 and stat.get("success_rate", 100) < 60]
+        low_tools = [
+            name
+            for name, stat in outcome.get("by_tool", {}).items()
+            if stat.get("failed", 0) >= 2 and stat.get("success_rate", 100) < 60
+        ]
         if low_tools:
             patterns.append("以下工具近期失败偏多：" + "、".join(low_tools[:5]))
             adjustments.append("对这些工具先缩小输入规模或换路径验证，再扩大任务范围。")
@@ -627,7 +695,15 @@ def upsert_daily_report() -> dict[str, Any]:
     day = time.strftime("%Y-%m-%d", time.localtime())
     p = aggregate_profile(24 * 7)
     insights = build_insights(p)
-    lines = [f"# {day} 本地使用简报", "", "## 归纳", *("- " + i for i in insights), "", "## 数据概览", f"- 7日内样本: {p['sample_count']}"]
+    lines = [
+        f"# {day} 本地使用简报",
+        "",
+        "## 归纳",
+        *("- " + i for i in insights),
+        "",
+        "## 数据概览",
+        f"- 7日内样本: {p['sample_count']}",
+    ]
     summary = "\n".join(lines)
     ts = int(time.time())
     conn = sqlite3.connect(BEHAVIOR_DB)
@@ -667,12 +743,14 @@ class SampleResult(BaseModel):
 def observe_status() -> dict[str, Any]:
     since24 = _since_ts(24)
     conn = sqlite3.connect(BEHAVIOR_DB)
-    n24 = conn.execute(
-        "SELECT COUNT(*) FROM activity_samples WHERE ts >= ?", (since24,)
-    ).fetchone()[0]
+    n24 = conn.execute("SELECT COUNT(*) FROM activity_samples WHERE ts >= ?", (since24,)).fetchone()[0]
     last = conn.execute("SELECT MAX(ts) FROM activity_samples").fetchone()[0]
     conn.close()
-    disabled = os.environ.get("DISABLE_BACKGROUND_OBSERVE", "").lower() in ("1", "true", "yes")
+    disabled = os.environ.get("DISABLE_BACKGROUND_OBSERVE", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
     return {
         "background_enabled": not disabled,
         "interval_sec_default": int(os.environ.get("OBSERVE_INTERVAL_SEC", "50")),
@@ -711,12 +789,14 @@ def observe_report_today() -> dict[str, Any]:
 @router.get("/report/latest")
 def observe_report_latest() -> dict[str, Any]:
     conn = sqlite3.connect(BEHAVIOR_DB)
-    row = conn.execute(
-        "SELECT day, summary, created_at FROM daily_reports ORDER BY created_at DESC LIMIT 1"
-    ).fetchone()
+    row = conn.execute("SELECT day, summary, created_at FROM daily_reports ORDER BY created_at DESC LIMIT 1").fetchone()
     conn.close()
     if not row:
-        return {"day": None, "summary": "", "hint": "尚无简报，请先调用 POST /observe/report/today"}
+        return {
+            "day": None,
+            "summary": "",
+            "hint": "尚无简报，请先调用 POST /observe/report/today",
+        }
     return {"day": row[0], "summary": row[1], "created_at": row[2]}
 
 

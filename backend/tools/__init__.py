@@ -1,4 +1,4 @@
-﻿"""Agent tools package (search, crawl, files, code, desktop control, browser)."""
+"""Agent tools package (search, crawl, files, code, desktop control, browser)."""
 
 from .code_exec import execute_python
 from .external_control import (

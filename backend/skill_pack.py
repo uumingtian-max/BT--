@@ -69,10 +69,7 @@ def _load_all_skills() -> list[SkillDoc]:
     if not SKILL_DIR.is_dir():
         return []
     paths = sorted(SKILL_DIR.glob("*.md"))
-    signature = tuple(
-        (path.name, (st := path.stat()).st_mtime_ns, st.st_size)
-        for path in paths
-    )
+    signature = tuple((path.name, (st := path.stat()).st_mtime_ns, st.st_size) for path in paths)
     cached_signature = _SKILL_CACHE.get("signature")
     cached_skills = _SKILL_CACHE.get("skills")
     if cached_signature == signature and isinstance(cached_skills, list):
@@ -152,7 +149,12 @@ def _score_skill(sk: SkillDoc, text: str, tokens: set[str]) -> int:
 
 def _skill_signature(skills: list[SkillDoc]) -> list[list[Any]]:
     return [
-        [sk.stem, sk.title, len(sk.body), hashlib.sha256(sk.body.encode("utf-8")).hexdigest()]
+        [
+            sk.stem,
+            sk.title,
+            len(sk.body),
+            hashlib.sha256(sk.body.encode("utf-8")).hexdigest(),
+        ]
         for sk in skills
     ]
 
@@ -234,7 +236,11 @@ def _build_embedding_index(skills: list[SkillDoc]) -> dict[str, Any]:
 
 def _embedding_route_skills(user_message: str, skills: list[SkillDoc]) -> list[tuple[float, SkillDoc]]:
     global _EMBED_FAILURE_UNTIL
-    if os.environ.get("SKILL_EMBED_ROUTER", "1").strip().lower() in {"0", "false", "off"}:
+    if os.environ.get("SKILL_EMBED_ROUTER", "1").strip().lower() in {
+        "0",
+        "false",
+        "off",
+    }:
         return []
     if time.time() < _EMBED_FAILURE_UNTIL:
         return []
@@ -282,10 +288,7 @@ def build_skill_pack_context(user_message: str) -> str:
         if sk:
             body = sk.body[:2800] + ("…" if len(sk.body) > 2800 else "")
             trig = ", ".join(sk.triggers[:8])
-            return (
-                f"## 技能包（用户指定: {sk.title} · id=`{sk.stem}`）\n"
-                f"命中触发: {trig}\n\n### {sk.title}\n{body}"
-            )
+            return f"## 技能包（用户指定: {sk.title} · id=`{sk.stem}`）\n命中触发: {trig}\n\n### {sk.title}\n{body}"
     semantic_scored = _embedding_route_skills(user_message or "", skills)
     text = (user_message or "").lower()
     tokens = _message_tokens(text)

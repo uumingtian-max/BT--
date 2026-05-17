@@ -6,8 +6,20 @@ import json
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException
 
-from automation_runner import automation_capabilities, normalize_target, normalize_task_kind, run_automation_task
-from automation_store import create_job, delete_job, get_job, list_jobs, list_runs, set_job_enabled
+from automation_runner import (
+    automation_capabilities,
+    normalize_target,
+    normalize_task_kind,
+    run_automation_task,
+)
+from automation_store import (
+    create_job,
+    delete_job,
+    get_job,
+    list_jobs,
+    list_runs,
+    set_job_enabled,
+)
 from visual_event_bus import list_events
 
 router = APIRouter()
@@ -95,4 +107,7 @@ def runs_list(limit: int = 50):
 
 @router.get("/events")
 def events_list(limit: int = 100, run_id: str | None = None):
-    return {"ok": True, "events": list_events(limit=limit, source="automation", run_id=run_id)}
+    return {
+        "ok": True,
+        "events": list_events(limit=limit, source="automation", run_id=run_id),
+    }

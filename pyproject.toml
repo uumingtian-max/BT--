@@ -1,0 +1,21 @@
+[project]
+name = "bt-heiguang"
+version = "1.2.0"
+requires-python = ">=3.10"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# env_bootstrap 须先于其它 import 加载 backend/.env
+"backend/main.py" = ["E402"]
+"backend/memory_store.py" = ["E402"]
+"backend/observe.py" = ["E402"]
+"backend/tests/conftest.py" = ["E402"]
+"backend/tests/test_agent_run_events.py" = ["E402"]
+"backend/tests/test_automation_runner.py" = ["E402"]

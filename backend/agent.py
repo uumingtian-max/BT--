@@ -24,7 +24,11 @@ from memory_store import (
     list_playbook_entries,
     remember_from_message,
 )
-from observe import get_evolution_profile_text, get_runtime_adjustments, record_task_outcome
+from observe import (
+    get_evolution_profile_text,
+    get_runtime_adjustments,
+    record_task_outcome,
+)
 from workflow_store import build_workflow_context, record_task_review
 
 from agent_runtime import get_runtime, orchestration_defaults, reload_runtime
@@ -33,7 +37,11 @@ from hooks import notify_agent_completed
 from llm_client import chat_complete_async, chat_complete_sync
 from self_evolve import distill_playbook_with_llm, ingest_review_lesson
 from skill_pack import build_skill_pack_context
-from agent_session import build_messages_with_history, persist_agent_answer, save_user_turn
+from agent_session import (
+    build_messages_with_history,
+    persist_agent_answer,
+    save_user_turn,
+)
 
 
 def _agent_run_stream_error_message(exc: Exception) -> str:
@@ -120,8 +128,7 @@ SYSTEM_PROMPT = (
     "生成图片/视频后，最终回答里必须写出 outputs 下的文件路径，便于界面预览。\n"
     "文生视频优先 generate_video(prompt=...)；有多张图时用 image_paths 合成幻灯片。\n"
     "第三方 App 控制可列窗口、聚焦窗口、发送快捷键、输入文字、坐标点击；"
-    "需要用户明确目标窗口/快捷键/坐标，不能声称已具备越权控制或绕过安全限制。\n\n"
-    + TOOLS_DESC
+    "需要用户明确目标窗口/快捷键/坐标，不能声称已具备越权控制或绕过安全限制。\n\n" + TOOLS_DESC
 )
 
 
@@ -156,6 +163,7 @@ def _build_system_prompt() -> str:
 def _device_profile_tool(_: dict) -> str:
     try:
         from observe import format_profile_for_llm
+
         return format_profile_for_llm()
     except Exception as e:
         return f"get_device_profile error: {e}"
@@ -164,6 +172,7 @@ def _device_profile_tool(_: dict) -> str:
 def _recent_desktop_files_tool(params: dict) -> str:
     try:
         from observe import desktop_recent_files
+
         limit = int(params.get("limit", 12))
         rows = desktop_recent_files(limit)
         if not rows:
@@ -265,7 +274,10 @@ def _generate_image_tool(params: dict) -> str:
 
         prompt = (params.get("prompt") or "").strip() or "abstract"
         output_path = (params.get("output_path") or "outputs/agent_sd.png").strip()
-        return json.dumps(generate_image(GenImageBody(prompt=prompt, output_path=output_path)), ensure_ascii=False)
+        return json.dumps(
+            generate_image(GenImageBody(prompt=prompt, output_path=output_path)),
+            ensure_ascii=False,
+        )
     except Exception as e:
         return f"generate_image error: {e}"
 
@@ -309,7 +321,10 @@ def _text_to_speech_tool(params: dict) -> str:
         if not text:
             return "text_to_speech error: missing text"
         output_path = (params.get("output_path") or "outputs/agent_tts.wav").strip()
-        return json.dumps(text_to_speech(TTSBody(text=text, output_path=output_path)), ensure_ascii=False)
+        return json.dumps(
+            text_to_speech(TTSBody(text=text, output_path=output_path)),
+            ensure_ascii=False,
+        )
     except Exception as e:
         return f"text_to_speech error: {e}"
 
@@ -336,9 +351,7 @@ def _run_project_check_tool(params: dict) -> str:
             )
             output = (completed.stdout or "") + (("\nSTDERR:\n" + completed.stderr) if completed.stderr else "")
             results.append(
-                f"## {label}\n"
-                f"exit_code={completed.returncode}\n"
-                f"{output[-4000:] if output else '(no output)'}"
+                f"## {label}\nexit_code={completed.returncode}\n{output[-4000:] if output else '(no output)'}"
             )
         except Exception as e:
             results.append(f"## {label}\nerror={e}")
@@ -346,7 +359,15 @@ def _run_project_check_tool(params: dict) -> str:
     if target in ("backend", "all", "api"):
         run(
             "backend py_compile",
-            [sys.executable, "-m", "py_compile", "main.py", "agent.py", "observe.py", "tools/search.py"],
+            [
+                sys.executable,
+                "-m",
+                "py_compile",
+                "main.py",
+                "agent.py",
+                "observe.py",
+                "tools/search.py",
+            ],
             backend,
         )
     if target in ("frontend", "all", "ui"):
@@ -368,7 +389,9 @@ def _web_search_tool(params: dict) -> str:
         q = " ".join(str(x) for x in q)
     q = str(q).strip()
     if not q:
-        return "web_search error: 缺少搜索关键词。请在 parameters 里提供 query（字符串），例如 {\"query\": \"最新 AI 新闻\"}。"
+        return (
+            'web_search error: 缺少搜索关键词。请在 parameters 里提供 query（字符串），例如 {"query": "最新 AI 新闻"}。'
+        )
     return web_search(q)
 
 
@@ -696,14 +719,18 @@ def _extract_filename(message: str) -> Optional[str]:
 
     generic_patterns = [
         r'["“](.+?\.[A-Za-z0-9]{1,8})["”]',
-        r'[「『](.+?\.[A-Za-z0-9]{1,8})[」』]',
-        r'([^，。\n\r；;]+?\.[A-Za-z0-9]{1,8})',
+        r"[「『](.+?\.[A-Za-z0-9]{1,8})[」』]",
+        r"([^，。\n\r；;]+?\.[A-Za-z0-9]{1,8})",
     ]
     for pattern in generic_patterns:
         match = re.search(pattern, message)
         if match:
             candidate = match.group(1).strip()
-            candidate = re.sub(r"^(?:读取|打开文件|看看文件|看文件|文件内容|读取文件|读取这个文件|看看这个文件)\s*", "", candidate)
+            candidate = re.sub(
+                r"^(?:读取|打开文件|看看文件|看文件|文件内容|读取文件|读取这个文件|看看这个文件)\s*",
+                "",
+                candidate,
+            )
             return candidate.strip()
     return None
 
@@ -781,7 +808,11 @@ def _extract_window_title(message: str) -> Optional[str]:
     quoted = _extract_quoted_text(message)
     if quoted:
         return quoted
-    text = re.sub(r"^(帮我|给我|请|把|将|切到|切换到|聚焦|激活|打开|定位到|窗口|应用|app|App)\s*", "", message.strip())
+    text = re.sub(
+        r"^(帮我|给我|请|把|将|切到|切换到|聚焦|激活|打开|定位到|窗口|应用|app|App)\s*",
+        "",
+        message.strip(),
+    )
     text = re.sub(r"(窗口|应用|app|App)$", "", text).strip()
     if 1 <= len(text) <= 80:
         return text
@@ -791,11 +822,32 @@ def _extract_window_title(message: str) -> Optional[str]:
 def _looks_like_model_download_research(text: str) -> bool:
     lower = (text or "").lower()
     model_markers = [
-        "模型", "大模型", "本地模型", "顶级模型", "开源模型", "llm", "gguf",
-        "qwen", "deepseek", "mistral", "gemma", "llama",
+        "模型",
+        "大模型",
+        "本地模型",
+        "顶级模型",
+        "开源模型",
+        "llm",
+        "gguf",
+        "qwen",
+        "deepseek",
+        "mistral",
+        "gemma",
+        "llama",
     ]
     hardware_markers = ["gpu", "显卡", "5090", "4090", "24g", "24gb", "vram", "显存"]
-    research_markers = ["下载", "可以下载", "适配", "推荐", "最强", "最牛", "顶级", "目前", "最新", "本地"]
+    research_markers = [
+        "下载",
+        "可以下载",
+        "适配",
+        "推荐",
+        "最强",
+        "最牛",
+        "顶级",
+        "目前",
+        "最新",
+        "本地",
+    ]
     has_model = any(k in lower or k in text for k in model_markers)
     has_hardware = any(k in lower or k in text for k in hardware_markers)
     has_research = any(k in lower or k in text for k in research_markers)
@@ -816,21 +868,77 @@ def _model_download_search_query(text: str) -> str:
 def _looks_like_research_or_recommendation_request(text: str) -> bool:
     lower = (text or "").lower()
     research_verbs = [
-        "查", "查一下", "看看", "帮我看看", "了解", "调研", "搜索", "找一下",
-        "推荐", "对比", "排行", "排名", "哪个", "哪些", "目前", "最新", "最强", "最牛", "顶级",
-        "research", "search", "recommend", "compare", "best", "latest", "top",
+        "查",
+        "查一下",
+        "看看",
+        "帮我看看",
+        "了解",
+        "调研",
+        "搜索",
+        "找一下",
+        "推荐",
+        "对比",
+        "排行",
+        "排名",
+        "哪个",
+        "哪些",
+        "目前",
+        "最新",
+        "最强",
+        "最牛",
+        "顶级",
+        "research",
+        "search",
+        "recommend",
+        "compare",
+        "best",
+        "latest",
+        "top",
     ]
     subject_markers = [
-        "模型", "大模型", "llm", "软件", "工具", "库", "框架", "资料", "信息", "方案",
-        "gpu", "显卡", "显存", "5090", "4090", "24g", "24gb",
+        "模型",
+        "大模型",
+        "llm",
+        "软件",
+        "工具",
+        "库",
+        "框架",
+        "资料",
+        "信息",
+        "方案",
+        "gpu",
+        "显卡",
+        "显存",
+        "5090",
+        "4090",
+        "24g",
+        "24gb",
     ]
     local_file_markers = [
-        "文件", "目录", "文件夹", "路径", "桌面", "文档", "下载目录", "下载文件夹",
-        "file", "folder", "directory", "path",
+        "文件",
+        "目录",
+        "文件夹",
+        "路径",
+        "桌面",
+        "文档",
+        "下载目录",
+        "下载文件夹",
+        "file",
+        "folder",
+        "directory",
+        "path",
     ]
     explicit_file_actions = [
-        "列出", "打开文件", "读取文件", "文件内容", "目录里", "文件夹里",
-        "list files", "read file", "open file", "show files",
+        "列出",
+        "打开文件",
+        "读取文件",
+        "文件内容",
+        "目录里",
+        "文件夹里",
+        "list files",
+        "read file",
+        "open file",
+        "show files",
     ]
     has_research = any(k in lower or k in text for k in research_verbs)
     has_subject = any(k in lower or k in text for k in subject_markers)
@@ -849,17 +957,57 @@ def infer_tool_from_message(message: str):
     directory_hint = _detect_directory_hint(text)
 
     if _looks_like_model_download_research(text):
-        return {"name": "local_search", "parameters": {"query": _model_download_search_query(text), "limit": 8, "scrape": True}}
+        return {
+            "name": "local_search",
+            "parameters": {
+                "query": _model_download_search_query(text),
+                "limit": 8,
+                "scrape": True,
+            },
+        }
 
     if _looks_like_research_or_recommendation_request(text):
-        return {"name": "local_search", "parameters": {"query": text, "limit": 8, "scrape": True}}
+        return {
+            "name": "local_search",
+            "parameters": {"query": text, "limit": 8, "scrape": True},
+        }
 
-    deploy_markers = ["启动失败", "端口连不上", "连不上", "起不来", "部署失败", "服务失败", "服务不可用"]
-    deploy_subjects = ["vllm", "ollama", "uvicorn", "fastapi", "8000", "8001", "8002", "端口", "backend", "后端"]
+    deploy_markers = [
+        "启动失败",
+        "端口连不上",
+        "连不上",
+        "起不来",
+        "部署失败",
+        "服务失败",
+        "服务不可用",
+    ]
+    deploy_subjects = [
+        "vllm",
+        "ollama",
+        "uvicorn",
+        "fastapi",
+        "8000",
+        "8001",
+        "8002",
+        "端口",
+        "backend",
+        "后端",
+    ]
     if any(k in lower or k in text for k in deploy_markers) and any(k in lower or k in text for k in deploy_subjects):
         return {"name": "get_device_profile", "parameters": {}}
 
-    if url and any(k in text for k in ["抓取网页", "读取网页", "总结网页", "网页内容", "爬取", "scrape", "crawl"]):
+    if url and any(
+        k in text
+        for k in [
+            "抓取网页",
+            "读取网页",
+            "总结网页",
+            "网页内容",
+            "爬取",
+            "scrape",
+            "crawl",
+        ]
+    ):
         return {"name": "local_scrape_url", "parameters": {"url": url}}
 
     if url and any(k in text for k in ["打开网页", "打开网站", "打开链接", "浏览", "访问", "打开"]):
@@ -924,16 +1072,76 @@ def infer_tool_from_message(message: str):
             },
         }
 
-    if any(k in text for k in ["生成图", "画一张", "生图", "文生图", "做个图标", "帮我画", "画个"]) and len(text) < 1200:
-        return {"name": "generate_image", "parameters": {"prompt": text, "output_path": "outputs/agent_sd.png"}}
+    if (
+        any(
+            k in text
+            for k in [
+                "生成图",
+                "画一张",
+                "生图",
+                "文生图",
+                "做个图标",
+                "帮我画",
+                "画个",
+            ]
+        )
+        and len(text) < 1200
+    ):
+        return {
+            "name": "generate_image",
+            "parameters": {"prompt": text, "output_path": "outputs/agent_sd.png"},
+        }
 
-    if any(k in text for k in ["生成一段视频", "生成视频", "做个视频", "制作视频", "生成短片", "文生视频", "短片"]) and len(text) < 1200:
-        return {"name": "generate_ai_video", "parameters": {"prompt": text, "output_path": "outputs/ai_video.mp4"}}
+    if (
+        any(
+            k in text
+            for k in [
+                "生成一段视频",
+                "生成视频",
+                "做个视频",
+                "制作视频",
+                "生成短片",
+                "文生视频",
+                "短片",
+            ]
+        )
+        and len(text) < 1200
+    ):
+        return {
+            "name": "generate_ai_video",
+            "parameters": {"prompt": text, "output_path": "outputs/ai_video.mp4"},
+        }
 
-    if any(k in text for k in ["文字转语音", "转成语音", "播报出来", "读给我听", "念一下", "语音播报"]) and len(text) < 4000:
-        return {"name": "text_to_speech", "parameters": {"text": text, "output_path": "outputs/agent_tts.wav"}}
+    if (
+        any(
+            k in text
+            for k in [
+                "文字转语音",
+                "转成语音",
+                "播报出来",
+                "读给我听",
+                "念一下",
+                "语音播报",
+            ]
+        )
+        and len(text) < 4000
+    ):
+        return {
+            "name": "text_to_speech",
+            "parameters": {"text": text, "output_path": "outputs/agent_tts.wav"},
+        }
 
-    if any(k in text for k in ["自动部署", "部署检查", "项目检查", "构建检查", "能不能启动", "跑一下检查"]):
+    if any(
+        k in text
+        for k in [
+            "自动部署",
+            "部署检查",
+            "项目检查",
+            "构建检查",
+            "能不能启动",
+            "跑一下检查",
+        ]
+    ):
         target = "all"
         if "后端" in text or "backend" in lower:
             target = "backend"
@@ -943,30 +1151,98 @@ def infer_tool_from_message(message: str):
 
     if ("导入知识库" in text or "写入知识树" in text or "记到知识库" in text) and len(text) > 60:
         title_guess = (text.split("\n")[0] or "笔记").strip()[:200]
-        return {"name": "notebook_ingest", "parameters": {"title": title_guess, "text": text}}
+        return {
+            "name": "notebook_ingest",
+            "parameters": {"title": title_guess, "text": text},
+        }
 
     if any(k in text for k in ["整理后写入知识库", "整理成长笔记", "AI 整理后写入"]) and len(text) > 120:
-        return {"name": "notebook_synthesize", "parameters": {"title": "整理", "text": text}}
+        return {
+            "name": "notebook_synthesize",
+            "parameters": {"title": "整理", "text": text},
+        }
 
     if any(k in text for k in ["设备画像", "使用习惯", "最近在忙什么", "设备情况", "画像"]):
         return {"name": "get_device_profile", "parameters": {}}
 
-    if any(k in text for k in ["最近在做什么", "总结我最近在干什么", "我最近在干什么", "最近忙什么", "总结最近活动"]):
+    if any(
+        k in text
+        for k in [
+            "最近在做什么",
+            "总结我最近在干什么",
+            "我最近在干什么",
+            "最近忙什么",
+            "总结最近活动",
+        ]
+    ):
         return {"name": "get_recent_work_summary", "parameters": {}}
 
-    if any(k in text for k in ["最近桌面文件", "桌面最近文件", "最近改过的文件", "桌面最近动了什么", "最近桌面上有什么变化"]):
+    if any(
+        k in text
+        for k in [
+            "最近桌面文件",
+            "桌面最近文件",
+            "最近改过的文件",
+            "桌面最近动了什么",
+            "最近桌面上有什么变化",
+        ]
+    ):
         return {"name": "get_recent_desktop_files", "parameters": {"limit": 12}}
 
-    wants_listing = any(k in text for k in ["列出", "哪些文件", "文件夹", "目录", "桌面上有什么", "文件列表", "有哪些"]) or any(
-        phrase in lower for phrase in ["list files", "show files", "show me files", "file list", "list directory", "list folder"]
-    ) or (("list" in lower_words or "show" in lower_words) and ("file" in lower_words or "files" in lower_words))
-    wants_read = any(k in text for k in ["读取", "打开文件", "看文件", "文件内容", "read file", "看看这个文件", "读取这个文件"]) or any(
-        phrase in lower for phrase in ["read this file", "read file", "open this file", "show file contents", "file contents"]
+    wants_listing = (
+        any(
+            k in text
+            for k in [
+                "列出",
+                "哪些文件",
+                "文件夹",
+                "目录",
+                "桌面上有什么",
+                "文件列表",
+                "有哪些",
+            ]
+        )
+        or any(
+            phrase in lower
+            for phrase in [
+                "list files",
+                "show files",
+                "show me files",
+                "file list",
+                "list directory",
+                "list folder",
+            ]
+        )
+        or (("list" in lower_words or "show" in lower_words) and ("file" in lower_words or "files" in lower_words))
+    )
+    wants_read = any(
+        k in text
+        for k in [
+            "读取",
+            "打开文件",
+            "看文件",
+            "文件内容",
+            "read file",
+            "看看这个文件",
+            "读取这个文件",
+        ]
+    ) or any(
+        phrase in lower
+        for phrase in [
+            "read this file",
+            "read file",
+            "open this file",
+            "show file contents",
+            "file contents",
+        ]
     )
     wants_browse = any(k in text for k in ["看看", "看一下", "帮我看看"])
 
     if wants_listing or ((wants_browse or "list files" in lower) and not filename):
-        return {"name": "list_files", "parameters": {"directory": directory_hint or path or "~/Desktop"}}
+        return {
+            "name": "list_files",
+            "parameters": {"directory": directory_hint or path or "~/Desktop"},
+        }
 
     if (wants_read or (wants_browse and filename)) and path:
         return {"name": "read_file", "parameters": {"path": path}}
@@ -975,11 +1251,17 @@ def infer_tool_from_message(message: str):
         content_match = re.search(r"内容[：:](.*)", text, re.DOTALL)
         return {
             "name": "write_file",
-            "parameters": {"path": path, "content": content_match.group(1).strip() if content_match else ""},
+            "parameters": {
+                "path": path,
+                "content": content_match.group(1).strip() if content_match else "",
+            },
         }
 
     if any(k in text for k in ["搜索并抓取", "搜索并读取", "深度搜索", "查资料", "读网页", "抓网页"]):
-        return {"name": "local_search", "parameters": {"query": text, "limit": 3, "scrape": True}}
+        return {
+            "name": "local_search",
+            "parameters": {"query": text, "limit": 3, "scrape": True},
+        }
 
     if any(
         k in text
@@ -999,7 +1281,10 @@ def infer_tool_from_message(message: str):
         return None
 
     if any(k in text for k in ["搜索", "查一下", "最新", "新闻", "web search", "duckduckgo"]):
-        return {"name": "local_search", "parameters": {"query": text, "limit": 6, "scrape": False}}
+        return {
+            "name": "local_search",
+            "parameters": {"query": text, "limit": 6, "scrape": False},
+        }
 
     if url and any(k in text for k in ["http 请求", "发送请求", "调用 api", "请求接口", "GET ", "POST "]):
         upper = text.upper()
@@ -1018,20 +1303,42 @@ def infer_tool_from_message(message: str):
         if sql_match:
             return {
                 "name": "query_database",
-                "parameters": {"path": db_path or "backend/memory.db", "sql": sql_match.group(1).strip()[:2000]},
+                "parameters": {
+                    "path": db_path or "backend/memory.db",
+                    "sql": sql_match.group(1).strip()[:2000],
+                },
             }
 
     code_match = re.search(r"```python\s*(.*?)```", text, re.DOTALL)
     if code_match:
-        return {"name": "execute_python", "parameters": {"code": code_match.group(1).strip()}}
+        return {
+            "name": "execute_python",
+            "parameters": {"code": code_match.group(1).strip()},
+        }
 
     return None
 
 
 def _looks_like_action_request(message: str) -> bool:
     triggers = [
-        "帮我", "给我", "看看", "读取", "打开", "列出", "查一下", "搜索", "总结",
-        "分析", "整理", "写入", "创建", "执行", "运行", "生成", "拆解", "查看",
+        "帮我",
+        "给我",
+        "看看",
+        "读取",
+        "打开",
+        "列出",
+        "查一下",
+        "搜索",
+        "总结",
+        "分析",
+        "整理",
+        "写入",
+        "创建",
+        "执行",
+        "运行",
+        "生成",
+        "拆解",
+        "查看",
     ]
     return any(token in message for token in triggers)
 
@@ -1039,8 +1346,13 @@ def _looks_like_action_request(message: str) -> bool:
 def _is_tool_error_text(text: str) -> bool:
     lowered = (text or "").lower()
     flags = [
-        "tool error:", "unknown tool", "not found:", "error:", "timeout",
-        "missing message", "子任务失败",
+        "tool error:",
+        "unknown tool",
+        "not found:",
+        "error:",
+        "timeout",
+        "missing message",
+        "子任务失败",
     ]
     return any(flag in lowered for flag in flags)
 
@@ -1050,7 +1362,11 @@ def _tool_result_failed(tool_name: str | None, text: str) -> bool:
     if (tool_name or "").lower() == "local_search":
         if not lowered:
             return True
-        hard_failures = ("local_search error:", "search error: empty query", "search error:")
+        hard_failures = (
+            "local_search error:",
+            "search error: empty query",
+            "search error:",
+        )
         if lowered.startswith(hard_failures):
             return True
         # Search results may contain scraped-page error snippets. Treat the tool as
@@ -1075,16 +1391,29 @@ def _looks_like_garbled_text(text: str) -> bool:
 def _looks_like_manual_instructions(text: str) -> bool:
     markers = [
         "请根据您使用的操作系统进行以下操作",
-        "方法一", "方法二", "win + r", "cmd", "文件资源管理器",
-        "如果您需要", "您可以使用以下方法", "请手动", "请打开",
+        "方法一",
+        "方法二",
+        "win + r",
+        "cmd",
+        "文件资源管理器",
+        "如果您需要",
+        "您可以使用以下方法",
+        "请手动",
+        "请打开",
     ]
     return any(marker in text for marker in markers)
 
 
 def _looks_like_fake_completion(text: str) -> bool:
     markers = [
-        "我已经给你", "我给你装好", "我给你放桌面", "已经完成",
-        "已帮你", "已经处理好了", "已经替你", "搞定了",
+        "我已经给你",
+        "我给你装好",
+        "我给你放桌面",
+        "已经完成",
+        "已帮你",
+        "已经处理好了",
+        "已经替你",
+        "搞定了",
     ]
     return any(marker in text for marker in markers)
 
@@ -1106,8 +1435,17 @@ def _build_honest_failure_answer(message: str, tool_name: str | None = None, too
 def _looks_like_summary_request(message: str) -> bool:
     lower = (message or "").lower()
     markers = [
-        "总结", "摘要", "概述", "简短总结", "简要总结", "提炼",
-        "summary", "summarize", "summarise", "brief", "overview",
+        "总结",
+        "摘要",
+        "概述",
+        "简短总结",
+        "简要总结",
+        "提炼",
+        "summary",
+        "summarize",
+        "summarise",
+        "brief",
+        "overview",
     ]
     return any(marker in (message or "") or marker in lower for marker in markers)
 
@@ -1228,7 +1566,6 @@ def _fallback_answer_from_tool_result(message: str, tool_name: str | None, tool_
 
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     if tool_name == "get_device_profile":
-        titles = [line for line in lines if "常见前台窗口" in line or "常见进程" in line]
         bullets = [line for line in lines if line.startswith("- ") or line.startswith("  - ")]
         out = ["我已经拿到设备画像，先给你直接结论："]
         if any("Codex" in line or "AI Agent" in line or "Cursor" in line or "Claude" in line for line in lines):
@@ -1343,21 +1680,43 @@ def _execute_tool_sync(tool_name: str, params: dict) -> str:
     return fn(params)
 
 
-async def run_agent(message: str, model: str, session_id: str | None = None):
+async def run_agent(
+    message: str,
+    model: str,
+    session_id: str | None = None,
+    on_step=None,
+):
     from model_lock import enforce_locked_model
 
     sid = (session_id or "").strip() or "agent"
     model = enforce_locked_model(model)
     rt = get_runtime()
+    steps = []
+
+    async def emit_step(step: dict):
+        steps.append(step)
+        if on_step is None:
+            return
+        maybe_awaitable = on_step(step)
+        if hasattr(maybe_awaitable, "__await__"):
+            await maybe_awaitable
+
     if _looks_like_garbled_text(message):
-        return [
+        await emit_step(
             {
                 "type": "final_answer",
                 "content": "这条输入在进入后端前已经乱码了，我不会把它写进记忆。请从桌面 Agent 正常输入中文，或者检查调用端编码是否是 UTF-8。",
             }
-        ]
+        )
+        return steps
     save_user_turn(sid, message)
     remember_from_message(sid, "user", message)
+    await emit_step(
+        {
+            "type": "thinking",
+            "content": "正在分析任务并选择合适的工具…",
+        }
+    )
     mx = rt.context_block_max_chars
     (
         memory_context,
@@ -1390,7 +1749,6 @@ async def run_agent(message: str, model: str, session_id: str | None = None):
     system_context_parts[0] = _build_system_prompt()
     system_content = "\n\n".join(system_context_parts)
     messages = build_messages_with_history(system_content, sid)
-    steps = []
     tool_used = False
     last_tool_name = None
     last_tool_result = None
@@ -1401,10 +1759,12 @@ async def run_agent(message: str, model: str, session_id: str | None = None):
         if forced_tool_call is not None and not tool_used:
             response = ""
             tool_call = forced_tool_call
-            steps.append({
-                "type": "thinking",
-                "content": "已按用户意图直接选择工具执行。",
-            })
+            await emit_step(
+                {
+                    "type": "thinking",
+                    "content": "已按用户意图直接选择工具执行。",
+                }
+            )
         else:
             try:
                 if tool_used and last_tool_result:
@@ -1415,9 +1775,20 @@ async def run_agent(message: str, model: str, session_id: str | None = None):
                 cleaned = _fallback_answer_from_tool_result(message, last_tool_name, last_tool_result)
                 if not _looks_like_garbled_text(message):
                     remember_from_message(sid, "assistant", cleaned)
-                record_task_outcome("agent_run", "success", last_tool_name or "agent_timeout_fallback", cleaned[:300])
-                last_review = record_task_review(message, "success", last_tool_name or "", cleaned, last_tool_result or "")
-                steps.append({"type": "final_answer", "content": cleaned})
+                record_task_outcome(
+                    "agent_run",
+                    "success",
+                    last_tool_name or "agent_timeout_fallback",
+                    cleaned[:300],
+                )
+                last_review = record_task_review(
+                    message,
+                    "success",
+                    last_tool_name or "",
+                    cleaned,
+                    last_tool_result or "",
+                )
+                await emit_step({"type": "final_answer", "content": cleaned})
                 break
             tool_call = parse_tool(response)
 
@@ -1427,8 +1798,8 @@ async def run_agent(message: str, model: str, session_id: str | None = None):
             last_tool_name = tool_name
             thinking = response.split("<tool_call>")[0].strip() if "<tool_call>" in response else ""
             if thinking:
-                steps.append({"type": "thinking", "content": thinking})
-            steps.append({"type": "tool_call", "tool": tool_name, "params": params})
+                await emit_step({"type": "thinking", "content": thinking})
+            await emit_step({"type": "tool_call", "tool": tool_name, "params": params})
             try:
                 result = await asyncio.to_thread(_execute_tool_sync, tool_name, params)
             except Exception as e:
@@ -1440,20 +1811,25 @@ async def run_agent(message: str, model: str, session_id: str | None = None):
             result_failed = _tool_result_failed(tool_name, result_text)
             tool_status = "failed" if result_failed else "success"
             record_task_outcome("tool", tool_status, tool_name or "", result_text[:300])
-            steps.append({"type": "tool_result", "tool": tool_name, "result": packed[:8000]})
+            await emit_step({"type": "tool_result", "tool": tool_name, "result": packed[:8000]})
             if result_failed:
                 final_text = _build_honest_failure_answer(message, tool_name, packed)
                 remember_from_message(sid, "assistant", final_text)
                 record_task_outcome("agent_run", "failed", tool_name or "tool", final_text[:300])
                 last_review = record_task_review(message, "failed", tool_name or "", final_text, result_text)
-                steps.append({"type": "final_answer", "content": final_text})
+                await emit_step({"type": "final_answer", "content": final_text})
                 break
             if tool_name == "local_search" and _looks_like_model_download_research(message):
                 final_text = _fallback_model_download_answer(result_text)
                 remember_from_message(sid, "assistant", final_text)
-                record_task_outcome("agent_run", "success", tool_name or "model_search", final_text[:300])
+                record_task_outcome(
+                    "agent_run",
+                    "success",
+                    tool_name or "model_search",
+                    final_text[:300],
+                )
                 last_review = record_task_review(message, "success", tool_name or "", final_text, result_text)
-                steps.append({"type": "final_answer", "content": final_text})
+                await emit_step({"type": "final_answer", "content": final_text})
                 break
             if forced_tool_call is not None and (tool_name in FAST_TOOL_FINALS):
                 final_text = _fallback_answer_from_tool_result(message, tool_name, packed)
@@ -1461,8 +1837,14 @@ async def run_agent(message: str, model: str, session_id: str | None = None):
                     remember_from_message(sid, "assistant", final_text)
                 record_task_outcome("agent_run", "success", tool_name or "tool_forced", final_text[:300])
                 last_review = record_task_review(message, "success", tool_name or "", final_text, result_text)
-                steps.append({"type": "final_answer", "content": final_text})
+                await emit_step({"type": "final_answer", "content": final_text})
                 break
+            await emit_step(
+                {
+                    "type": "thinking",
+                    "content": f"工具 {tool_name} 已执行完成，正在整理结果并生成回答…",
+                }
+            )
             messages += [
                 {"role": "assistant", "content": response},
                 {
@@ -1480,21 +1862,65 @@ async def run_agent(message: str, model: str, session_id: str | None = None):
         if _looks_like_fake_completion(cleaned):
             if tool_used and _is_successful_tool_result(last_tool_result or ""):
                 cleaned = _fallback_answer_from_tool_result(message, last_tool_name, last_tool_result)
-                record_task_outcome("agent_run", "success", last_tool_name or "agent_final", cleaned[:300])
-                last_review = record_task_review(message, "success", last_tool_name or "", cleaned, last_tool_result or "")
+                record_task_outcome(
+                    "agent_run",
+                    "success",
+                    last_tool_name or "agent_final",
+                    cleaned[:300],
+                )
+                last_review = record_task_review(
+                    message,
+                    "success",
+                    last_tool_name or "",
+                    cleaned,
+                    last_tool_result or "",
+                )
             else:
                 cleaned = _build_honest_failure_answer(message, last_tool_name, last_tool_result)
-                record_task_outcome("agent_run", "failed", last_tool_name or "agent_final", cleaned[:300])
-                last_review = record_task_review(message, "failed", last_tool_name or "", cleaned, last_tool_result or "")
+                record_task_outcome(
+                    "agent_run",
+                    "failed",
+                    last_tool_name or "agent_final",
+                    cleaned[:300],
+                )
+                last_review = record_task_review(
+                    message,
+                    "failed",
+                    last_tool_name or "",
+                    cleaned,
+                    last_tool_result or "",
+                )
         elif tool_used and _looks_like_manual_instructions(cleaned):
             if _is_successful_tool_result(last_tool_result or ""):
                 cleaned = _fallback_answer_from_tool_result(message, last_tool_name, last_tool_result)
-                record_task_outcome("agent_run", "success", last_tool_name or "agent_final", cleaned[:300])
-                last_review = record_task_review(message, "success", last_tool_name or "", cleaned, last_tool_result or "")
+                record_task_outcome(
+                    "agent_run",
+                    "success",
+                    last_tool_name or "agent_final",
+                    cleaned[:300],
+                )
+                last_review = record_task_review(
+                    message,
+                    "success",
+                    last_tool_name or "",
+                    cleaned,
+                    last_tool_result or "",
+                )
             else:
                 cleaned = _build_honest_failure_answer(message, last_tool_name, last_tool_result)
-                record_task_outcome("agent_run", "failed", last_tool_name or "agent_final", cleaned[:300])
-                last_review = record_task_review(message, "failed", last_tool_name or "", cleaned, last_tool_result or "")
+                record_task_outcome(
+                    "agent_run",
+                    "failed",
+                    last_tool_name or "agent_final",
+                    cleaned[:300],
+                )
+                last_review = record_task_review(
+                    message,
+                    "failed",
+                    last_tool_name or "",
+                    cleaned,
+                    last_tool_result or "",
+                )
         elif not tool_used and _looks_like_action_request(message) and _looks_like_manual_instructions(cleaned):
             cleaned = _build_honest_failure_answer(message)
             record_task_outcome("agent_run", "failed", "agent_manual_fallback", cleaned[:300])
@@ -1507,12 +1933,34 @@ async def run_agent(message: str, model: str, session_id: str | None = None):
                     cleaned = strengthened
                 else:
                     cleaned = _fallback_answer_from_tool_result(message, last_tool_name, last_tool_result)
-                    record_task_outcome("agent_run", "success", last_tool_name or "agent_quality_guard", cleaned[:300])
-                    last_review = record_task_review(message, "success", last_tool_name or "", cleaned, last_tool_result or "")
+                    record_task_outcome(
+                        "agent_run",
+                        "success",
+                        last_tool_name or "agent_quality_guard",
+                        cleaned[:300],
+                    )
+                    last_review = record_task_review(
+                        message,
+                        "success",
+                        last_tool_name or "",
+                        cleaned,
+                        last_tool_result or "",
+                    )
             except Exception:
                 cleaned = _fallback_answer_from_tool_result(message, last_tool_name, last_tool_result)
-                record_task_outcome("agent_run", "success", last_tool_name or "agent_quality_guard", cleaned[:300])
-                last_review = record_task_review(message, "success", last_tool_name or "", cleaned, last_tool_result or "")
+                record_task_outcome(
+                    "agent_run",
+                    "success",
+                    last_tool_name or "agent_quality_guard",
+                    cleaned[:300],
+                )
+                last_review = record_task_review(
+                    message,
+                    "success",
+                    last_tool_name or "",
+                    cleaned,
+                    last_tool_result or "",
+                )
         elif not tool_used and _is_low_quality_answer(message, cleaned) and _looks_like_action_request(message):
             cleaned = _build_honest_failure_answer(message)
             record_task_outcome("agent_run", "failed", "agent_quality_guard", cleaned[:300])
@@ -1521,10 +1969,20 @@ async def run_agent(message: str, model: str, session_id: str | None = None):
             cleaned = "任务已处理，但模型没有返回可展示文本。"
         if not _looks_like_garbled_text(message):
             remember_from_message(sid, "assistant", cleaned)
-        if last_review is None and not _looks_like_fake_completion(cleaned) and "这次我没有真正把任务做完。" not in cleaned:
+        if (
+            last_review is None
+            and not _looks_like_fake_completion(cleaned)
+            and "这次我没有真正把任务做完。" not in cleaned
+        ):
             record_task_outcome("agent_run", "success", "agent_final", cleaned[:300])
-            last_review = record_task_review(message, "success", last_tool_name or "", cleaned, last_tool_result or "")
-        steps.append({"type": "final_answer", "content": cleaned})
+            last_review = record_task_review(
+                message,
+                "success",
+                last_tool_name or "",
+                cleaned,
+                last_tool_result or "",
+            )
+        await emit_step({"type": "final_answer", "content": cleaned})
         break
 
     if not any(step["type"] == "final_answer" for step in steps):
@@ -1532,7 +1990,7 @@ async def run_agent(message: str, model: str, session_id: str | None = None):
         remember_from_message(sid, "assistant", final_text)
         record_task_outcome("agent_run", "failed", "agent_final", final_text[:300])
         last_review = record_task_review(message, "failed", "agent_final", final_text, last_tool_result or "")
-        steps.append({"type": "final_answer", "content": final_text})
+        await emit_step({"type": "final_answer", "content": final_text})
 
     if rt.agent_self_evolve and last_review is not None:
         ingest_review_lesson(message, last_review)
@@ -1608,32 +2066,56 @@ def agent_evolve_distill():
     return distill_playbook_with_llm()
 
 
-@router.post('/run')
+@router.post("/run")
 async def agent_run(req: AgentRequest):
     from model_lock import enforce_locked_model
 
     req.model = enforce_locked_model(req.model)
 
     async def generate():
+        import inspect
+
+        queue: asyncio.Queue[dict] = asyncio.Queue()
+        sig = inspect.signature(run_agent)
+        supports_streaming_steps = len(sig.parameters) >= 4
+
+        async def on_step(step: dict):
+            await queue.put(step)
+
+        async def worker():
+            try:
+                if len(sig.parameters) <= 2:
+                    steps = await run_agent(req.message, req.model)
+                    for step in steps:
+                        await queue.put(step)
+                elif supports_streaming_steps:
+                    steps = await run_agent(req.message, req.model, req.session_id, on_step)
+                else:
+                    steps = await run_agent(req.message, req.model, req.session_id)
+                    for step in steps:
+                        await queue.put(step)
+            except Exception as e:
+                await queue.put(
+                    {
+                        "type": "final_answer",
+                        "content": _agent_run_stream_error_message(e),
+                    }
+                )
+            finally:
+                await queue.put({"done": True})
+
+        task = asyncio.create_task(worker())
         try:
-            import inspect
+            while True:
+                item = await queue.get()
+                if item.get("done"):
+                    yield f"data: {json.dumps({'done': True}, ensure_ascii=False)}\n\n"
+                    break
+                yield f"data: {json.dumps(item, ensure_ascii=False)}\n\n"
+        finally:
+            await task
 
-            sig = inspect.signature(run_agent)
-            if len(sig.parameters) <= 2:
-                steps = await run_agent(req.message, req.model)
-            else:
-                steps = await run_agent(req.message, req.model, req.session_id)
-            for step in steps:
-                yield f"data: {json.dumps(step, ensure_ascii=False)}\n\n"
-        except Exception as e:
-            fallback = {
-                "type": "final_answer",
-                "content": _agent_run_stream_error_message(e),
-            }
-            yield f"data: {json.dumps(fallback, ensure_ascii=False)}\n\n"
-        yield f"data: {json.dumps({'done': True}, ensure_ascii=False)}\n\n"
-
-    return StreamingResponse(generate(), media_type='text/event-stream')
+    return StreamingResponse(generate(), media_type="text/event-stream")
 
 
 @router.get("/tools")

@@ -34,8 +34,7 @@ async def notebook_synthesize(body: SynthBody):
         {
             "role": "system",
             "content": (
-                "你是资料整理助手。把用户给的长材料整理成结构化中文笔记："
-                "小标题、要点列表、待核实问题；不要空话套话。"
+                "你是资料整理助手。把用户给的长材料整理成结构化中文笔记：小标题、要点列表、待核实问题；不要空话套话。"
             ),
         },
         {"role": "user", "content": f"标题偏好：{body.title}\n\n材料：\n{body.text}"},

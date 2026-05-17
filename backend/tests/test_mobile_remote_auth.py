@@ -26,7 +26,11 @@ def test_mobile_auth_blocks_public_api(client: TestClient, monkeypatch) -> None:
 
 def test_mobile_auth_login_cookie_allows_public_api(client: TestClient, monkeypatch) -> None:
     monkeypatch.setenv("MOBILE_ACCESS_TOKEN", "secret")
-    login = client.post("/mobile-auth/login", json={"token": "secret"}, headers={"host": "agent.example.com"})
+    login = client.post(
+        "/mobile-auth/login",
+        json={"token": "secret"},
+        headers={"host": "agent.example.com"},
+    )
     assert login.status_code == 200
     r = client.get("/meta/doctor", headers={"host": "agent.example.com"})
     assert r.status_code == 200

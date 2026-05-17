@@ -39,7 +39,7 @@ def distill_playbook_with_llm() -> dict[str, Any]:
         return {"ok": False, "reason": "not_enough_reviews"}
     lines = []
     for r in reviews:
-        lines.append(f"- [{r.get('status')}] {r.get('task_type')} | {r.get('lessons','')}")
+        lines.append(f"- [{r.get('status')}] {r.get('task_type')} | {r.get('lessons', '')}")
     blob = "\n".join(lines)[:6000]
     messages = [
         {
@@ -57,7 +57,12 @@ def distill_playbook_with_llm() -> dict[str, Any]:
         s = line.strip().lstrip("-").strip()
         if len(s) < 12:
             continue
-        row = store_playbook_entry(f"[自进化蒸馏] {s}", source_session_id="agent", source_role="llm_distill", importance=5)
+        row = store_playbook_entry(
+            f"[自进化蒸馏] {s}",
+            source_session_id="agent",
+            source_role="llm_distill",
+            importance=5,
+        )
         if row:
             stored += 1
     return {"ok": True, "stored": stored, "raw_chars": len(raw)}

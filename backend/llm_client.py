@@ -20,7 +20,7 @@ from agent_runtime import get_runtime
 def _ollama_connection_message(url: str, exc: Exception) -> str:
     return (
         f"无法连接 Ollama（{url}）：{exc}。"
-        "请先启动 Ollama：托盘图标、运行 ollama serve，或重新打开 ONYX-OVERRIDE（会自动尝试启动）。"
+        "请先启动 Ollama：托盘图标、运行 ollama serve，或重新打开 BT（黑光）（会自动尝试启动）。"
         "安装：https://ollama.com"
     )
 
@@ -72,13 +72,16 @@ def _openai_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _openai_chat_url_headers_body(
-    rt: Any, messages: list[dict[str, Any]], model: str, *, temperature: float, stream: bool
+    rt: Any,
+    messages: list[dict[str, Any]],
+    model: str,
+    *,
+    temperature: float,
+    stream: bool,
 ) -> tuple[str, dict[str, str], dict[str, Any]]:
     base = rt.openai_base_url.rstrip("/")
     if not base:
-        raise RuntimeError(
-            "LLM_BACKEND=openai_compatible 但未设置 OPENAI_BASE_URL（例如 http://127.0.0.1:8000/v1）"
-        )
+        raise RuntimeError("LLM_BACKEND=openai_compatible 但未设置 OPENAI_BASE_URL（例如 http://127.0.0.1:8000/v1）")
     url = base + "/chat/completions"
     headers: dict[str, str] = {"Content-Type": "application/json"}
     if rt.openai_api_key:
@@ -112,9 +115,7 @@ def chat_complete_sync(
     if http_timeout_sec is not None:
         timeout = min(timeout, max(5.0, float(http_timeout_sec)))
     if rt.llm_backend == "openai_compatible":
-        url, headers, body = _openai_chat_url_headers_body(
-            rt, messages, model, temperature=temperature, stream=False
-        )
+        url, headers, body = _openai_chat_url_headers_body(rt, messages, model, temperature=temperature, stream=False)
         with httpx.Client(timeout=timeout) as client:
             resp = client.post(url, headers=headers, json=body)
             resp.raise_for_status()
@@ -152,9 +153,7 @@ async def chat_complete_async(
     rt = get_runtime()
     timeout = rt.ollama_timeout_sec
     if rt.llm_backend == "openai_compatible":
-        url, headers, body = _openai_chat_url_headers_body(
-            rt, messages, model, temperature=temperature, stream=False
-        )
+        url, headers, body = _openai_chat_url_headers_body(rt, messages, model, temperature=temperature, stream=False)
         async with httpx.AsyncClient(timeout=timeout) as client:
             resp = await client.post(url, headers=headers, json=body)
             resp.raise_for_status()
@@ -193,9 +192,7 @@ async def chat_stream_async(
     timeout = rt.ollama_timeout_sec
 
     if rt.llm_backend == "openai_compatible":
-        url, headers, body = _openai_chat_url_headers_body(
-            rt, messages, model, temperature=temperature, stream=True
-        )
+        url, headers, body = _openai_chat_url_headers_body(rt, messages, model, temperature=temperature, stream=True)
         async with httpx.AsyncClient(timeout=_streaming_http_timeout(float(timeout))) as client:
             async with client.stream("POST", url, headers=headers, json=body) as resp:
                 resp.raise_for_status()

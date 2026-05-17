@@ -29,12 +29,36 @@ AgentEventStatus = Literal["pending", "running", "success", "failed", "skipped"]
 
 
 TIMELINE_EVENT_TYPES: list[dict[str, str]] = [
-    {"type": "user_goal", "label": "用户目标", "description": "用户提交给 Agent 的原始任务。"},
-    {"type": "thinking", "label": "思考 / 计划", "description": "Agent 的阶段性计划、判断或执行意图。"},
-    {"type": "tool_call", "label": "工具调用", "description": "Agent 选择并准备执行的工具。"},
-    {"type": "tool_result", "label": "工具结果", "description": "工具执行返回的真实结果、摘要或错误。"},
-    {"type": "final_answer", "label": "最终回答", "description": "基于真实执行结果生成的最终回复。"},
-    {"type": "error", "label": "错误", "description": "运行时异常或工具失败的标准化描述。"},
+    {
+        "type": "user_goal",
+        "label": "用户目标",
+        "description": "用户提交给 Agent 的原始任务。",
+    },
+    {
+        "type": "thinking",
+        "label": "思考 / 计划",
+        "description": "Agent 的阶段性计划、判断或执行意图。",
+    },
+    {
+        "type": "tool_call",
+        "label": "工具调用",
+        "description": "Agent 选择并准备执行的工具。",
+    },
+    {
+        "type": "tool_result",
+        "label": "工具结果",
+        "description": "工具执行返回的真实结果、摘要或错误。",
+    },
+    {
+        "type": "final_answer",
+        "label": "最终回答",
+        "description": "基于真实执行结果生成的最终回复。",
+    },
+    {
+        "type": "error",
+        "label": "错误",
+        "description": "运行时异常或工具失败的标准化描述。",
+    },
     {"type": "done", "label": "完成", "description": "一次 Agent run 的结束标记。"},
 ]
 

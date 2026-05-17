@@ -24,7 +24,11 @@ from local_agent_api import init_legacy_db, router as local_agent_router
 from memory_store import background_memory_maintenance
 from meta_routes import router as meta_router
 from notebook_routes import router as notebook_router
-from observe import background_collector, background_pattern_maintenance, router as observe_router
+from observe import (
+    background_collector,
+    background_pattern_maintenance,
+    router as observe_router,
+)
 from orchestrator import init_orchestrator_db, router as orchestrator_router
 from request_log import RequestLogMiddleware, request_log_enabled
 from telegraf_routes import router as telegraf_router
@@ -92,10 +96,10 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="BKLT Blacklight Backend",
+    title="BT Heiguang Backend",
     version="1.2.0",
     description=(
-        "BKLT 黑光合并服务：Ollama 或 OpenAI 兼容网关 /chat、工具 Agent /agent/run、编排 /agent/orchestrate；"
+        "BT（黑光）合并服务：Ollama 或 OpenAI 兼容网关 /chat、工具 Agent /agent/run、编排 /agent/orchestrate；"
         "内容处理 /content/process；行为采样 /observe；Telegraf 可抓取指标 /telegraf/prometheus；"
         "遗留 Local API（POST /agent 任务分解、图像/视频/语音）。"
         "技能包 backend/agent_skills。运行时环境变量见 backend/.env.example。"
@@ -157,7 +161,11 @@ async def mobile_remote_access_guard(request: Request, call_next):
 @app.get("/mobile-auth/status")
 def mobile_auth_status(request: Request):
     required = _mobile_remote_auth_required(request, include_auth_routes=True)
-    return {"ok": True, "required": required, "authenticated": (not required) or _mobile_request_authenticated(request)}
+    return {
+        "ok": True,
+        "required": required,
+        "authenticated": (not required) or _mobile_request_authenticated(request),
+    }
 
 
 @app.post("/mobile-auth/login")
@@ -226,12 +234,20 @@ _frontend_build = Path(__file__).resolve().parent.parent / "frontend" / "build"
 if _static.is_dir():
     from fastapi.staticfiles import StaticFiles
 
-    app.mount("/app", StaticFiles(directory=str(_static), html=True), name="local_agent_static")
+    app.mount(
+        "/app",
+        StaticFiles(directory=str(_static), html=True),
+        name="local_agent_static",
+    )
 
 if _frontend_build.is_dir():
     from fastapi.staticfiles import StaticFiles
 
-    app.mount("/mobile", StaticFiles(directory=str(_frontend_build), html=True), name="mobile_frontend")
+    app.mount(
+        "/mobile",
+        StaticFiles(directory=str(_frontend_build), html=True),
+        name="mobile_frontend",
+    )
 
 _outputs = Path(__file__).resolve().parent.parent / "outputs"
 _outputs.mkdir(parents=True, exist_ok=True)

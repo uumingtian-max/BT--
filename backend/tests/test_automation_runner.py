@@ -5,14 +5,23 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from automation_runner import automation_capabilities, normalize_target, normalize_task_kind  # noqa: E402
+from automation_runner import (
+    automation_capabilities,
+    normalize_target,
+    normalize_task_kind,
+)  # noqa: E402
 
 
 def test_automation_capabilities_are_allow_listed():
     caps = automation_capabilities()
     assert caps["default_task_kind"] == "project_check"
     assert caps["default_target"] == "all"
-    assert set(caps["task_kinds"]) == {"backend_compile", "frontend_build", "project_check", "repo_health"}
+    assert set(caps["task_kinds"]) == {
+        "backend_compile",
+        "frontend_build",
+        "project_check",
+        "repo_health",
+    }
     assert set(caps["targets"]) == {"all", "backend", "frontend"}
 
 

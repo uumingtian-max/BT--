@@ -17,9 +17,20 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
         t0 = time.perf_counter()
         response = await call_next(request)
         ms = (time.perf_counter() - t0) * 1000.0
-        _log.info("%s %s -> %s (%.1fms)", request.method, request.url.path, response.status_code, ms)
+        _log.info(
+            "%s %s -> %s (%.1fms)",
+            request.method,
+            request.url.path,
+            response.status_code,
+            ms,
+        )
         return response
 
 
 def request_log_enabled() -> bool:
-    return os.environ.get("REQUEST_LOG", "").strip().lower() in ("1", "true", "yes", "on")
+    return os.environ.get("REQUEST_LOG", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
