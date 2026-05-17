@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-ONYX-OVERRIDE 统一启动器
+BKLT 黑光 / BLACKLIGHT 统一启动器
+旧名 ONYX-OVERRIDE 作为历史兼容名保留。
+
 用法：python start.py [mode]
 
 模式（mode）：
@@ -158,7 +160,7 @@ def start_frontend_dev():
 
 
 def start_electron():
-    info("启动 Electron …")
+    info("启动 Electron 桌面壳 …")
     cmd = [NPM, "start"] if IS_WINDOWS else ["npm", "start"]
     return run(cmd, cwd=ROOT, shell=True)
 
@@ -187,7 +189,7 @@ def mode_app():
     check_env()
     start_backend()
     start_electron()
-    info("应用已启动，关闭窗口或按 Ctrl+C 退出")
+    info("BKLT 黑光已启动，关闭窗口或按 Ctrl+C 退出")
     try:
         procs[-1].wait()
     except KeyboardInterrupt:
@@ -200,7 +202,7 @@ def mode_dev():
     check_env()
     start_backend(dev=True)
     start_frontend_dev()
-    info("开发模式就绪，按 Ctrl+C 退出")
+    info("BKLT 黑光开发模式就绪，按 Ctrl+C 退出")
     try:
         while all(p.poll() is None for p in procs):
             time.sleep(1)
@@ -288,7 +290,7 @@ MODES = {
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="ONYX-OVERRIDE 统一启动器",
+        description="BKLT 黑光 / BLACKLIGHT 统一启动器",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
@@ -301,12 +303,12 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(0)
 
-    print(c("\n  ██████╗ ███╗   ██╗██╗   ██╗██╗  ██╗", "cyan"))
-    print(c("  ██╔═══██╗████╗  ██║╚██╗ ██╔╝╚██╗██╔╝", "cyan"))
-    print(c("  ██║   ██║██╔██╗ ██║ ╚████╔╝  ╚███╔╝ ", "cyan"))
-    print(c("  ██║   ██║██║╚██╗██║  ╚██╔╝   ██╔██╗ ", "cyan"))
-    print(c("  ╚██████╔╝██║ ╚████║   ██║   ██╔╝ ██╗", "cyan"))
-    print(c("   ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝", "cyan"))
-    print(c("  OVERRIDE  —  Local AI Desktop Agent\n", "yellow"))
+    print(c("\n  ██████╗ ██╗  ██╗██╗  ████████╗", "cyan"))
+    print(c("  ██╔══██╗██║ ██╔╝██║  ╚══██╔══╝", "cyan"))
+    print(c("  ██████╔╝█████╔╝ ██║     ██║   ", "cyan"))
+    print(c("  ██╔══██╗██╔═██╗ ██║     ██║   ", "cyan"))
+    print(c("  ██████╔╝██║  ██╗███████╗██║   ", "cyan"))
+    print(c("  ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝   ", "cyan"))
+    print(c("  黑光 / BLACKLIGHT  —  Local AI Agent Workbench\n", "yellow"))
 
     MODES[args.mode]()
