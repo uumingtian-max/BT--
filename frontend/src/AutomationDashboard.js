@@ -1,7 +1,11 @@
 import React from 'react';
 import './AutomationDashboard.css';
-
-const API = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+import {
+  fetchAutomationCapabilities,
+  fetchAutomationEvents,
+  fetchAutomationRuns,
+  runAutomationOnce,
+} from './automationApi';
 
 function fmtTime(value) {
   if (!value) return '暂无';
@@ -83,23 +87,14 @@ export default function AutomationDashboard() {
   const refresh = React.useCallback(async () => {
     setError('');
     try {
-      const [capRes, runsRes, eventsRes] = await Promise.all([
-        fetch(`${API}/automation/capabilities`),
-        fetch(`${API}/automation/runs?limit=20`),
-        fetch(`${API}/automation/events?limit=50`),
+      const [nextCapabilities, nextRuns, nextEvents] = await Promise.all([
+        fetchAutomationCapabilities(),
+        fetchAutomationRuns(20),
+        fetchAutomationEvents(50),
       ]);
-      if (capRes.ok) {
-        const data = await capRes.json();
-        setCapabilities(data.capabilities || null);
-      }
-      if (runsRes.ok) {
-        const data = await runsRes.json();
-        setRuns(data.runs || []);
-      }
-      if (eventsRes.ok) {
-        const data = await eventsRes.json();
-        setEvents(data.events || []);
-      }
+      setCapabilities(nextCapabilities);
+      setRuns(nextRuns);
+      setEvents(nextEvents);
     } catch (err) {
       setError(`自动化面板加载失败：${err.message || err}`);
     }
@@ -115,13 +110,7 @@ export default function AutomationDashboard() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API}/automation/run`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task_kind: taskKind, target }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || data.error || `HTTP ${res.status}`);
+      await runAutomationOnce(taskKind, target);
       await refresh();
     } catch (err) {
       setError(`执行失败：${err.message || err}`);
