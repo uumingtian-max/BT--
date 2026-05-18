@@ -8,6 +8,12 @@ if defined AI_AGENT_PYTHON (
   set "PY=%AI_AGENT_PYTHON%"
   goto :run
 )
+if exist "%~dp0resolve-python.cjs" (
+  for /f "usebackq delims=" %%P in (`node "%~dp0resolve-python.cjs"`) do (
+    set "PY=%%P"
+    goto :run
+  )
+)
 if exist "%USERPROFILE%\miniconda3\envs\quant\python.exe" (
   set "PY=%USERPROFILE%\miniconda3\envs\quant\python.exe"
   goto :run

@@ -51,6 +51,11 @@ function Wait-Backend {
 Set-Location $Root
 
 if (-not (Test-Path $Python)) {
+  $ResolvedPython = (& node (Join-Path $Root "scripts\resolve-python.cjs")).Trim()
+  if ($ResolvedPython) { $Python = $ResolvedPython }
+}
+
+if (-not (Test-Path $Python)) {
   Write-Host "[ERROR] Python not found: $Python"
   exit 1
 }
@@ -88,5 +93,9 @@ if (-not (Wait-Backend)) {
 
 Write-Host "[OK] Backend is healthy."
 Write-Host "[INFO] Starting Electron..."
-Start-Process -FilePath $ElectronCmd -ArgumentList "." -WorkingDirectory $Root
+$ElectronCmdLine = "cd /d `"$Root`" & `"$ElectronCmd`" ."
+Start-Process -FilePath "cmd.exe" `
+  -ArgumentList @("/c", $ElectronCmdLine) `
+  -WorkingDirectory $Root `
+  -WindowStyle Normal
 Write-Host "[OK] AI Agent launched."

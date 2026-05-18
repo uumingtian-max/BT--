@@ -13,6 +13,27 @@ if (envPy) {
   process.exit(0);
 }
 
+const repoRoot = path.resolve(__dirname, "..");
+const backendEnv = path.join(repoRoot, "backend", ".env");
+try {
+  if (fs.existsSync(backendEnv)) {
+    const raw = fs.readFileSync(backendEnv, "utf8");
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const match = trimmed.match(/^AI_AGENT_PYTHON\s*=\s*(.+)$/);
+      if (!match) continue;
+      const configured = match[1].trim().replace(/^["']|["']$/g, "");
+      if (configured && fs.existsSync(configured)) {
+        console.log(configured);
+        process.exit(0);
+      }
+    }
+  }
+} catch (_) {
+  /* continue */
+}
+
 const home = process.env.USERPROFILE || process.env.HOME || "";
 const candidates = [
   path.join(home, "miniconda3", "envs", "quant", "python.exe"),
