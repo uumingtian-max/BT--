@@ -22,6 +22,7 @@ from observe import get_evolution_profile_text
 from agent_runtime import get_runtime, orchestration_defaults
 from llm_client import chat_complete_sync
 
+
 def _device_profile_tool(_: dict) -> str:
     try:
         from observe import format_profile_for_llm
@@ -71,6 +72,26 @@ def _evolution_profile_tool(_: dict) -> str:
         return get_evolution_profile_text()
     except Exception as e:
         return f"get_evolution_profile error: {e}"
+
+
+def _capability_route_tool(params: dict) -> str:
+    try:
+        from intent_router import route_intent
+
+        message = (
+            params.get("message")
+            or params.get("text")
+            or params.get("query")
+            or params.get("user_text")
+            or ""
+        )
+        message = str(message).strip()
+        if not message:
+            return "route_capability_intent error: missing message"
+        max_matches = int(params.get("max_matches", 4) or 4)
+        return json.dumps(route_intent(message, max_matches=max_matches), ensure_ascii=False)
+    except Exception as e:
+        return f"route_capability_intent error: {e}"
 
 
 def _task_orchestration_tool(params: dict) -> str:
@@ -383,6 +404,7 @@ def _lazy_browser_playwright(params: dict) -> str:
 
 
 TOOL_MAP = {
+    "route_capability_intent": lambda p: _capability_route_tool(p),
     "web_search": lambda p: _web_search_tool(p),
     "local_search": lambda p: local_search(
         p.get("query") or p.get("q") or p.get("search") or "",
