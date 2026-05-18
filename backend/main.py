@@ -18,6 +18,7 @@ from fastapi.responses import JSONResponse
 from a2a_bridge import router as a2a_router
 from agent import router as agent_router
 from automation_routes import router as automation_router
+from capability_routes import router as capability_router
 from chat import router as chat_router
 from content_routes import router as content_router
 from local_agent_api import init_legacy_db, router as local_agent_router
@@ -229,6 +230,7 @@ if request_log_enabled():
 
 app.include_router(meta_router, prefix="/meta", tags=["meta"])
 app.include_router(tool_registry_router, prefix="/meta", tags=["tools"])
+app.include_router(capability_router, prefix="/meta", tags=["capabilities"])
 app.include_router(telegraf_router)
 app.include_router(notebook_router, prefix="/notebook", tags=["notebook"])
 app.include_router(content_router, prefix="/content", tags=["content"])
