@@ -24,6 +24,7 @@ class ToolMetadata(TypedDict):
 
 
 TOOL_GROUPS: dict[str, list[str]] = {
+    "capability_control": ["route_capability_intent"],
     "search_crawl": ["web_search", "local_search", "local_scrape_url"],
     "files_code": ["read_file", "write_file", "list_files", "execute_python"],
     "profile_orchestrate": [
@@ -64,6 +65,7 @@ TOOL_GROUPS: dict[str, list[str]] = {
 }
 
 TOOL_DESCRIPTIONS: dict[str, str] = {
+    "route_capability_intent": "把自然语言路由到黑光高层能力图谱，只生成计划和风险判断，不执行真实动作。",
     "web_search": "联网搜索最新信息。",
     "local_search": "使用本地无 Key 搜索，并可抓取搜索结果正文。",
     "local_scrape_url": "抓取指定网页并提取可读 Markdown 文本。",
@@ -103,6 +105,7 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
 }
 
 TOOL_RISK_LEVELS: dict[str, RiskLevel] = {
+    "route_capability_intent": "safe",
     "web_search": "safe",
     "local_search": "safe",
     "local_scrape_url": "safe",
@@ -148,6 +151,14 @@ _DEFAULT_SCHEMA: dict[str, Any] = {
 }
 
 TOOL_INPUT_SCHEMAS: dict[str, dict[str, Any]] = {
+    "route_capability_intent": {
+        "type": "object",
+        "properties": {
+            "message": {"type": "string"},
+            "max_matches": {"type": "integer", "minimum": 1, "maximum": 8},
+        },
+        "required": ["message"],
+    },
     "web_search": {
         "type": "object",
         "properties": {"query": {"type": "string"}},
