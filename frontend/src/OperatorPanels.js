@@ -1,6 +1,11 @@
 import React from 'react';
 import { filterModelsForUi } from './modelCatalog';
 
+const API =
+  (typeof window !== 'undefined' && window.electronAPI?.backendUrl) ||
+  process.env.REACT_APP_API_URL ||
+  'http://127.0.0.1:8000';
+
 function formatTime(value) {
   if (!value) return '暂无';
   const n = typeof value === 'number' ? value * 1000 : Date.parse(value);
@@ -29,6 +34,147 @@ function LogCard({ item }) {
         <span>{formatTime(item?.updated_at)}</span>
       </div>
       <pre className="dash-log-pre">{lines.length ? lines.join('\n') : '暂无日志输出'}</pre>
+    </div>
+  );
+}
+
+function riskLabel(risk) {
+  if (risk === 'dangerous') return '高风险';
+  if (risk === 'confirm') return '需确认';
+  return '安全';
+}
+
+function CapabilityWorkbench() {
+  const [capabilities, setCapabilities] = React.useState([]);
+  const [health, setHealth] = React.useState(null);
+  const [message, setMessage] = React.useState('屏幕太刺眼了，帮我开个护眼模式');
+  const [route, setRoute] = React.useState(null);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  const loadCapabilities = React.useCallback(async () => {
+    try {
+      setError('');
+      const [itemsRes, healthRes] = await Promise.all([
+        fetch(API + '/meta/capabilities'),
+        fetch(API + '/meta/capabilities/health'),
+      ]);
+      if (itemsRes.ok) {
+        const payload = await itemsRes.json();
+        setCapabilities(payload.items || []);
+      }
+      if (healthRes.ok) {
+        setHealth(await healthRes.json());
+      }
+    } catch (e) {
+      setError('能力图谱加载失败，请确认后端已启动。');
+    }
+  }, []);
+
+  const routeIntent = async (sample) => {
+    const text = (sample || message || '').trim();
+    if (!text) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(API + '/meta/intent/route', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, max_matches: 4 }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const payload = await res.json();
+      setRoute(payload.route || null);
+      setMessage(text);
+    } catch (e) {
+      setError('意图路由失败：' + (e.message || e));
+      setRoute(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    loadCapabilities();
+  }, [loadCapabilities]);
+
+  const grouped = capabilities.reduce((acc, item) => {
+    const key = item.domain || 'other';
+    acc[key] = acc[key] || [];
+    acc[key].push(item);
+    return acc;
+  }, {});
+  const matchedIds = new Set((route?.matches || []).map((m) => m.capability?.id));
+
+  return (
+    <div className="profile-card">
+      <div className="dash-card-head">
+        <h3>能力驾驶舱</h3>
+        <span>{health ? (health.ok ? `健康 · ${health.count} 项` : `${health.problems?.length || 0} 个问题`) : '加载中'}</span>
+      </div>
+      <p className="profile-muted">
+        这里显示黑光 720° 的第一层：自然语言 → 意图 → 高层能力 → 风险 → 候选工具。当前只做规划展示，不直接执行危险动作。
+      </p>
+      <div className="tool-form">
+        <textarea
+          className="tool-textarea"
+          rows={2}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="输入一句自然语言，例如：护眼模式 / 整理桌面 / 自己优化黑光"
+        />
+        <div className="dashboard-hero-actions">
+          <button type="button" className="profile-btn dashboard-primary-btn" disabled={loading} onClick={() => routeIntent()}>
+            {loading ? '识别中…' : '识别意图'}
+          </button>
+          <button type="button" className="profile-btn" onClick={() => routeIntent('整理一下我的桌面文件')}>试：整理桌面</button>
+          <button type="button" className="profile-btn" onClick={() => routeIntent('根据我的使用习惯自动改技能，让黑光自己进化')}>试：自进化</button>
+          <button type="button" className="profile-btn" onClick={loadCapabilities}>刷新能力</button>
+        </div>
+      </div>
+      {error && <p className="health-warn">{error}</p>}
+      {route && (
+        <div className="profile-card profile-inner-card">
+          <h3>识别结果</h3>
+          <p>
+            意图：<strong>{route.primary_intent}</strong> · 置信度：<strong>{Math.round((route.confidence || 0) * 100)}%</strong> · 风险：<strong>{riskLabel(route.risk_level)}</strong>
+            {route.needs_confirmation ? ' · 执行前需要确认' : ' · 可安全规划'}
+          </p>
+          <ol className="profile-list">
+            {(route.plan || []).map((step) => (
+              <li key={`${step.step}-${step.capability_id}`}>
+                <span className="profile-count">{step.step}</span>
+                <strong>{step.title}</strong>
+                <small>{step.capability_id} · {riskLabel(step.risk_level)}</small>
+                <div className="memory-summary-text">
+                  候选工具：{(step.tool_candidates || []).slice(0, 6).join('、') || '暂无'}
+                </div>
+              </li>
+            ))}
+          </ol>
+          {(route.notes || []).length > 0 && (
+            <ul className="profile-bullets">
+              {route.notes.map((note, idx) => <li key={idx}>{note}</li>)}
+            </ul>
+          )}
+        </div>
+      )}
+      <div className="profile-grid">
+        {Object.entries(grouped).map(([domain, items]) => (
+          <div className="profile-card profile-inner-card" key={domain}>
+            <h3>{domain}</h3>
+            <ul className="profile-bullets">
+              {items.map((item) => (
+                <li key={item.id} className={matchedIds.has(item.id) ? 'health-ok' : ''}>
+                  <strong>{item.title}</strong>
+                  <small>{item.id} · {riskLabel(item.risk_level)}</small>
+                  <div className="memory-summary-text">{item.description}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -220,6 +366,7 @@ export function SystemPanel({ systemHealth, agentToolsInfo, alignment, onRefresh
         <h2>系统</h2>
         <button type="button" className="profile-btn" onClick={onRefresh}>刷新</button>
       </div>
+      <CapabilityWorkbench />
       {systemHealth?.doctor ? (
         <div className="profile-card profile-health-card">
           <h3>自检 /meta/doctor</h3>
