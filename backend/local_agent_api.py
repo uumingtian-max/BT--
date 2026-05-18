@@ -192,7 +192,7 @@ def _decompose_tasks(query: str) -> list[_LegacyTask]:
 
 def _decompose_tasks_llm(query: str) -> list[_LegacyTask]:
     rt = get_runtime()
-    model = os.environ.get("OLLAMA_TASK_MODEL", "").strip() or rt.default_chat_model
+    model = os.environ.get("OLLAMA_TASK_MODEL", "").strip() or getattr(rt, "task_model", rt.default_chat_model)
     system = (
         "你是任务分解助手。把用户描述拆成可执行的子任务。每行一条，以短横线 - 开头；不要编号；不要其它前缀；不要解释。"
     )

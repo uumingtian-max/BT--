@@ -1,4 +1,4 @@
-"""单模型锁：仅允许 LOCKED_MODEL_ID / AGENT_DEFAULT_MODEL 指定的 id。"""
+"""Model lock plus smart-router entry point."""
 
 from __future__ import annotations
 
@@ -6,16 +6,14 @@ import os
 
 
 def locked_model_id() -> str:
-    explicit = os.environ.get("LOCKED_MODEL_ID", "").strip()
-    if explicit:
-        return explicit
     if os.environ.get("LOCK_SINGLE_MODEL", "").strip().lower() in (
         "1",
         "true",
         "yes",
         "on",
     ):
-        return os.environ.get("AGENT_DEFAULT_MODEL", "qwen3:14b").strip()
+        explicit = os.environ.get("LOCKED_MODEL_ID", "").strip()
+        return explicit or _default_model_id()
     return ""
 
 
@@ -23,8 +21,37 @@ def is_model_locked() -> bool:
     return bool(locked_model_id())
 
 
-def enforce_locked_model(model: str | None) -> str:
+def _default_model_id() -> str:
+    try:
+        from model_router import get_model
+
+        return get_model("AGENT_DEFAULT_MODEL")
+    except Exception:
+        return os.environ.get("AGENT_DEFAULT_MODEL", "qwen3.5:4b").strip() or "qwen3.5:4b"
+
+
+def _looks_like_default_model(model: str | None) -> bool:
+    value = (model or "").strip()
+    return not value or value == _default_model_id()
+
+
+def enforce_locked_model(
+    model: str | None,
+    *,
+    user_input: str = "",
+    mode: str = "chat",
+) -> str:
     locked = locked_model_id()
     if locked:
         return locked
-    return (model or "").strip() or os.environ.get("AGENT_DEFAULT_MODEL", "qwen3:14b").strip()
+
+    requested = (model or "").strip()
+    if user_input and _looks_like_default_model(requested):
+        try:
+            from model_router import select_model
+
+            selected, _ = select_model(user_input, mode=mode)
+            return selected
+        except Exception:
+            return _default_model_id()
+    return requested or _default_model_id()

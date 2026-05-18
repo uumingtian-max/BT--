@@ -1,17 +1,20 @@
 # 多角色 Agent 工具链（gstack 思路）
 
-Triggers: gstack,garrytan,23 tools,CEO,release manager,doc engineer,角色扮演,发布经理,技术文档,设计评审
+Triggers: gstack,garrytan,23 tools,CEO,release manager,doc engineer,角色扮演,发布经理,技术文档,设计评审,gstack_agent_roles,gstack agent roles,gstack-agent-roles,多角色,Agent,工具链,思路,文档工程师,角色分工
 
-对标 **Garry Tan / gstack**：用固定**角色镜头**组织复杂工程任务，而非一个万能助手。
+---
 
-| 角色 | 职责 | 本仓库落地 |
-|------|------|-----------|
-| CEO / 产品 | 目标、范围、不做清单 | 先输出 5 条内决策摘要，不问技术细节 |
-| 设计师 | 交互与信息架构 | 文字线框 + 状态表；大 UI 走 `design_stitch_handoff` |
-| 工程经理 | 拆解与依赖 | `spec_minimal_steps` + `run_task_orchestration` |
-| 实现者 | 代码/脚本 | `read_file`/`write_file`/`execute_python` |
-| 审查者 | 风险与测试 | 只读工具 + `run_project_check` |
-| 发布/运维 | 可部署性 | `run_project_check` target=all；提及 `/meta/doctor` |
-| 文档工程师 | 用户可读说明 | 改 README/注释；不擅自改业务逻辑 |
+**何时使用**：用户意图与「多角色 Agent 工具链（gstack 思路）」相关，或 Triggers 中任一词命中时**应**挂载；勿等待用户说出技能 id。
 
-**切换规则**：用户未指定角色时，复杂任务默认 **经理 → 实现 → 审查** 三拍；每拍结束停顿征求「继续/修改」。
+## 执行步骤
+1. 用一句话写清成功标准。
+2. 查本仓库真实路径/API 后再行动。
+3. 交付可验证结果；不确定则标置信度。
+
+## 避免
+- 无工具/无读取就声称「已完成」或编造文件/命令输出。
+- 把 `.env`、token、密钥写入聊天或长期记忆。
+
+## 自测用语（习惯体检 / 人工抽检）
+- （自然语）帮我处理「多角色 Agent 工具链（gstack 思路）」相关的事
+- [skill:gstack_agent_roles] 执行一步可验证操作

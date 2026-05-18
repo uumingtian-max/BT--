@@ -74,62 +74,9 @@ def _agent_run_stream_error_message(exc: Exception) -> str:
 
 router = APIRouter()
 
-TOOLS_DESC = """
-可用工具：
-- web_search：联网搜索最新信息
-- local_search：无 Key 本地搜索，必要时抓取搜索结果正文（参数 query、limit、scrape）
-- local_scrape_url：无 Key 抓取指定网页并提取可读 Markdown 文本（参数 url）
-- read_file：读取本地文件
-- write_file：写入本地文件
-- list_files：列出目录内容
-- execute_python：执行 Python 代码
-- get_device_profile：读取本机设备画像与使用习惯摘要
-- get_recent_desktop_files：读取最近有变化的桌面文件
-- get_recent_work_summary：综合设备画像与最近桌面文件，总结你最近在做什么
-- get_evolution_profile：读取自进化画像摘要
-- run_task_orchestration：多模型协作规划/实现/审查并汇总结论（编排、复杂方案对比、多角色任务）
-- notebook_ingest：把长文本笔记写入本地知识库（参数 title、text）
-- notebook_synthesize：用模型整理长材料后写入知识库（参数 title、text）
-- generate_image：本地文生图（参数 prompt、output_path，需 ENABLE_LOCAL_SD）
-- generate_video：生成视频。幻灯片：image_paths + output_path + fps；文生视频：prompt + output_path（需 .env 设 VIDEO_GEN_BACKEND=auto|cogvideox|wan，依赖 requirements-media.txt）
-- text_to_speech：本地文字转语音 wav（参数 text、output_path）
-- run_project_check：运行本项目内置检查（参数 target，可选 backend/frontend/all）
-- open_url：在默认浏览器打开网页（参数 url，仅 http/https）
-- open_path：打开本地文件、文件夹或程序（参数 path，受安全路径解析限制）
-- get_foreground_window：读取当前 Windows 前台窗口标题
-- list_windows：列出当前可见窗口
-- focus_window：按窗口标题关键字聚焦第三方 App（参数 title）
-- send_hotkey：向当前前台窗口发送快捷键（参数 keys，例如 ctrl+l）
-- type_text：向当前前台窗口输入文字（参数 text）
-- click_screen：点击屏幕坐标（参数 x、y）
-- browser_navigate：Playwright 打开网页并提取正文（参数 url、wait_ms、screenshot）
-- browser_screenshot：网页全页截图（参数 url、output_path）
-- browser_click_and_extract：打开网页点击元素后提取内容（参数 url、selector、extract_selector）
-- browser_fill_form：填写并提交表单（参数 url、fields 对象、submit_selector）
-- run_parallel_subagents：并行执行多条子提示并汇总（参数 tasks 字符串数组或多行文本、model 可选）
+from agent_prompts import SYSTEM_PROMPT_BASE, TOOLS_DESC
 
-工具调用格式必须严格输出：
-<tool_call>{"name":"tool_name","parameters":{"key":"value"}}</tool_call>
-
-不要教用户怎么手动调用工具。
-如果任务需要工具，就由你自己调用。
-用户用自然语言描述意图即可，不要要求用户填 API 字段。
-"""
-
-SYSTEM_PROMPT = (
-    "你是一个本地 AI Agent。"
-    "你的职责是直接完成任务，不是教用户如何调用工具。"
-    "当需要读取文件、列目录、搜索、执行代码、查看设备画像、编排多模型任务、写入知识库、"
-    "本地画图/视频/语音时，必须自己调用对应工具。\n"
-    "若用户提到「编排」「多模型」「复杂方案对比」「协作审查」等，应优先使用 run_task_orchestration，"
-    "并把用户整句需求作为 parameters.message 传入。\n\n"
-    "能力边界要准确表达：当前已能联网搜索、本地网页抓取、文件管理、代码执行、设备画像、知识库、多模型编排、"
-    "图像/视频/语音生成、项目检查和 Windows 第三方 App 基础控制。"
-    "生成图片/视频后，最终回答里必须写出 outputs 下的文件路径，便于界面预览。\n"
-    "文生视频优先 generate_video(prompt=...)；有多张图时用 image_paths 合成幻灯片。\n"
-    "第三方 App 控制可列窗口、聚焦窗口、发送快捷键、输入文字、坐标点击；"
-    "需要用户明确目标窗口/快捷键/坐标，不能声称已具备越权控制或绕过安全限制。\n\n" + TOOLS_DESC
-)
+SYSTEM_PROMPT = SYSTEM_PROMPT_BASE + TOOLS_DESC
 
 
 def _build_system_prompt() -> str:
@@ -160,447 +107,9 @@ def _build_system_prompt() -> str:
     return "\n\n".join(parts)
 
 
-def _device_profile_tool(_: dict) -> str:
-    try:
-        from observe import format_profile_for_llm
 
-        return format_profile_for_llm()
-    except Exception as e:
-        return f"get_device_profile error: {e}"
+from agent_tool_map import TOOL_MAP, _normalize_parsed_tool, _web_search_tool
 
-
-def _recent_desktop_files_tool(params: dict) -> str:
-    try:
-        from observe import desktop_recent_files
-
-        limit = int(params.get("limit", 12))
-        rows = desktop_recent_files(limit)
-        if not rows:
-            return "最近没有采集到桌面文件变化。"
-        lines = ["最近桌面文件："]
-        for row in rows[:limit]:
-            lines.append(f"- {row.get('name', '?')} | {row.get('path', '')}")
-        return "\n".join(lines)
-    except Exception as e:
-        return f"get_recent_desktop_files error: {e}"
-
-
-def _recent_work_summary_tool(_: dict) -> str:
-    try:
-        from observe import format_profile_for_llm, desktop_recent_files
-
-        profile_text = format_profile_for_llm()
-        recent_files = desktop_recent_files(12)
-        lines = ["## 最近活动总结素材", profile_text.strip(), "", "## 最近桌面文件"]
-        if recent_files:
-            for row in recent_files:
-                lines.append(f"- {row.get('name', '?')} | {row.get('path', '')}")
-        else:
-            lines.append("- 最近没有采集到桌面文件变化。")
-        lines.append("")
-        lines.append("请基于这些素材，用中文直接总结用户最近主要在做什么，给出 3-6 条简洁判断，不要解释工具。")
-        return "\n".join(lines)
-    except Exception as e:
-        return f"get_recent_work_summary error: {e}"
-
-
-def _evolution_profile_tool(_: dict) -> str:
-    try:
-        return get_evolution_profile_text()
-    except Exception as e:
-        return f"get_evolution_profile error: {e}"
-
-
-def _task_orchestration_tool(params: dict) -> str:
-    try:
-        message = params.get("message", "").strip()
-        if not message:
-            return "run_task_orchestration error: missing message"
-        base = orchestration_defaults()
-        result = run_orchestration(
-            message,
-            {
-                "planner_model": params.get("planner_model") or base["planner_model"],
-                "coder_model": params.get("coder_model") or base["coder_model"],
-                "reviewer_model": params.get("reviewer_model") or base["reviewer_model"],
-                "vision_model": params.get("vision_model") or base["vision_model"],
-                "speech_model": params.get("speech_model") or base["speech_model"],
-                "evolution_context": _evolution_profile_tool({}),
-            },
-        )
-        return result["final_output"]
-    except Exception as e:
-        return f"run_task_orchestration error: {e}"
-
-
-def _notebook_ingest_tool(params: dict) -> str:
-    title = (params.get("title") or "笔记").strip() or "笔记"
-    body = (params.get("text") or params.get("body") or "").strip()
-    if not body:
-        return "notebook_ingest error: missing text"
-    try:
-        return json.dumps(ingest_notebook_corpus(title, body), ensure_ascii=False)
-    except Exception as e:
-        return f"notebook_ingest error: {e}"
-
-
-def _notebook_synthesize_tool(params: dict) -> str:
-    rt = get_runtime()
-    title = (params.get("title") or "合成").strip() or "合成"
-    body = (params.get("text") or "").strip()
-    if not body:
-        return "notebook_synthesize error: missing text"
-    try:
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "你是资料整理助手。把用户给的长材料整理成结构化中文笔记："
-                    "小标题、要点列表、待核实问题；不要空话套话。"
-                ),
-            },
-            {"role": "user", "content": f"标题偏好：{title}\n\n材料：\n{body}"},
-        ]
-        out = chat_complete_sync(messages, rt.default_chat_model, temperature=0.2)
-        ing = ingest_notebook_corpus(f"{title} · 合成", out)
-        return json.dumps({"synthesis": out, "ingest": ing}, ensure_ascii=False)
-    except Exception as e:
-        return f"notebook_synthesize error: {e}"
-
-
-def _generate_image_tool(params: dict) -> str:
-    try:
-        from local_agent_api import GenImageBody, generate_image
-
-        prompt = (params.get("prompt") or "").strip() or "abstract"
-        output_path = (params.get("output_path") or "outputs/agent_sd.png").strip()
-        return json.dumps(
-            generate_image(GenImageBody(prompt=prompt, output_path=output_path)),
-            ensure_ascii=False,
-        )
-    except Exception as e:
-        return f"generate_image error: {e}"
-
-
-def _generate_video_tool(params: dict) -> str:
-    try:
-        from local_agent_api import GenVideoBody, generate_video
-
-        raw = params.get("image_paths")
-        if isinstance(raw, str):
-            paths = [p.strip() for p in raw.replace("，", ",").split(",") if p.strip()]
-        elif isinstance(raw, list):
-            paths = [str(p).strip() for p in raw if str(p).strip()]
-        else:
-            paths = []
-        prompt = (params.get("prompt") or "").strip()
-        output_path = (params.get("output_path") or "outputs/agent_video.mp4").strip()
-        fps = float(params.get("fps", 1.0) or 1.0)
-        if not paths and not prompt:
-            return "generate_video error: need prompt (AI video) or image_paths (slideshow)"
-        return json.dumps(
-            generate_video(
-                GenVideoBody(
-                    prompt=prompt,
-                    image_paths=paths,
-                    output_path=output_path,
-                    fps=fps,
-                )
-            ),
-            ensure_ascii=False,
-        )
-    except Exception as e:
-        return f"generate_video error: {e}"
-
-
-def _text_to_speech_tool(params: dict) -> str:
-    try:
-        from local_agent_api import TTSBody, text_to_speech
-
-        text = (params.get("text") or "").strip()
-        if not text:
-            return "text_to_speech error: missing text"
-        output_path = (params.get("output_path") or "outputs/agent_tts.wav").strip()
-        return json.dumps(
-            text_to_speech(TTSBody(text=text, output_path=output_path)),
-            ensure_ascii=False,
-        )
-    except Exception as e:
-        return f"text_to_speech error: {e}"
-
-
-def _run_project_check_tool(params: dict) -> str:
-    import subprocess
-    import sys
-    from pathlib import Path
-
-    target = str(params.get("target") or "all").strip().lower()
-    root = Path(__file__).resolve().parent.parent
-    backend = root / "backend"
-    frontend = root / "frontend"
-    results: list[str] = []
-
-    def run(label: str, cmd: list[str], cwd: Path) -> None:
-        try:
-            completed = subprocess.run(
-                cmd,
-                cwd=str(cwd),
-                capture_output=True,
-                text=True,
-                timeout=180,
-            )
-            output = (completed.stdout or "") + (("\nSTDERR:\n" + completed.stderr) if completed.stderr else "")
-            results.append(
-                f"## {label}\nexit_code={completed.returncode}\n{output[-4000:] if output else '(no output)'}"
-            )
-        except Exception as e:
-            results.append(f"## {label}\nerror={e}")
-
-    if target in ("backend", "all", "api"):
-        run(
-            "backend py_compile",
-            [
-                sys.executable,
-                "-m",
-                "py_compile",
-                "main.py",
-                "agent.py",
-                "observe.py",
-                "tools/search.py",
-            ],
-            backend,
-        )
-    if target in ("frontend", "all", "ui"):
-        npm_cmd = "npm.cmd" if sys.platform.startswith("win") else "npm"
-        run("frontend build", [npm_cmd, "run", "build"], frontend)
-    return "\n\n".join(results)
-
-
-def _web_search_tool(params: dict) -> str:
-    q = (
-        params.get("query")
-        or params.get("q")
-        or params.get("search")
-        or params.get("keywords")
-        or params.get("text")
-        or ""
-    )
-    if isinstance(q, (list, tuple)):
-        q = " ".join(str(x) for x in q)
-    q = str(q).strip()
-    if not q:
-        return (
-            'web_search error: 缺少搜索关键词。请在 parameters 里提供 query（字符串），例如 {"query": "最新 AI 新闻"}。'
-        )
-    return web_search(q)
-
-
-def _parallel_subagents_tool(params: dict) -> str:
-    raw = params.get("tasks") or params.get("prompts") or []
-    if isinstance(raw, str):
-        raw = [line.strip() for line in raw.splitlines() if line.strip()]
-    if not isinstance(raw, list):
-        return "run_parallel_subagents error: tasks 须为数组或非空多行文本"
-    model = (params.get("model") or "").strip() or None
-    return run_parallel_subagents_sync([str(x) for x in raw], model=model)
-
-
-def _browser_fill_form_tool(params: dict) -> str:
-    from tools.browser import browser_fill_form
-
-    fields = params.get("fields") or params.get("form") or {}
-    if isinstance(fields, str):
-        try:
-            fields = json.loads(fields)
-        except json.JSONDecodeError:
-            fields = {}
-    if not isinstance(fields, dict):
-        fields = {}
-    return browser_fill_form(
-        params.get("url") or "",
-        fields,
-        params.get("submit_selector"),
-    )
-
-
-def _lazy_execute_python(params: dict) -> str:
-    from tools.code_exec import execute_python
-
-    return execute_python(params["code"])
-
-
-def _lazy_open_url(params: dict) -> str:
-    from tools.external_control import open_url
-
-    return open_url(params.get("url") or params.get("href") or params.get("link") or "")
-
-
-def _lazy_open_path(params: dict) -> str:
-    from tools.external_control import open_path
-
-    return open_path(params.get("path") or params.get("target") or "")
-
-
-def _lazy_get_foreground_window(_: dict) -> str:
-    from tools.external_control import get_foreground_window
-
-    return get_foreground_window()
-
-
-def _lazy_list_windows(params: dict) -> str:
-    from tools.external_control import list_windows
-
-    return list_windows(int(params.get("limit", 30) or 30))
-
-
-def _lazy_focus_window(params: dict) -> str:
-    from tools.external_control import focus_window
-
-    return focus_window(params.get("title") or params.get("window") or params.get("name") or "")
-
-
-def _lazy_send_hotkey(params: dict) -> str:
-    from tools.external_control import send_hotkey
-
-    return send_hotkey(params.get("keys") or params.get("hotkey") or "")
-
-
-def _lazy_type_text(params: dict) -> str:
-    from tools.external_control import type_text
-
-    return type_text(params.get("text") or params.get("content") or "")
-
-
-def _lazy_click_screen(params: dict) -> str:
-    from tools.external_control import click_screen
-
-    return click_screen(params.get("x"), params.get("y"))
-
-
-def _lazy_browser_navigate(params: dict) -> str:
-    from tools.browser import browser_navigate
-
-    return browser_navigate(
-        params.get("url") or params.get("href") or "",
-        int(params.get("wait_ms", 2000) or 2000),
-        bool(params.get("screenshot", False)),
-    )
-
-
-def _lazy_browser_screenshot(params: dict) -> str:
-    from tools.browser import browser_screenshot
-
-    return browser_screenshot(
-        params.get("url") or params.get("href") or "",
-        (params.get("output_path") or "outputs/browser_shot.png"),
-    )
-
-
-def _lazy_browser_click_and_extract(params: dict) -> str:
-    from tools.browser import browser_click_and_extract
-
-    return browser_click_and_extract(
-        params.get("url") or "",
-        params.get("selector") or "",
-        params.get("extract_selector") or "body",
-    )
-
-
-def _lazy_browser_playwright(params: dict) -> str:
-    from tools.browser import browser_playwright
-
-    return browser_playwright(
-        params.get("url") or params.get("href") or "",
-        params.get("action") or params.get("mode") or "navigate",
-        params.get("selector") or "",
-        params.get("text") or params.get("value") or "",
-        params.get("extract_selector") or "body",
-        params.get("output_path") or "outputs/browser_shot.png",
-        int(params.get("wait_ms", 2000) or 2000),
-    )
-
-
-TOOL_MAP = {
-    "web_search": lambda p: _web_search_tool(p),
-    "local_search": lambda p: local_search(
-        p.get("query") or p.get("q") or p.get("search") or "",
-        int(p.get("limit", 6) or 6),
-        bool(p.get("scrape", False)),
-    ),
-    "local_scrape_url": lambda p: local_scrape_url(
-        p.get("url") or p.get("href") or p.get("link") or "",
-        int(p.get("max_chars", 12000) or 12000),
-    ),
-    "read_file": lambda p: read_file(p["path"]),
-    "write_file": lambda p: write_file(p["path"], p["content"]),
-    "list_files": lambda p: list_files(p.get("directory") or p.get("path") or "~/Desktop"),
-    "execute_python": lambda p: _lazy_execute_python(p),
-    "get_device_profile": lambda p: _device_profile_tool(p),
-    "get_recent_desktop_files": lambda p: _recent_desktop_files_tool(p),
-    "get_recent_work_summary": lambda p: _recent_work_summary_tool(p),
-    "get_evolution_profile": lambda p: _evolution_profile_tool(p),
-    "run_task_orchestration": lambda p: _task_orchestration_tool(p),
-    "notebook_ingest": lambda p: _notebook_ingest_tool(p),
-    "notebook_synthesize": lambda p: _notebook_synthesize_tool(p),
-    "generate_image": lambda p: _generate_image_tool(p),
-    "generate_video": lambda p: _generate_video_tool(p),
-    "generate_ai_video": lambda p: _generate_video_tool(p),
-    "text_to_speech": lambda p: _text_to_speech_tool(p),
-    "run_project_check": lambda p: _run_project_check_tool(p),
-    "open_url": lambda p: _lazy_open_url(p),
-    "open_path": lambda p: _lazy_open_path(p),
-    "get_foreground_window": lambda p: _lazy_get_foreground_window(p),
-    "list_windows": lambda p: _lazy_list_windows(p),
-    "focus_window": lambda p: _lazy_focus_window(p),
-    "send_hotkey": lambda p: _lazy_send_hotkey(p),
-    "type_text": lambda p: _lazy_type_text(p),
-    "click_screen": lambda p: _lazy_click_screen(p),
-    "browser_navigate": lambda p: _lazy_browser_navigate(p),
-    "browser_playwright": lambda p: _lazy_browser_playwright(p),
-    "browser_screenshot": lambda p: _lazy_browser_screenshot(p),
-    "browser_click_and_extract": lambda p: _lazy_browser_click_and_extract(p),
-    "browser_fill_form": lambda p: _browser_fill_form_tool(p),
-    "run_parallel_subagents": lambda p: _parallel_subagents_tool(p),
-    "http_request": lambda p: http_request(
-        p.get("url") or p.get("href") or "",
-        p.get("method") or "GET",
-        p.get("headers"),
-        p.get("body") or p.get("json") or p.get("data"),
-        float(p.get("timeout_sec", 30) or 30),
-    ),
-    "query_database": lambda p: query_database(
-        p.get("path") or p.get("db_path") or p.get("database") or p.get("db") or "",
-        p.get("sql") or p.get("query") or "",
-        int(p.get("limit", 50) or 50),
-    ),
-    "mcp_invoke": lambda p: mcp_invoke(
-        p.get("server") or "builtin",
-        p.get("tool") or p.get("name") or "",
-        p.get("arguments") if isinstance(p.get("arguments"), dict) else p,
-    ),
-}
-
-
-def _normalize_parsed_tool(data: dict) -> dict:
-    """把模型常犯的扁平字段 / OpenAI 风格 arguments 合并进 parameters，避免 KeyError。"""
-    name = data.get("name")
-    if name not in TOOL_MAP:
-        return data
-    params = data.get("parameters")
-    if not isinstance(params, dict):
-        params = {}
-    args = data.get("arguments")
-    if isinstance(args, dict):
-        for k, v in args.items():
-            params.setdefault(k, v)
-    reserved = {"name", "parameters", "arguments", "id", "type"}
-    for k, v in data.items():
-        if k in reserved or k in params:
-            continue
-        params[k] = v
-    out = dict(data)
-    out["parameters"] = params
-    return out
 
 
 DIRECTORY_HINTS = {
@@ -626,11 +135,11 @@ class AgentRequest(BaseModel):
     session_id: str | None = None
 
 
-def _candidate_models(requested_model: str) -> list[str]:
+def _candidate_models(requested_model: str, user_input: str = "") -> list[str]:
     from model_lock import enforce_locked_model, is_model_locked
 
     if is_model_locked():
-        locked = enforce_locked_model(requested_model)
+        locked = enforce_locked_model(requested_model, user_input=user_input, mode="agent")
         return [locked]
     rt = get_runtime()
     models = [requested_model, rt.default_chat_model, _GEMMA4_ID]
@@ -647,7 +156,12 @@ def _candidate_models(requested_model: str) -> list[str]:
 
 async def call_llm(messages, model: str, *, temperature: float = 0.1):
     errors: list[str] = []
-    for candidate in _candidate_models(model):
+    prompt = ""
+    for item in reversed(messages or []):
+        if isinstance(item, dict) and item.get("role") == "user":
+            prompt = str(item.get("content") or "")
+            break
+    for candidate in _candidate_models(model, prompt):
         try:
             return await chat_complete_async(messages, candidate, temperature=temperature)
         except Exception as e:
@@ -1674,10 +1188,9 @@ def _fallback_model_download_answer(search_text: str) -> str:
 
 
 def _execute_tool_sync(tool_name: str, params: dict) -> str:
-    fn = TOOL_MAP.get(tool_name)
-    if not fn:
-        return f"Unknown tool: {tool_name}"
-    return fn(params)
+    from agent_dispatch import execute_tool_sync
+
+    return execute_tool_sync(tool_name, params, TOOL_MAP)
 
 
 async def run_agent(
@@ -1689,7 +1202,7 @@ async def run_agent(
     from model_lock import enforce_locked_model
 
     sid = (session_id or "").strip() or "agent"
-    model = enforce_locked_model(model)
+    model = enforce_locked_model(model, user_input=message, mode="agent")
     rt = get_runtime()
     steps = []
 
@@ -1800,6 +1313,30 @@ async def run_agent(
             if thinking:
                 await emit_step({"type": "thinking", "content": thinking})
             await emit_step({"type": "tool_call", "tool": tool_name, "params": params})
+            from agent_dispatch import check_tool_execution
+
+            block = check_tool_execution(tool_name, params, tool_map=TOOL_MAP)
+            if block and block.get("status") == "confirm_required":
+                await emit_step(
+                    {
+                        "type": "tool_confirm_required",
+                        "tool": tool_name,
+                        "params": params,
+                        "risk_level": block.get("risk_level"),
+                        "content": block.get("message"),
+                    }
+                )
+                messages += [
+                    {"role": "assistant", "content": response},
+                    {
+                        "role": "user",
+                        "content": (
+                            f"{block.get('message')}\n"
+                            "请向用户说明需要确认的操作，不要假装已执行。"
+                        ),
+                    },
+                ]
+                continue
             try:
                 result = await asyncio.to_thread(_execute_tool_sync, tool_name, params)
             except Exception as e:
@@ -2070,7 +1607,7 @@ def agent_evolve_distill():
 async def agent_run(req: AgentRequest):
     from model_lock import enforce_locked_model
 
-    req.model = enforce_locked_model(req.model)
+    req.model = enforce_locked_model(req.model, user_input=req.message, mode="agent")
 
     async def generate():
         import inspect
@@ -2121,43 +1658,12 @@ async def agent_run(req: AgentRequest):
 @router.get("/tools")
 def list_tools():
     """Agent 可用工具清单（供前端 / 自检）。"""
-    groups = {
-        "search_crawl": ["web_search", "local_search", "local_scrape_url"],
-        "files_code": ["read_file", "write_file", "list_files", "execute_python"],
-        "profile_orchestrate": [
-            "get_device_profile",
-            "get_recent_desktop_files",
-            "get_recent_work_summary",
-            "get_evolution_profile",
-            "run_task_orchestration",
-        ],
-        "knowledge_media": [
-            "notebook_ingest",
-            "notebook_synthesize",
-            "generate_image",
-            "generate_video",
-            "generate_ai_video",
-            "text_to_speech",
-            "run_project_check",
-        ],
-        "desktop_control": [
-            "open_url",
-            "open_path",
-            "get_foreground_window",
-            "list_windows",
-            "focus_window",
-            "send_hotkey",
-            "type_text",
-            "click_screen",
-        ],
-        "browser_automation": [
-            "browser_navigate",
-            "browser_screenshot",
-            "browser_click_and_extract",
-            "browser_fill_form",
-        ],
-        "parallel": ["run_parallel_subagents"],
-        "integration": ["http_request", "query_database", "mcp_invoke"],
-    }
+    from tool_registry import TOOL_GROUPS, list_tool_metadata
+
     flat = list(TOOL_MAP.keys())
-    return {"tools": flat, "count": len(flat), "groups": groups}
+    return {
+        "tools": flat,
+        "count": len(flat),
+        "groups": TOOL_GROUPS,
+        "metadata": list_tool_metadata(),
+    }

@@ -33,7 +33,7 @@ def jobs_create(body: JobCreate):
 
     if body.task_kind not in ("agent", "chat", "habit_check"):
         raise HTTPException(400, "task_kind must be agent, chat, or habit_check")
-    body.model = enforce_locked_model(body.model)
+    body.model = enforce_locked_model(body.model, user_input=body.message, mode=body.task_kind)
     job = create_job(
         name=body.name,
         message=body.message,

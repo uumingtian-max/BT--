@@ -218,7 +218,7 @@ async def stream_llm(messages: list, model: str):
 async def chat(req: ChatRequest):
     from model_lock import enforce_locked_model
 
-    req.model = enforce_locked_model(req.model)
+    req.model = enforce_locked_model(req.model, user_input=req.message, mode="chat")
     history = get_history(req.session_id)
     save_message(req.session_id, "user", req.message)
     remember_from_message(req.session_id, "user", req.message)

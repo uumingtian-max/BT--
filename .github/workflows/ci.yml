@@ -50,6 +50,11 @@ jobs:
           backend/automation_store.py
           backend/automation_runner.py
           backend/automation_routes.py
+          backend/agent_dispatch.py
+          backend/agent_prompts.py
+          backend/agent_tool_map.py
+          backend/model_router.py
+          backend/settings.py
 
       - name: Run tests
         env:
@@ -117,13 +122,12 @@ jobs:
         run: pip install pip-audit
 
       - name: Audit Python dependencies
-        run: pip-audit -r requirements.txt || true
+        run: pip-audit -r requirements.txt --desc on
 
       - name: Check for secrets (gitleaks)
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true   # 初始阶段警告不阻断 CI
 
   # ─── 合并状态徽章门控 ─────────────────────────────────────
   all-green:

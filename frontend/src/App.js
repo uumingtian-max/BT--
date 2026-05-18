@@ -86,6 +86,7 @@ function TimelineStep({ step, index, isLast }) {
   const typeConfig = {
     thinking: { icon: 'cpu', color: '#7c6bff', label: '推理中', bg: 'rgba(124,107,255,0.08)', border: 'rgba(124,107,255,0.2)' },
     tool_call: { icon: meta.icon, color: meta.color, label: meta.label, bg: 'rgba(251,146,60,0.06)', border: 'rgba(251,146,60,0.18)' },
+    tool_confirm_required: { icon: 'zap', color: '#fbbf24', label: '待确认', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.25)' },
     tool_result: { icon: 'check', color: '#4ade80', label: '执行结果', bg: 'rgba(74,222,128,0.06)', border: 'rgba(74,222,128,0.15)' },
     final_answer: { icon: 'zap', color: '#a78bfa', label: '最终回答', bg: 'rgba(167,139,250,0.07)', border: 'rgba(167,139,250,0.2)' },
   };
@@ -115,6 +116,9 @@ function TimelineStep({ step, index, isLast }) {
         {expanded && (
           <div className="tl-content">
             {step.type === 'thinking' && step.content && (
+              <p className="tl-text">{step.content}</p>
+            )}
+            {step.type === 'tool_confirm_required' && step.content && (
               <p className="tl-text">{step.content}</p>
             )}
             {step.type === 'tool_call' && (

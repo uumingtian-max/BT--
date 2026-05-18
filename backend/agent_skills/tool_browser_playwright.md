@@ -1,6 +1,6 @@
 # 工具：Playwright 浏览器
 
-Triggers: browser_navigate,browser_screenshot,browser_click_and_extract,browser_fill_form,browser_fill,playwright,chromium,无头浏览器,浏览器自动化,打开网页,打开网站,访问网址,网页截图,截图网页,页面截图,点按钮,点击元素,填表单,提交表单,登录网页,抓页面,爬网页,网页测试,e2e,端到端,自动化测试网页,Browser,@Browser,browser automation,web automation,tool_browser_playwright
+Triggers: browser_navigate,browser_screenshot,browser_click_and_extract,browser_fill_form,browser_fill,playwright,chromium,无头浏览器,浏览器自动化,打开网页,打开网站,访问网址,网页截图,截图网页,页面截图,点按钮,点击元素,填表单,提交表单,登录网页,抓页面,爬网页,网页测试,e2e,端到端,自动化测试网页,Browser,@Browser,browser automation,web automation
 
 ---
 

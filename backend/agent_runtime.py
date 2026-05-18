@@ -1,11 +1,4 @@
-"""
-Central runtime settings (OpenHuman-style: one place for models, Ollama URL, context budgets).
-Override via environment variables; no extra config file required.
-
-默认 fallback（无中国厂商默认 tag）：
-  vLLM 模式 → /mnt/d/models/Gemma-4-26B-A4B-NVFP4
-  Ollama 模式 → mistral-small3.2
-"""
+"""Central runtime settings: one place for models, URLs, and budgets."""
 
 from __future__ import annotations
 
@@ -14,7 +7,23 @@ import threading
 from dataclasses import dataclass
 
 _VLLM_DEFAULT = "/mnt/d/models/Gemma-4-26B-A4B-NVFP4"
-_OLLAMA_DEFAULT = "mistral-small3.2"
+
+# Ollama 多模型栈默认（与 backend/.env 一致；未设环境变量时生效）
+# 路由角色见 model_router.MODEL_ROLE_CATALOG
+_OLLAMA_DEFAULT = "qwen3.5:4b"  # 💬 主聊天
+_EMBED_MODEL_DEFAULT = "nomic-embed-text:latest"  # 📐 向量嵌入 — RAG/技能/记忆（后台）
+_ROUTER_MODEL_DEFAULT = "functiongemma:latest"  # 🔧 工具路由 — 意图解析（非主对话）
+_FAST_MODEL_DEFAULT = "qwen3.5:0.8b"  # ⚡ 快速响应
+_TASK_MODEL_DEFAULT = "granite4:3b"  # 📋 结构化任务
+_REASONING_MODEL_DEFAULT = "deepseek-r1:7b"  # 🧠 深度推理
+_CODE_MODEL_DEFAULT = "deepseek-coder-v2:16b"  # 💻 代码专家
+# 编排子模型：规划/代码/审查/视觉/语音
+_ORCH_PLANNER_DEFAULT = _REASONING_MODEL_DEFAULT
+_ORCH_CODER_DEFAULT = _CODE_MODEL_DEFAULT
+_ORCH_REVIEWER_DEFAULT = _OLLAMA_DEFAULT
+_ORCH_VISION_DEFAULT = _OLLAMA_DEFAULT
+_ORCH_SPEECH_DEFAULT = _TASK_MODEL_DEFAULT
+_AGENT_EVOLVE_DEFAULT = _OLLAMA_DEFAULT
 
 
 def _env_str(key: str, default: str) -> str:
@@ -41,8 +50,15 @@ class AgentRuntime:
     agent_skill_pack: bool
     agent_self_evolve: bool
     agent_evolve_llm: bool
+    smart_router_enabled: bool
     agent_evolve_model: str
     default_chat_model: str
+    fast_model: str
+    router_model: str
+    embed_model: str
+    reasoning_model: str
+    code_model: str
+    task_model: str
     planner_model: str
     coder_model: str
     reviewer_model: str
@@ -85,7 +101,15 @@ def _build_runtime_from_env() -> AgentRuntime:
     def _model(key: str) -> str:
         return _env_str(key, "").strip() or _env_str("AGENT_DEFAULT_MODEL", _default_model)
 
-    ev_model = _env_str("AGENT_EVOLVE_MODEL", "").strip() or _model("AGENT_DEFAULT_MODEL")
+    def _orch_model(env_key: str, ollama_default: str) -> str:
+        explicit = os.environ.get(env_key, "").strip()
+        if explicit:
+            return explicit
+        if llm_backend == "openai_compatible":
+            return _env_str("AGENT_DEFAULT_MODEL", _default_model)
+        return ollama_default
+
+    ev_model = _env_str("AGENT_EVOLVE_MODEL", _AGENT_EVOLVE_DEFAULT)
 
     return AgentRuntime(
         llm_backend=llm_backend,
@@ -95,13 +119,21 @@ def _build_runtime_from_env() -> AgentRuntime:
         agent_skill_pack=_env_str("AGENT_SKILL_PACK", "1") != "0",
         agent_self_evolve=_env_str("AGENT_SELF_EVOLVE", "1") != "0",
         agent_evolve_llm=_env_str("AGENT_EVOLVE_LLM", "0") == "1",
+        smart_router_enabled=_env_str("SMART_ROUTER_ENABLED", "1").lower()
+        not in ("0", "false", "off", "no"),
         agent_evolve_model=ev_model,
         default_chat_model=_model("AGENT_DEFAULT_MODEL"),
-        planner_model=_model("ORCH_PLANNER_MODEL"),
-        coder_model=_model("ORCH_CODER_MODEL"),
-        reviewer_model=_model("ORCH_REVIEWER_MODEL"),
-        vision_model=_model("ORCH_VISION_MODEL"),
-        speech_model=_model("ORCH_SPEECH_MODEL"),
+        fast_model=_env_str("FAST_MODEL", _FAST_MODEL_DEFAULT),
+        router_model=_env_str("AGENT_ROUTER_MODEL", _ROUTER_MODEL_DEFAULT),
+        embed_model=_env_str("EMBED_MODEL", _EMBED_MODEL_DEFAULT),
+        reasoning_model=_env_str("REASONING_MODEL", _REASONING_MODEL_DEFAULT),
+        code_model=_env_str("CODE_MODEL", _CODE_MODEL_DEFAULT),
+        task_model=_env_str("TASK_MODEL", _TASK_MODEL_DEFAULT),
+        planner_model=_orch_model("ORCH_PLANNER_MODEL", _ORCH_PLANNER_DEFAULT),
+        coder_model=_orch_model("ORCH_CODER_MODEL", _ORCH_CODER_DEFAULT),
+        reviewer_model=_orch_model("ORCH_REVIEWER_MODEL", _ORCH_REVIEWER_DEFAULT),
+        vision_model=_orch_model("ORCH_VISION_MODEL", _ORCH_VISION_DEFAULT),
+        speech_model=_orch_model("ORCH_SPEECH_MODEL", _ORCH_SPEECH_DEFAULT),
         tool_result_max_chars=max(800, _env_int("AGENT_TOOL_RESULT_MAX_CHARS", 12000)),
         context_block_max_chars=max(400, _env_int("AGENT_CONTEXT_MAX_CHARS", 8000)),
         agent_max_steps=max(2, min(12, _env_int("AGENT_MAX_STEPS", 6))),

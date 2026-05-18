@@ -180,6 +180,12 @@ def _runtime_model_entries(rt) -> list[dict[str, str]]:
     out: list[dict[str, str]] = []
     for mid in (
         rt.default_chat_model,
+        getattr(rt, "fast_model", ""),
+        getattr(rt, "router_model", ""),
+        getattr(rt, "embed_model", ""),
+        getattr(rt, "reasoning_model", ""),
+        getattr(rt, "code_model", ""),
+        getattr(rt, "task_model", ""),
         rt.planner_model,
         rt.coder_model,
         rt.reviewer_model,
@@ -258,6 +264,17 @@ def _meta_doctor_payload(*, strict_probe: bool = True) -> dict[str, object]:
             checks.append({"name": name, "status": "ok" if ok else "fail", "detail": detail})
 
     add("llm_backend", True, rt.llm_backend)
+    try:
+        from model_router import routing_info
+
+        info = routing_info("帮我写个 Python 脚本", mode="chat")
+        add(
+            "smart_router",
+            bool(info.get("smart_router_enabled")),
+            f"{info.get('reason')} -> {info.get('model')}",
+        )
+    except Exception as e:
+        add("smart_router", False, str(e), optional=True)
     if rt.llm_backend == "ollama":
         payload = _get_ollama_tags(rt.ollama_base, allow_background=not strict_probe)
         if payload.get("ok"):
@@ -458,6 +475,17 @@ def meta_info():
         "ollama_base": r.ollama_base,
         "openai_base_url_set": bool((r.openai_base_url or "").strip()),
         "defaults": {"chat": r.default_chat_model},
+        "smart_router": {
+            "enabled": getattr(r, "smart_router_enabled", False),
+            "models": {
+                "fast": getattr(r, "fast_model", ""),
+                "agent_router": getattr(r, "router_model", ""),
+                "embed": getattr(r, "embed_model", ""),
+                "reasoning": getattr(r, "reasoning_model", ""),
+                "code": getattr(r, "code_model", ""),
+                "task": getattr(r, "task_model", ""),
+            },
+        },
         "hooks": {"webhook_configured": bool((r.webhook_url or "").strip())},
         "extensions": {
             "scheduler": os.environ.get("SCHEDULER_ENABLED", "1") not in ("0", "false", "off"),

@@ -40,12 +40,17 @@ from scheduler_routes import router as scheduler_router
 from gateway_routes import router as gateway_router
 from mcp_routes import router as mcp_router
 from tool_registry_routes import router as tool_registry_router
-from agent_runtime import get_runtime
+from agent_runtime import get_runtime, validate_llm_config
+from settings import get_settings, validate_startup_settings
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     env_bootstrap.configure_root_logging()
+    for msg in validate_startup_settings() + validate_llm_config():
+        import logging
+
+        logging.getLogger("main").warning("config: %s", msg)
     init_legacy_db()
     init_orchestrator_db()
     init_workflow_store()
@@ -126,9 +131,19 @@ def _is_local_or_lan_host(host_header: str) -> bool:
         return False
 
 
+def _lan_requires_token() -> bool:
+    s = get_settings()
+    host = (s.backend_host or "").strip()
+    if host not in ("0.0.0.0", "::"):
+        return False
+    return s.require_api_token_on_lan
+
+
 def _mobile_remote_auth_required(request: Request, *, include_auth_routes: bool = False) -> bool:
     token = _mobile_token()
     if not token:
+        if _lan_requires_token():
+            return not _is_local_or_lan_host(request.headers.get("host", ""))
         return False
     path = request.url.path
     if path == "/health" or (not include_auth_routes and path in ("/mobile-auth/status", "/mobile-auth/login")):

@@ -62,7 +62,11 @@ async def gateway_inbound(body: InboundMessage, token: str | None = None):
     from model_lock import enforce_locked_model
 
     rt = get_runtime()
-    model = enforce_locked_model((body.model or "").strip() or rt.default_chat_model)
+    model = enforce_locked_model(
+        (body.model or "").strip() or rt.default_chat_model,
+        user_input=text,
+        mode=(body.mode or "agent").strip().lower(),
+    )
     sid = (body.session_id or "").strip() or f"gw-{body.channel}-{body.user_id or 'anon'}-{uuid.uuid4().hex[:8]}"
     mode = (body.mode or "agent").strip().lower()
     result_text = ""
