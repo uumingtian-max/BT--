@@ -13,8 +13,8 @@ _VLLM_DEFAULT = "/mnt/d/models/Gemma-4-26B-A4B-NVFP4"
 _OLLAMA_DEFAULT = "qwen3.5:4b"  # 💬 主聊天
 _EMBED_MODEL_DEFAULT = "nomic-embed-text:latest"  # 📐 向量嵌入 — RAG/技能/记忆（后台）
 _ROUTER_MODEL_DEFAULT = "functiongemma:latest"  # 🔧 工具路由 — 意图解析（非主对话）
-_FAST_MODEL_DEFAULT = "qwen3.5:0.8b"  # ⚡ 快速响应
-_TASK_MODEL_DEFAULT = "granite4:3b"  # 📋 结构化任务
+_FAST_MODEL_DEFAULT = "qwen3.5:4b"  # ⚡ 快答（与主聊同模型）
+_TASK_MODEL_DEFAULT = "qwen3.5:4b"  # 📋 结构化 / 体检
 _REASONING_MODEL_DEFAULT = "deepseek-r1:7b"  # 🧠 深度推理
 _CODE_MODEL_DEFAULT = "deepseek-coder-v2:16b"  # 💻 代码专家
 # 编排子模型：规划/代码/审查/视觉/语音
@@ -23,7 +23,7 @@ _ORCH_CODER_DEFAULT = _CODE_MODEL_DEFAULT
 _ORCH_REVIEWER_DEFAULT = _OLLAMA_DEFAULT
 _ORCH_VISION_DEFAULT = _OLLAMA_DEFAULT
 _ORCH_SPEECH_DEFAULT = _TASK_MODEL_DEFAULT
-_AGENT_EVOLVE_DEFAULT = _OLLAMA_DEFAULT
+_AGENT_EVOLVE_DEFAULT = _REASONING_MODEL_DEFAULT
 
 
 def _env_str(key: str, default: str) -> str:

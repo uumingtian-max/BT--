@@ -120,7 +120,7 @@ python start.py mobile   # 手机访问模式
 | `/scheduler` | 定时任务 |
 | `/mode chat` / `/mode agent` | 切换模式 |
 | `/model Gemma4-26B-A4B-Uncensored-HauhauCS-Balanced-Q5_K_P` | 切换到当前锁定的 llama.cpp 模型（须与 `.env` 一致） |
-| `/model qwen3:14b` | 切换到 Ollama 示例模型 |
+| `/model qwen3.5:4b` | 切换到 Ollama 主聊模型 |
 | `/skill <id>` | 挂载指定技能 |
 | `/tools` | 列出 Agent 工具 |
 

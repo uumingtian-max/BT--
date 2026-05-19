@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import json
 import os
 import re
@@ -470,6 +470,26 @@ def infer_tool_from_message(message: str):
     filename = _extract_filename(text)
     directory_hint = _detect_directory_hint(text)
 
+    # BKLT_FORCE_ORCHESTRATION_BEFORE_SEARCH
+    if any(
+        k in text
+        for k in [
+            "多模型", "复杂任务", "拆解任务", "完整项目", "协作完成",
+            "任务分解", "执行计划", "编排", "orchestrate", "orchestration",
+            "多角色", "协作汇总", "总控", "方案对比", "复杂方案",
+            "对比方案", "用编排",
+        ]
+    ):
+        od = orchestration_defaults()
+        return {
+            "name": "run_task_orchestration",
+            "parameters": {
+                "message": text,
+                "planner_model": od["planner_model"],
+                "coder_model": od["coder_model"],
+                "reviewer_model": od["reviewer_model"],
+            },
+        }
     if _looks_like_model_download_research(text):
         return {
             "name": "local_search",
@@ -1667,3 +1687,4 @@ def list_tools():
         "groups": TOOL_GROUPS,
         "metadata": list_tool_metadata(),
     }
+

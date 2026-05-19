@@ -114,7 +114,7 @@ def resolve_default_model() -> str:
         except Exception:
             pass
         return os.environ.get("AGENT_DEFAULT_MODEL", "nvidia/Gemma-4-26B-A4B-NVFP4")
-    return os.environ.get("AGENT_DEFAULT_MODEL", "qwen3:14b")
+    return os.environ.get("AGENT_DEFAULT_MODEL", "qwen3.5:4b")
 
 
 DEFAULT_MODEL = resolve_default_model()

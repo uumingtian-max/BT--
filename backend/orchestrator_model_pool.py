@@ -58,6 +58,12 @@ def looks_garbled_output(text: str) -> bool:
 
 def pool_for_kind(kind: str, preferred: str, profile, runtime) -> list[str]:
     """Return ordered model candidates for one orchestration role."""
+    from ollama_pins import strict_model_roles
+
+    preferred = (preferred or "").strip()
+    if strict_model_roles() and preferred:
+        return [preferred]
+
     runtime_fallbacks = unique_models(
         [
             getattr(runtime, "planner_model", ""),

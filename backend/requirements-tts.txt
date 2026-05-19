@@ -1,0 +1,8 @@
+# 可选：F5-TTS 独立服务（backend/f5_tts_server.py）
+# 安装：pip install -r backend/requirements.txt -r backend/requirements-tts.txt
+# 或运行 launcher/INSTALL_F5_TTS.bat
+# 配置见 backend/.env.example 第 7 节（F5_TTS_*、REAL_TTS_URL）
+
+f5-tts>=1.0.0
+torch>=2.0.0
+torchaudio>=2.0.0

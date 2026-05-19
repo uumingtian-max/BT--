@@ -95,7 +95,7 @@ for ($round = 1; $round -le $Rounds; $round++) {
 
     # 轻量 chat：按 backend\.env（Ollama 或 openai_compatible 网关）
     try {
-        $chatModel = "qwen3:14b"
+        $chatModel = "qwen3.5:4b"
         $envPath = Join-Path $backend ".env"
         if (Test-Path $envPath) {
             Get-Content $envPath | ForEach-Object {

@@ -66,7 +66,7 @@ ONYX-OVERRIDE 便携包
 1. 解压到任意目录（路径尽量无中文空格问题）
 2. 双击 INSTALL_FIRST_RUN.bat（仅首次，安装 Node 依赖）
 3. 复制 backend\.env.example 为 backend\.env，按你的环境填写（本 ZIP 不含 .env，避免泄露密钥与路径）
-4. 安装 Ollama: https://ollama.com ，执行 ollama pull qwen3:14b（或改用 vLLM 见 README）
+4. 安装 Ollama: https://ollama.com ，执行 scripts\MANAGE_MODELS.ps1 拉取五模型栈（或改用 vLLM 见 README）
 5. 双击 START_APP.bat 启动
 
 可选：运行 scripts\create-desktop-shortcut.ps1 创建带品牌图标的桌面快捷方式。

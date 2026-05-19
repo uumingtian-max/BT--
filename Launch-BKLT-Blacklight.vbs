@@ -1,7 +1,5 @@
-' Legacy BKLT launcher wrapper
-Set fso = CreateObject("Scripting.FileSystemObject")
-projectRoot = fso.GetParentFolderName(WScript.ScriptFullName)
+' BKLT ???????????
 Set sh = CreateObject("WScript.Shell")
-sh.CurrentDirectory = projectRoot
-sh.Run "cmd /c """ & projectRoot & "\launcher\START_APP.bat""", 0, False
-
+root = Replace(WScript.ScriptFullName, "Launch-BKLT-Blacklight.vbs", "")
+sh.CurrentDirectory = root
+sh.Run "cmd /c """ & root & "START_APP.bat""", 0, False

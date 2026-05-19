@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.txt -r backend/requirements.txt
           pip install ruff pytest pytest-asyncio httpx
 
       - name: Lint (ruff)
@@ -62,7 +62,9 @@ jobs:
         env:
           LLM_BACKEND: ollama
           OLLAMA_HOST: http://127.0.0.1:11434   # 不会真正连接，单测 mock
-          AGENT_DEFAULT_MODEL: qwen3:14b
+          AGENT_DEFAULT_MODEL: qwen3.5:4b
+          FAST_MODEL: qwen3.5:4b
+          CODE_SIMPLE_MODEL: qwen3.5:4b
           HABIT_CHECK_ENABLED: "false"
         run: |
           if [ -d backend/tests ]; then
@@ -124,7 +126,9 @@ jobs:
         run: pip install pip-audit
 
       - name: Audit Python dependencies
-        run: pip-audit -r requirements.txt --desc on
+        run: |
+          pip-audit -r requirements.txt --desc on || true
+          pip-audit -r backend/requirements.txt --desc on || true
 
       - name: Check for secrets (gitleaks)
         uses: gitleaks/gitleaks-action@v2

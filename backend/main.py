@@ -67,6 +67,14 @@ async def lifespan(app: FastAPI):
             from meta_routes import _schedule_ollama_tags_refresh
 
             _schedule_ollama_tags_refresh(rt.ollama_base)
+            from ollama_pins import warm_on_startup, warm_all_pinned_models
+
+            if warm_on_startup():
+
+                async def _warm_resident_ollama() -> None:
+                    await asyncio.to_thread(warm_all_pinned_models)
+
+                asyncio.create_task(_warm_resident_ollama())
     except Exception:
         pass
     observe_task = asyncio.create_task(background_collector())

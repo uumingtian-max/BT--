@@ -15,6 +15,7 @@ from typing import Any, AsyncIterator
 import httpx
 
 from agent_runtime import get_runtime
+from ollama_pins import maybe_prepare_ollama_model, maybe_release_ollama_model, ollama_chat_body
 
 
 def _ollama_connection_message(url: str, exc: Exception) -> str:
@@ -123,16 +124,17 @@ def chat_complete_sync(
         return _openai_non_stream_content(data)
 
     url = rt.ollama_chat_url()
+    maybe_prepare_ollama_model(model)
     try:
         with httpx.Client(timeout=_ollama_request_timeout(float(timeout))) as client:
             resp = client.post(
                 url,
-                json={
-                    "model": model,
-                    "messages": _ollama_messages(messages),
-                    "stream": False,
-                    "options": _ollama_chat_options(temperature),
-                },
+                json=ollama_chat_body(
+                    model,
+                    _ollama_messages(messages),
+                    stream=False,
+                    options=_ollama_chat_options(temperature),
+                ),
             )
             error_text = resp.text
             if resp.status_code == 404:
@@ -141,6 +143,8 @@ def chat_complete_sync(
             data = resp.json()
     except httpx.ConnectError as e:
         raise RuntimeError(_ollama_connection_message(rt.ollama_base, e)) from e
+    finally:
+        maybe_release_ollama_model(model)
     return (data.get("message") or {}).get("content", "") or ""
 
 
@@ -161,16 +165,17 @@ async def chat_complete_async(
         return _openai_non_stream_content(data)
 
     url = rt.ollama_chat_url()
+    maybe_prepare_ollama_model(model)
     try:
         async with httpx.AsyncClient(timeout=_ollama_request_timeout(float(timeout))) as client:
             resp = await client.post(
                 url,
-                json={
-                    "model": model,
-                    "messages": _ollama_messages(messages),
-                    "stream": False,
-                    "options": _ollama_chat_options(temperature),
-                },
+                json=ollama_chat_body(
+                    model,
+                    _ollama_messages(messages),
+                    stream=False,
+                    options=_ollama_chat_options(temperature),
+                ),
             )
             error_text = resp.text
             if resp.status_code == 404:
@@ -179,6 +184,8 @@ async def chat_complete_async(
             data = resp.json()
     except httpx.ConnectError as e:
         raise RuntimeError(_ollama_connection_message(rt.ollama_base, e)) from e
+    finally:
+        maybe_release_ollama_model(model)
     return (data.get("message") or {}).get("content", "") or ""
 
 
@@ -220,17 +227,18 @@ async def chat_stream_async(
         return
 
     url = rt.ollama_chat_url()
+    maybe_prepare_ollama_model(model)
     try:
         async with httpx.AsyncClient(timeout=_streaming_http_timeout(float(timeout))) as client:
             async with client.stream(
                 "POST",
                 url,
-                json={
-                    "model": model,
-                    "messages": _ollama_messages(messages),
-                    "stream": True,
-                    "options": _ollama_chat_options(temperature),
-                },
+                json=ollama_chat_body(
+                    model,
+                    _ollama_messages(messages),
+                    stream=True,
+                    options=_ollama_chat_options(temperature),
+                ),
             ) as resp:
                 if resp.status_code == 404:
                     error_text = (await resp.aread()).decode("utf-8", errors="ignore")
@@ -249,3 +257,5 @@ async def chat_stream_async(
                         return
     except httpx.ConnectError as e:
         raise RuntimeError(_ollama_connection_message(rt.ollama_base, e)) from e
+    finally:
+        maybe_release_ollama_model(model)
