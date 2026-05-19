@@ -45,6 +45,8 @@ jobs:
           backend/env_bootstrap.py
           backend/tool_registry.py
           backend/tool_registry_routes.py
+          backend/skillhub.py
+          backend/skillhub_routes.py
           backend/agent_run_events.py
           backend/visual_event_bus.py
           backend/automation_store.py
