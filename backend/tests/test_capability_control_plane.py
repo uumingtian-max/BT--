@@ -1,3 +1,4 @@
+from capability_executor import execute_capability_request
 from capability_registry import list_capabilities, validate_capabilities
 from intent_router import route_intent
 from tool_registry import all_tool_names
@@ -33,6 +34,16 @@ def test_route_self_evolution_and_skill_rewrite():
     assert "skill.self_evolve" in matched_ids
     assert route["risk_level"] in {"confirm", "dangerous"}
     assert any(step["capability_id"] == "skill.self_evolve" for step in route["plan"])
+
+
+def test_capability_executor_dry_run_does_not_execute_real_actions():
+    result = execute_capability_request("整理一下桌面", dry_run=True)
+    assert result["ok"] is True
+    assert result["dry_run"] is True
+    assert result["executed"] is False
+    assert result["capability_id"] == "files.organize_workspace"
+    assert result["plan"]
+    assert result["observations"] == []
 
 
 def test_route_unknown_still_returns_safe_plan():
