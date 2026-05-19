@@ -1,20 +1,15 @@
 """Capability executor for BKLT Blacklight.
 
-The intent router decides *what* a user likely wants.  This module is the next
-layer: it turns a capability plan into a guarded execution preview or a limited
-safe execution.
-
-Version 1 deliberately executes only read-only/safe capabilities.  Confirm and
-dangerous capabilities return a structured plan until the UI approval + rollback
-flow exists.
+Intent routing decides what the user likely wants. The runtime executes broad,
+reversible capabilities with existing tools and returns concrete observations.
 """
 
 from __future__ import annotations
 
-import json
 from typing import Any, TypedDict
 
 from capability_registry import get_capability
+from capability_runtime import execute_runtime_capability
 from intent_router import route_intent
 
 
@@ -31,16 +26,11 @@ class CapabilityExecution(TypedDict):
     result: dict[str, Any]
 
 
-SAFE_EXECUTION_HANDLERS = {
-    "project.health_check": "run_project_check",
-}
-
-
 def execute_capability_request(
     message: str,
     *,
     capability_id: str | None = None,
-    dry_run: bool = True,
+    dry_run: bool = False,
     allow_confirmed: bool = False,
 ) -> CapabilityExecution:
     route = route_intent(message, max_matches=4)
@@ -61,73 +51,23 @@ def execute_capability_request(
 
     cap = get_capability(selected_id)
     plan = _plan_for_capability(route, selected_id)
-    risk = cap["risk_level"]
-    needs_confirmation = bool(cap.get("requires_confirmation"))
 
     if dry_run:
         return _preview(cap, route, plan, dry_run=True, summary="已生成能力执行预案，未执行真实动作。")
 
-    if risk != "safe" or needs_confirmation:
-        return _preview(
-            cap,
-            route,
-            plan,
-            dry_run=False,
-            summary="该能力需要确认或存在风险，当前只返回计划，不执行真实动作。",
-        )
-
-    handler_name = SAFE_EXECUTION_HANDLERS.get(selected_id)
-    if not handler_name:
-        return _preview(
-            cap,
-            route,
-            plan,
-            dry_run=False,
-            summary="该安全能力暂未接入执行 handler，当前只返回计划。",
-        )
-
-    observations = []
-    result_payload: dict[str, Any] = {"route": route}
-    try:
-        # Import lazily to avoid loading desktop/browser dependencies when merely
-        # listing capabilities.
-        from agent_tool_map import TOOL_MAP
-
-        if handler_name == "run_project_check":
-            raw = TOOL_MAP["run_project_check"]({"target": "all"})
-            observations.append(
-                {
-                    "tool": "run_project_check",
-                    "ok": "exit_code=0" in raw and "exit_code=1" not in raw,
-                    "preview": raw[-4000:],
-                }
-            )
-            result_payload["tool_output"] = raw
-        return {
-            "ok": True,
-            "dry_run": False,
-            "executed": True,
-            "capability_id": selected_id,
-            "risk_level": risk,
-            "requires_confirmation": needs_confirmation,
-            "summary": f"已执行安全能力：{cap['title']}",
-            "plan": plan,
-            "observations": observations,
-            "result": result_payload,
-        }
-    except Exception as exc:
-        return {
-            "ok": False,
-            "dry_run": False,
-            "executed": False,
-            "capability_id": selected_id,
-            "risk_level": risk,
-            "requires_confirmation": needs_confirmation,
-            "summary": f"能力执行失败：{exc}",
-            "plan": plan,
-            "observations": observations,
-            "result": result_payload,
-        }
+    runtime = execute_runtime_capability(selected_id, message)
+    return {
+        "ok": bool(runtime.get("ok")),
+        "dry_run": False,
+        "executed": bool(runtime.get("observations")),
+        "capability_id": selected_id,
+        "risk_level": cap["risk_level"],
+        "requires_confirmation": bool(cap.get("requires_confirmation")),
+        "summary": runtime.get("summary") or f"已处理能力：{cap['title']}",
+        "plan": plan,
+        "observations": runtime.get("observations", []),
+        "result": {"route": route, "capability": cap, "runtime": runtime},
+    }
 
 
 def _first_capability_id(route: dict[str, Any]) -> str | None:
