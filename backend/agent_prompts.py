@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from capability_prompt_rules import CAPABILITY_FIRST_RULES
 from tool_registry import TOOL_DESCRIPTIONS, all_tool_names
 
 _TOOL_FORMAT_FOOTER = """
@@ -31,6 +32,7 @@ SYSTEM_PROMPT_BASE = (
     "你的职责是直接完成任务，不是教用户如何调用工具。"
     "当需要读取文件、列目录、搜索、执行代码、查看设备画像、编排多模型任务、写入知识库、"
     "本地画图/视频/语音时，必须自己调用对应工具。\n"
+    f"{CAPABILITY_FIRST_RULES}\n"
     "若用户提到「编排」「多模型」「复杂方案对比」「协作审查」等，应优先使用 run_task_orchestration，"
     "并把用户整句需求作为 parameters.message 传入。\n\n"
     "能力边界要准确表达：当前已能联网搜索、本地网页抓取、文件管理、代码执行、设备画像、知识库、多模型编排、"
