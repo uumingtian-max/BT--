@@ -184,11 +184,18 @@ def _record_from_file(*, source: str, trust_level: str, base_dir: Path, path: Pa
     name = _slug(str(meta.get("name") or path.parent.name if path.name == "SKILL.md" else path.stem))
     title = str(meta.get("title") or _extract_heading(body) or name).strip()
     description = str(meta.get("description") or _extract_description(body) or "").strip()
-    tags = tuple(_as_list(_nested_get(meta, ("metadata", "bklt", "tags")) or _nested_get(meta, ("metadata", "hermes", "tags"))))
+    tags = tuple(
+        _as_list(
+            _nested_get(meta, ("metadata", "bklt", "tags"))
+            or _nested_get(meta, ("metadata", "hermes", "tags"))
+        )
+    )
     platforms = tuple(_as_list(meta.get("platforms")))
     version = str(meta.get("version") or "").strip()
     has_references = (path.parent / "references").is_dir()
-    has_scripts = (path.parent / "scripts").is_dir() or any(p.suffix.lower() in _SCRIPT_EXTENSIONS for p in path.parent.glob("scripts/*"))
+    has_scripts = (path.parent / "scripts").is_dir() or any(
+        p.suffix.lower() in _SCRIPT_EXTENSIONS for p in path.parent.glob("scripts/*")
+    )
     risk_signals, risk_level = _audit_content(content=content, skill_dir=path.parent, source=source)
     enabled = source in {"core", "user"} and risk_level != "dangerous"
     skill_id = _slug(f"{source}-{category}-{name}")
@@ -228,7 +235,6 @@ def _parse_simple_yaml(raw: str) -> dict[str, Any]:
     """Small YAML-ish parser for skill metadata; avoids requiring PyYAML."""
     out: dict[str, Any] = {}
     stack: list[tuple[int, dict[str, Any]]] = [(-1, out)]
-    pending_key: tuple[int, str, dict[str, Any]] | None = None
     lines = raw.splitlines()
     index = 0
     while index < len(lines):
@@ -271,10 +277,8 @@ def _parse_simple_yaml(raw: str) -> dict[str, Any]:
             child: dict[str, Any] = {}
             parent[key] = child
             stack.append((indent, child))
-            pending_key = (indent, key, child)
         else:
             parent[key] = _parse_scalar(value)
-            pending_key = None
         index += 1
     return out
 
