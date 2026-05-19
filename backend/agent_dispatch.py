@@ -78,11 +78,52 @@ def check_tool_execution(
     return None
 
 
+_ORCHESTRATION_MARKERS = (
+    "编排",
+    "用编排",
+    "多模型",
+    "多角色",
+    "协作审查",
+    "协作汇总",
+    "任务分解",
+    "复杂方案",
+    "方案对比",
+    "对比方案",
+    "复杂任务",
+    "orchestrate",
+    "orchestration",
+)
+
+
+def _search_params_look_like_orchestration(params: dict[str, Any]) -> bool:
+    query = str(
+        params.get("query")
+        or params.get("q")
+        or params.get("search")
+        or params.get("text")
+        or ""
+    ).lower()
+    return bool(query) and any(marker.lower() in query for marker in _ORCHESTRATION_MARKERS)
+
+
+def _maybe_force_orchestration(tool_name: str, params: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    """Correct bad deterministic/LLM routing before execution.
+
+    Requests such as “用编排做一个复杂方案对比” must invoke the orchestration
+    tool.  If an earlier heuristic incorrectly picked search, redirect here.
+    """
+    if tool_name in {"local_search", "web_search"} and _search_params_look_like_orchestration(params):
+        message = str(params.get("query") or params.get("q") or params.get("search") or params.get("text") or "").strip()
+        return "run_task_orchestration", {"message": message}
+    return tool_name, params
+
+
 def execute_tool_sync(
     tool_name: str,
     params: dict[str, Any],
     tool_map: dict[str, ToolHandler],
 ) -> str:
+    tool_name, params = _maybe_force_orchestration(tool_name, params or {})
     block = check_tool_execution(tool_name, params, tool_map=tool_map)
     if block:
         return block["message"]
