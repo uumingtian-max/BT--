@@ -8,6 +8,12 @@ from pydantic import BaseModel, Field
 from capability_executor import execute_capability_request
 from capability_registry import get_capability, list_capabilities, validate_capabilities
 from intent_router import route_intent
+from specialist_registry import (
+    get_specialist,
+    list_specialists,
+    route_specialists,
+    validate_specialists,
+)
 from tool_registry import all_tool_names
 
 router = APIRouter()
@@ -33,8 +39,16 @@ def capabilities():
 
 @router.get("/capabilities/health")
 def capabilities_health():
-    problems = validate_capabilities(set(all_tool_names()))
-    return {"ok": not problems, "problems": problems, "count": len(list_capabilities())}
+    capability_problems = validate_capabilities(set(all_tool_names()))
+    capability_ids = {item["id"] for item in list_capabilities()}
+    specialist_problems = validate_specialists(capability_ids)
+    problems = capability_problems + specialist_problems
+    return {
+        "ok": not problems,
+        "problems": problems,
+        "count": len(list_capabilities()),
+        "specialist_count": len(list_specialists()),
+    }
 
 
 @router.get("/capabilities/{capability_id}")
@@ -47,8 +61,32 @@ def capability_detail(capability_id: str):
 
 @router.post("/intent/route")
 def intent_route(body: IntentRouteRequest):
-    """Route natural language into candidate capabilities without executing tools."""
-    return {"ok": True, "route": route_intent(body.message, max_matches=body.max_matches)}
+    """Route natural language into capabilities and specialist roles without executing tools."""
+    return {
+        "ok": True,
+        "route": route_intent(body.message, max_matches=body.max_matches),
+        "specialists": route_specialists(body.message, max_matches=min(body.max_matches, 5)),
+    }
+
+
+@router.get("/specialists")
+def specialists():
+    """List routing specialists used by the orchestrator/control plane."""
+    return {"ok": True, "items": list_specialists()}
+
+
+@router.get("/specialists/{specialist_id}")
+def specialist_detail(specialist_id: str):
+    try:
+        return {"ok": True, "item": get_specialist(specialist_id)}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/specialists/route")
+def specialist_route(body: IntentRouteRequest):
+    """Route natural language into specialist lenses without executing tools."""
+    return {"ok": True, "matches": route_specialists(body.message, max_matches=body.max_matches)}
 
 
 @router.post("/capabilities/execute")
