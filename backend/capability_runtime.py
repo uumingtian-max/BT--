@@ -18,11 +18,12 @@ def execute_runtime_capability(capability_id: str, message: str) -> dict[str, An
     observations: list[dict[str, Any]] = []
 
     def call(tool: str, params: dict[str, Any]) -> str:
+        from agent_dispatch import execute_tool_sync
         from agent_tool_map import TOOL_MAP
 
         if tool not in TOOL_MAP:
             raise KeyError(f"tool not found: {tool}")
-        raw = TOOL_MAP[tool](params)
+        raw = execute_tool_sync(tool, params or {}, TOOL_MAP)
         observations.append({"tool": tool, "params": params, "output_preview": str(raw)[-2500:]})
         return str(raw)
 

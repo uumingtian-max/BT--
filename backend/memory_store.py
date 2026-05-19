@@ -338,17 +338,28 @@ def store_memory(
                     ts,
                 ),
             )
+        if not existing:
+            memory_id = int(conn.execute("SELECT last_insert_rowid()").fetchone()[0])
         if own_conn:
             conn.commit()
     finally:
         if own_conn:
             conn.close()
-    return {
+    row = {
+        "id": memory_id,
         "category": category,
         "content": text,
         "importance": importance,
         "tags": tags,
     }
+    try:
+        from vector_memory import get_vector_memory_store, vector_memory_enabled
+
+        if vector_memory_enabled() and memory_id:
+            get_vector_memory_store().add_memory(memory_id, text, category=category)
+    except Exception:
+        pass
+    return row
 
 
 def remember_from_message(session_id: str, role: str, content: str) -> list[dict[str, Any]]:
@@ -527,6 +538,45 @@ def _fts_memory_query(raw: str) -> str | None:
     return q or None
 
 
+def _merge_vector_hits(query: str, fts_rows: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
+    try:
+        from vector_memory import get_vector_memory_store, vector_memory_enabled
+
+        if not vector_memory_enabled():
+            return fts_rows
+        vec_hits = get_vector_memory_store().query_memory(query, top_k=limit)
+        if not vec_hits:
+            return fts_rows
+        seen = {r.get("id") for r in fts_rows}
+        merged = list(fts_rows)
+        for hit in vec_hits:
+            mid = hit.get("id")
+            if mid in seen:
+                continue
+            merged.append(
+                {
+                    "id": mid,
+                    "category": hit.get("category", "general"),
+                    "content": hit.get("text", ""),
+                    "importance": 4,
+                    "tags": [],
+                    "access_count": 0,
+                    "updated_at": _now_ts(),
+                    "vector_score": hit.get("vector_score"),
+                }
+            )
+            seen.add(mid)
+        merged.sort(
+            key=lambda r: (
+                -(r.get("vector_score") or 0),
+                -(r.get("importance") or 0),
+            )
+        )
+        return merged[:limit]
+    except Exception:
+        return fts_rows
+
+
 def search_memories(query: str, limit: int = 6) -> list[dict[str, Any]]:
     q = _normalize_text(query).lower()
     q_tags = set(_extract_tags(q))
@@ -620,7 +670,7 @@ def search_memories(query: str, limit: int = 6) -> list[dict[str, Any]]:
         )
     conn.commit()
     conn.close()
-    return out
+    return _merge_vector_hits(query, out, limit)
 
 
 def build_memory_context(query: str, limit: int = 6) -> str:

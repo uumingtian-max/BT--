@@ -723,3 +723,11 @@ def operator_dashboard():
         "agent_tools": {"count": len(TOOL_MAP)},
         "failures": failures[:20],
     }
+
+
+@router.get("/visual-events")
+def meta_visual_events(limit: int = 80, source: str | None = None, run_id: str | None = None):
+    """Neural topology / workbench: recent agent & automation pulses."""
+    from visual_event_bus import list_events
+
+    return {"ok": True, "events": list_events(limit=limit, source=source, run_id=run_id)}

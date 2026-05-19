@@ -25,6 +25,7 @@ tmp/pytest-tmp/
 tmp/
 CLINE_MEMORY.md
 backend/.skill_embedding_index.json
+backend/.memory_vector_index.json
 backend/agent_skills/learned_habit_auto.md
 backend/agent_skills/generated/
 backend/*.bak

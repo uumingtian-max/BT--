@@ -35,7 +35,7 @@ from agent_runtime import get_runtime, orchestration_defaults, reload_runtime
 from context_pack import compress_for_llm, compress_tool_result_for_llm
 from hooks import notify_agent_completed
 from llm_client import chat_complete_async, chat_complete_sync
-from self_evolve import distill_playbook_with_llm, ingest_review_lesson
+from self_evolve import critic_evaluate, distill_playbook_with_llm, ingest_review_lesson, record_critic_lesson
 from skill_pack import build_skill_pack_context
 from agent_session import (
     build_messages_with_history,
@@ -1336,6 +1336,27 @@ async def run_agent(
             from agent_dispatch import check_tool_execution
 
             block = check_tool_execution(tool_name, params, tool_map=TOOL_MAP)
+            if block and block.get("status") == "policy_denied":
+                await emit_step(
+                    {
+                        "type": "policy_denied",
+                        "tool": tool_name,
+                        "params": params,
+                        "policy_rule": block.get("policy_rule"),
+                        "content": block.get("message"),
+                    }
+                )
+                messages += [
+                    {"role": "assistant", "content": response},
+                    {
+                        "role": "user",
+                        "content": (
+                            f"策略拦截：{block.get('message')}\n"
+                            "向用户说明该操作被 PolicyGuard 拒绝，不要假装已执行。"
+                        ),
+                    },
+                ]
+                continue
             if block and block.get("status") == "confirm_required":
                 await emit_step(
                     {
@@ -1551,6 +1572,21 @@ async def run_agent(
 
     if rt.agent_self_evolve and last_review is not None:
         ingest_review_lesson(message, last_review)
+        final_for_critic = ""
+        for s in reversed(steps):
+            if s.get("type") == "final_answer":
+                final_for_critic = s.get("content") or ""
+                break
+        if final_for_critic:
+            critic = critic_evaluate(message, final_for_critic, steps_summary=str(len(steps)))
+            record_critic_lesson(critic, message)
+            if critic.get("should_retry"):
+                await emit_step(
+                    {
+                        "type": "thinking",
+                        "content": f"[Critic] 评分 {critic.get('score')}/10，已记录修正建议供下次任务参考。",
+                    }
+                )
 
     persist_agent_answer(sid, steps)
 

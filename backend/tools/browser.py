@@ -179,4 +179,56 @@ def browser_playwright(
     if action in {"fill", "fill_form", "submit"}:
         fields = {selector: text} if selector else {}
         return browser_fill_form(url, fields)
-    return f"browser_playwright error: action 必须是 navigate/screenshot/click/fill 之一；收到 {action!r}"
+    if action in {"vision_click", "vla_click"}:
+        return browser_vision_action(url, selector=selector, text=text, wait_ms=wait_ms)
+    return f"browser_playwright error: action 必须是 navigate/screenshot/click/fill/vision_click 之一；收到 {action!r}"
+
+
+def browser_vision_action(
+    url: str,
+    *,
+    selector: str = "",
+    text: str = "",
+    wait_ms: int = 2000,
+) -> str:
+    """VLA-lite: screenshot + element box + optional click/type (Vision-Language-Action)."""
+    _normalize_playwright_env()
+    url = (url or "").strip()
+    if not url.startswith(("http://", "https://")):
+        return json.dumps({"ok": False, "error": "需要 http/https URL"}, ensure_ascii=False)
+    if not _playwright_available():
+        _ensure_playwright()
+    try:
+        from playwright.sync_api import sync_playwright
+
+        out = safe_output_path("outputs/browser_vla.png", default_name="browser_vla.png")
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page(viewport={"width": 1280, "height": 800})
+            page.goto(url, timeout=30000)
+            page.wait_for_timeout(max(0, int(wait_ms)))
+            action_trace: list[dict[str, str | int]] = []
+            box: dict[str, float] | None = None
+            if selector:
+                el = page.query_selector(selector)
+                if el:
+                    box = el.bounding_box()
+                    el.click(timeout=8000)
+                    action_trace.append({"op": "click", "selector": selector})
+                    if text:
+                        page.keyboard.type(text[:500])
+                        action_trace.append({"op": "type", "chars": len(text[:500])})
+            page.screenshot(path=str(out), full_page=False)
+            browser.close()
+        payload = {
+            "ok": True,
+            "url": url,
+            "screenshot_path": str(out),
+            "viewport": {"width": 1280, "height": 800},
+            "element_box": box,
+            "trace": action_trace,
+            "hint": "前端上帝视角可展示 screenshot_path 与 element_box 光标轨迹",
+        }
+        return json.dumps(payload, ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False)

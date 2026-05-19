@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from typing import Any, Callable
 
+from policy_guard import check_policy
 from tool_registry import RiskLevel, get_tool_metadata
 
 ToolHandler = Callable[[dict[str, Any]], str]
@@ -48,6 +49,9 @@ def check_tool_execution(
     Otherwise return a structured block dict for the agent loop (confirm_required / error).
     """
     params = params or {}
+    policy_block = check_policy(tool_name, params)
+    if policy_block:
+        return policy_block
     if tool_map is not None and tool_name not in tool_map:
         return {
             "status": "error",
@@ -122,6 +126,8 @@ def execute_tool_sync(
     tool_name: str,
     params: dict[str, Any],
     tool_map: dict[str, ToolHandler],
+    *,
+    run_id: str | None = None,
 ) -> str:
     tool_name, params = _maybe_force_orchestration(tool_name, params or {})
     block = check_tool_execution(tool_name, params, tool_map=tool_map)
@@ -130,4 +136,31 @@ def execute_tool_sync(
     fn = tool_map.get(tool_name)
     if not fn:
         return f"Unknown tool: {tool_name}"
-    return fn(params)
+    try:
+        from visual_event_bus import publish_event
+
+        publish_event(
+            event_type="neural_pulse",
+            source="agent_dispatch",
+            title=f"工具 {tool_name}",
+            payload={"tool": tool_name, "params_keys": list((params or {}).keys())[:12]},
+            run_id=run_id,
+            status="active",
+        )
+    except Exception:
+        pass
+    result = fn(params)
+    try:
+        from visual_event_bus import publish_event
+
+        publish_event(
+            event_type="tool_complete",
+            source="agent_dispatch",
+            title=f"完成 {tool_name}",
+            payload={"preview": str(result)[:400]},
+            run_id=run_id,
+            status="ok",
+        )
+    except Exception:
+        pass
+    return result
