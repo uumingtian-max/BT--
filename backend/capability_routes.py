@@ -104,3 +104,50 @@ def capability_execute(body: CapabilityExecuteRequest):
             allow_confirmed=body.allow_confirmed,
         ),
     }
+
+
+@router.get("/evolution-cockpit")
+def evolution_cockpit():
+    """Single payload for the frontend evolution cockpit.
+
+    This endpoint intentionally composes existing local subsystems instead of
+    starting work by itself. The UI can poll it cheaply to render the current
+    state of SkillHub, automation, specialists, capabilities, and visual events.
+    """
+    payload: dict[str, object] = {
+        "ok": True,
+        "capabilities": {"count": len(list_capabilities()), "items": list_capabilities()},
+        "specialists": {"count": len(list_specialists()), "items": list_specialists()},
+    }
+
+    try:
+        from skillhub import audit_skillhub, skillhub_summary
+
+        payload["skillhub"] = {"summary": skillhub_summary(), "audit": audit_skillhub()}
+    except Exception as exc:  # pragma: no cover - defensive dashboard fallback
+        payload["skillhub"] = {"ok": False, "error": str(exc)}
+
+    try:
+        from automation_store import list_jobs, list_runs
+
+        jobs = list_jobs()
+        runs = list_runs(limit=10)
+        payload["automation"] = {"jobs_count": len(jobs), "runs_count": len(runs), "jobs": jobs, "recent_runs": runs}
+    except Exception as exc:  # pragma: no cover - defensive dashboard fallback
+        payload["automation"] = {"ok": False, "error": str(exc)}
+
+    try:
+        from visual_event_bus import list_events
+
+        payload["events"] = {"count": len(list_events(limit=50)), "items": list_events(limit=50)}
+    except Exception as exc:  # pragma: no cover - defensive dashboard fallback
+        payload["events"] = {"ok": False, "error": str(exc)}
+
+    try:
+        from habit_pipeline import get_habit_status
+
+        payload["habit"] = get_habit_status()
+    except Exception as exc:  # pragma: no cover - defensive dashboard fallback
+        payload["habit"] = {"ok": False, "error": str(exc)}
+
+    return payload
