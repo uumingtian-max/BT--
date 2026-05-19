@@ -41,6 +41,7 @@ from scheduler_routes import router as scheduler_router
 from gateway_routes import router as gateway_router
 from mcp_routes import router as mcp_router
 from tool_registry_routes import router as tool_registry_router
+from skillhub_routes import router as skillhub_router
 from agent_runtime import get_runtime, validate_llm_config
 from settings import get_settings, validate_startup_settings
 
@@ -230,6 +231,7 @@ if request_log_enabled():
 
 app.include_router(meta_router, prefix="/meta", tags=["meta"])
 app.include_router(tool_registry_router, prefix="/meta", tags=["tools"])
+app.include_router(skillhub_router, prefix="/meta", tags=["skillhub"])
 app.include_router(capability_router, prefix="/meta", tags=["capabilities"])
 app.include_router(telegraf_router)
 app.include_router(notebook_router, prefix="/notebook", tags=["notebook"])
