@@ -1,6 +1,7 @@
 from capability_executor import execute_capability_request
 from capability_registry import list_capabilities, validate_capabilities
 from intent_router import route_intent
+from specialist_registry import list_specialists, route_specialists, validate_specialists
 from tool_registry import all_tool_names
 
 
@@ -11,6 +12,16 @@ def test_capability_registry_is_valid_against_tool_registry():
     assert "system.eye_comfort" in ids
     assert "project.health_check" in ids
     assert "skill.self_evolve" in ids
+
+
+def test_specialist_registry_references_known_capabilities():
+    capability_ids = {item["id"] for item in list_capabilities()}
+    problems = validate_specialists(capability_ids)
+    assert problems == []
+    specialist_ids = {item["id"] for item in list_specialists()}
+    assert "operations.sre" in specialist_ids
+    assert "testing.reality_checker" in specialist_ids
+    assert "memory.habit_coach" in specialist_ids
 
 
 def test_route_eye_comfort_to_system_capability():
@@ -34,6 +45,18 @@ def test_route_self_evolution_and_skill_rewrite():
     assert "skill.self_evolve" in matched_ids
     assert route["risk_level"] in {"confirm", "dangerous"}
     assert any(step["capability_id"] == "skill.self_evolve" for step in route["plan"])
+
+
+def test_route_specialists_for_agent_architecture_research():
+    matches = route_specialists("继续深挖 GitHub 上的 Agent 和 MCP 框架，给黑光落地方案")
+    ids = [item["specialist"]["id"] for item in matches]
+    assert "research.agent_architect" in ids
+
+
+def test_route_specialists_for_local_runtime_incident():
+    matches = route_specialists("黑光启动不了，检查端口、日志和模型网关")
+    ids = [item["specialist"]["id"] for item in matches]
+    assert "operations.sre" in ids
 
 
 def test_capability_executor_dry_run_does_not_execute_real_actions():
