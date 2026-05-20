@@ -5,7 +5,7 @@ import logging
 import json
 import os
 import re
-import sqlite_wal as _sqlite3_mod
+import sqlite_wal as sqlite3
 import threading
 import time
 from collections import Counter
@@ -24,32 +24,6 @@ if not VAULT_DIR.is_dir() and LEGACY_VAULT_DIR.is_dir():
 # 原实现每次操作都 sqlite3.connect() + close()，在高频读写下会造成频繁 fd 开关。
 # 同一线程内复用连接；sqlite_wal（WAL 模式）保证多线程读写不互相阻塞。
 # ---------------------------------------------------------------------------
-
-_tls = threading.local()
-
-
-def _get_conn() -> _sqlite3_mod.Connection:
-    """返回当前线程的缓存连接，首次访问时建立。"""
-    conn = getattr(_tls, "conn", None)
-    if conn is None:
-        conn = _sqlite3_mod.connect(DB_PATH)
-        _tls.conn = conn
-    return conn
-
-
-class sqlite3:
-    """透明代理：将 sqlite3.connect(DB_PATH) 重定向到线程本地连接缓存。"""
-
-    @staticmethod
-    def connect(path: str) -> _sqlite3_mod.Connection:
-        if path == DB_PATH:
-            return _get_conn()
-        return _sqlite3_mod.connect(path)
-
-    OperationalError = _sqlite3_mod.OperationalError
-    IntegrityError = getattr(_sqlite3_mod, "IntegrityError", Exception)
-    Connection = getattr(_sqlite3_mod, "Connection", object)
-
 
 def init_memory_store() -> None:
     conn = sqlite3.connect(DB_PATH)
