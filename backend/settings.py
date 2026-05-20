@@ -17,7 +17,7 @@ class AppSettings(BaseSettings):
     backend_port: int = Field(default=8000, alias="BACKEND_PORT")
     mobile_access_token: str = Field(default="", alias="MOBILE_ACCESS_TOKEN")
     require_api_token_on_lan: bool = Field(default=True, alias="REQUIRE_API_TOKEN_ON_LAN")
-    agent_tool_auto_confirm: bool = Field(default=True, alias="AGENT_TOOL_AUTO_CONFIRM")
+    agent_tool_auto_confirm: bool = Field(default=False, alias="AGENT_TOOL_AUTO_CONFIRM")
     smart_router_enabled: bool = Field(default=True, alias="SMART_ROUTER_ENABLED")
     llm_backend: str = Field(default="ollama", alias="LLM_BACKEND")
 

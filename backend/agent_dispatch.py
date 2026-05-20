@@ -12,7 +12,7 @@ ToolHandler = Callable[[dict[str, Any]], str]
 
 def tool_auto_confirm_enabled() -> bool:
     """When true, confirm/dangerous tools run without explicit confirmed=true."""
-    return os.environ.get("AGENT_TOOL_AUTO_CONFIRM", "1").strip().lower() in (
+    return os.environ.get("AGENT_TOOL_AUTO_CONFIRM", "0").strip().lower() in (
         "1",
         "true",
         "yes",
@@ -62,6 +62,12 @@ def check_tool_execution(
             "status": "error",
             "message": f"Unknown tool: {tool_name}",
         }
+
+    from policy_guard import check_policy
+
+    policy_block = check_policy(tool_name, params)
+    if policy_block:
+        return policy_block
 
     if tool_requires_confirmation(tool_name, params):
         risk = get_tool_risk_level(tool_name) or "confirm"

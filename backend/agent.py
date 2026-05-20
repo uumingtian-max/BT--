@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import json
 import os
 import re
@@ -1373,6 +1373,27 @@ async def run_agent(
             from agent_dispatch import check_tool_execution
 
             block = check_tool_execution(tool_name, params, tool_map=TOOL_MAP)
+            if block and block.get("status") == "policy_denied":
+                denied_msg = str(block.get("message") or "策略拦截")
+                await emit_step(
+                    {
+                        "type": "tool_result",
+                        "tool": tool_name,
+                        "result": denied_msg,
+                        "policy_denied": True,
+                    }
+                )
+                messages += [
+                    {"role": "assistant", "content": response},
+                    {
+                        "role": "user",
+                        "content": (
+                            f"工具 {tool_name} 被安全策略拒绝：{denied_msg}\n"
+                            "向用户说明原因，不要假装已执行，也不要绕过策略重试。"
+                        ),
+                    },
+                ]
+                continue
             if block and block.get("status") == "confirm_required":
                 await emit_step(
                     {

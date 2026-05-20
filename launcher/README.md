@@ -2,11 +2,17 @@
 
 Windows 下从这里启动 BT（黑光）。
 
+官方启动链（唯一推荐）：
+
+`Launch-BT-Heiguang.vbs` → 根目录 `START_APP.bat` → `launcher\START_APP.bat`
+
+兼容：根目录 `START.bat` 仅转发到 `START_APP.bat`（旧快捷方式仍可用）。
+
 常用：
 
 - `START_APP.bat` — 桌面应用（自动拉 llama.cpp / Ollama）
 - `INSTALL_FIRST_RUN.bat` — 首次安装 Node / Python 依赖
-- `Launch-BT-Heiguang.vbs` — 做桌面快捷方式（无黑框）
+- `Launch-BT-Heiguang.vbs` — 桌面快捷方式（无黑框）
 - `打开本机Gemma模型.cmd` — 只起 llama-server（:8001）
 - `打开AI Agent.cmd` — 同 START_APP
 

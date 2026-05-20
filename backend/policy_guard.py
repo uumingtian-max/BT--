@@ -146,6 +146,9 @@ class PolicyGuard:
                 action = "write" if name in ("write_file",) else "access"
                 self.validate_path(val, action=action)
 
+        if name == "run_shell":
+            self.validate_command(str(p.get("command") or ""))
+
         if name == "execute_python":
             code = str(p.get("code") or "")
             self.validate_command(code)

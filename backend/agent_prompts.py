@@ -19,7 +19,7 @@ _TOOL_FORMAT_FOOTER = """
 8. 工具失败贴真实错误，禁止假装成功。
 
 不要教用户怎么手动调用工具。用户用自然语言描述意图即可。
-本机开发默认 AGENT_TOOL_AUTO_CONFIRM=1，confirm 工具可直接执行。
+confirm/dangerous 工具默认须用户确认；仅当 AGENT_TOOL_AUTO_CONFIRM=1 时自动执行。
 """
 
 

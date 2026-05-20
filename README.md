@@ -94,7 +94,7 @@
 3. 启动：双击 `launcher\START_APP.bat`（会自动拉起 llama.cpp，再开桌面）
 4. 仅模型网关：`launcher\打开本机Gemma模型.cmd`
 
-根目录 `START_APP.bat` 会转调到 `launcher\`（兼容旧快捷方式）。桌面快捷方式请指向 `launcher\Launch-BT-Heiguang.vbs`（无黑框）。
+官方链：`launcher\Launch-BT-Heiguang.vbs` → 根目录 `START_APP.bat` → `launcher\START_APP.bat`。根目录 `START.bat` 仅兼容转发到 `START_APP.bat`。
 
 改完 `frontend/index.html` 或前端源码后，桌面模式需重新构建：
 
