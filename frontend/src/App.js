@@ -2,6 +2,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import ReactMarkdown from 'react-markdown';
 import './App.css';
+import './electron-frame.css';
 import BrandLogo, { BrandHero } from './BrandLogo';
 import { DashboardPanel, SystemPanel, SkillsPanel, SchedulerPanel } from './OperatorPanels';
 import { LOCKED_MODEL_ID, LOCKED_MODEL_LABEL, labelForModel } from './modelCatalog';

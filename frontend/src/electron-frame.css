@@ -1,0 +1,7 @@
+/* Electron 无边框窗口专用：仅桌面壳加载，不参与 Web 兼容性检查 */
+.titlebar {
+  -webkit-app-region: drag;
+}
+.titlebar-controls {
+  -webkit-app-region: no-drag;
+}

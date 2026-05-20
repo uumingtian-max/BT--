@@ -4,46 +4,73 @@
   "python.analysis.venvPath": "C:\\Users\\ROG\\miniconda3\\envs",
   "python.analysis.venv": "bt-heiguang",
   "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
+  "python.analysis.include": [
+    "${workspaceFolder}/backend/**/*.py",
+    "${workspaceFolder}/scripts/**/*.py",
+    "${workspaceFolder}/start.py"
+  ],
   "python.analysis.exclude": [
     "**/miniconda3/**",
     "**/site-packages/**",
     "**/_pytest/**",
     "**/Lib/site-packages/**"
   ],
+  "python.analysis.ignore": [
+    "**/miniconda3/**",
+    "**/site-packages/**"
+  ],
   "basedpyright.analysis.diagnosticMode": "workspace",
   "basedpyright.analysis.venvPath": "C:\\Users\\ROG\\miniconda3\\envs",
   "basedpyright.analysis.venv": "bt-heiguang",
-  "basedpyright.analysis.extraPaths": ["${workspaceFolder}/backend"],
+  "basedpyright.analysis.include": [
+    "${workspaceFolder}/backend",
+    "${workspaceFolder}/scripts",
+    "${workspaceFolder}/start.py"
+  ],
   "basedpyright.analysis.exclude": [
     "**/miniconda3/**",
     "**/site-packages/**",
     "**/_pytest/**"
   ],
+  "cursorpyright.analysis.diagnosticMode": "workspace",
   "cursorpyright.analysis.venvPath": "C:\\Users\\ROG\\miniconda3\\envs",
   "cursorpyright.analysis.venv": "bt-heiguang",
-  "cursorpyright.analysis.extraPaths": ["${workspaceFolder}/backend"],
+  "cursorpyright.analysis.include": [
+    "${workspaceFolder}/backend",
+    "${workspaceFolder}/scripts",
+    "${workspaceFolder}/start.py"
+  ],
   "cursorpyright.analysis.exclude": [
     "**/miniconda3/**",
     "**/site-packages/**",
     "**/_pytest/**"
   ],
+  "cursorpyright.analysis.ignore": [
+    "**/miniconda3/**",
+    "**/site-packages/**"
+  ],
   "cursorpyright.analysis.diagnosticSeverityOverrides": {
     "reportMissingImports": "none",
-    "reportMissingModuleSource": "none"
+    "reportMissingModuleSource": "none",
+    "reportGeneralTypeIssues": "none"
   },
-  "css.lint.compatibleVendorPrefixes": "ignore",
+  "css.validate": false,
   "css.lint.unknownProperties": "ignore",
+  "css.lint.compatibleVendorPrefixes": "ignore",
+  "scss.validate": false,
+  "less.validate": false,
   "vscode-edge-devtools.webhint": false,
+  "edgeTools.webhint": false,
   "files.exclude": {
     "**/miniconda3": true,
     "**/.codex": true,
-    "backend/.vscode": true
+    "**/site-packages": true
   },
   "search.exclude": {
     "**/miniconda3/**": true,
     "**/site-packages/**": true,
-    "**/.codex/**": true,
-    "**/_pytest/**": true
+    "**/_pytest/**": true,
+    "**/.codex/**": true
   },
   "files.watcherExclude": {
     "**/miniconda3/**": true,
@@ -52,7 +79,12 @@
   "files.scanExcludedFolders": [
     "C:\\Users\\ROG\\miniconda3",
     "C:\\Users\\ROG\\miniconda3\\envs",
-    "C:\\Users\\ROG\\miniconda3\\Lib\\site-packages"
+    "C:\\Users\\ROG\\miniconda3\\Lib",
+    "C:\\Users\\ROG\\miniconda3\\envs\\bt-heiguang\\Lib"
   ],
-  "problems.sortOrder": "severity"
+  "files.associations": {
+    "**/miniconda3/**": "plaintext",
+    "**/site-packages/**": "plaintext",
+    "**/_pytest/**": "plaintext"
+  }
 }
