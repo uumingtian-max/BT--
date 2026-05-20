@@ -2,7 +2,9 @@
   "include": ["backend", "scripts", "start.py"],
   "ignore": [
     "C:/Users/ROG/miniconda3",
-    "C:/Users/ROG/miniconda3/envs/bt-heiguang/Lib/site-packages"
+    "C:/Users/ROG/miniconda3/envs/bt-heiguang/Lib/site-packages",
+    "C:/Users/ROG/Desktop/miniconda3",
+    "C:/Users/ROG/Desktop/miniconda3/envs/bt-heiguang/Lib/site-packages"
   ],
   "exclude": [
     "**/node_modules",

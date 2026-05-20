@@ -15,8 +15,12 @@ if (Test-Path $ws) {
 }
 
 Write-Host "验证项目内 pyright ..." -ForegroundColor DarkGray
-$py = "$env:USERPROFILE\miniconda3\envs\bt-heiguang\python.exe"
-if (Test-Path $py) {
+$candidates = @(
+  "$env:USERPROFILE\Desktop\miniconda3\envs\bt-heiguang\python.exe",
+  "$env:USERPROFILE\miniconda3\envs\bt-heiguang\python.exe"
+)
+$py = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+if ($py) {
   Push-Location $root
   & $py -m pyright backend 2>&1 | Select-Object -Last 1
   Pop-Location

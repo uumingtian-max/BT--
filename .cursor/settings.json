@@ -15,6 +15,26 @@
     "**/miniconda3/**",
     "**/site-packages/**"
   ],
+  "basedpyright.analysis.diagnosticMode": "workspace",
+  "basedpyright.analysis.include": [
+    "${workspaceFolder}/backend",
+    "${workspaceFolder}/scripts",
+    "${workspaceFolder}/start.py"
+  ],
+  "basedpyright.analysis.exclude": [
+    "**/miniconda3/**",
+    "**/site-packages/**",
+    "**/_pytest/**"
+  ],
+  "basedpyright.analysis.ignore": [
+    "**/miniconda3/**",
+    "**/site-packages/**"
+  ],
+  "basedpyright.analysis.diagnosticSeverityOverrides": {
+    "reportMissingImports": "none",
+    "reportMissingModuleSource": "none",
+    "reportGeneralTypeIssues": "none"
+  },
   "cursorpyright.analysis.include": [
     "${workspaceFolder}/backend",
     "${workspaceFolder}/scripts",
@@ -40,6 +60,8 @@
   "files.associations": {
     "C:\\Users\\ROG\\miniconda3\\**\\*.py": "plaintext",
     "C:\\Users\\ROG\\miniconda3\\**\\*.pyi": "plaintext",
+    "C:\\Users\\ROG\\Desktop\\miniconda3\\**\\*.py": "plaintext",
+    "C:\\Users\\ROG\\Desktop\\miniconda3\\**\\*.pyi": "plaintext",
     "**/miniconda3/**": "plaintext",
     "**/site-packages/**": "plaintext",
     "**/_pytest/**": "plaintext"
@@ -57,6 +79,10 @@
     "C:\\Users\\ROG\\miniconda3",
     "C:\\Users\\ROG\\miniconda3\\envs",
     "C:\\Users\\ROG\\miniconda3\\Lib",
-    "C:\\Users\\ROG\\miniconda3\\envs\\bt-heiguang\\Lib"
+    "C:\\Users\\ROG\\miniconda3\\envs\\bt-heiguang\\Lib",
+    "C:\\Users\\ROG\\Desktop\\miniconda3",
+    "C:\\Users\\ROG\\Desktop\\miniconda3\\envs",
+    "C:\\Users\\ROG\\Desktop\\miniconda3\\Lib",
+    "C:\\Users\\ROG\\Desktop\\miniconda3\\envs\\bt-heiguang\\Lib"
   ]
 }
