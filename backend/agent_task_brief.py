@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 _TOOL_TITLES: dict[str, str] = {

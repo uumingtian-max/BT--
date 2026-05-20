@@ -24,7 +24,6 @@ GPU_LIVE_PATTERNS: list[str] = [
     r"多少度",
     r"功耗",
     r"实时.*gpu",
-    r"5090",
 ]
 
 VRAM_CLEAN_PATTERNS: list[str] = [
@@ -80,9 +79,7 @@ def infer_gpu_live_tool(user_msg: str) -> str | None:
         return "get_gpu_status"
     live_markers = ("利用率", "温度", "功耗", "实时")
     gpu_markers = ("gpu", "显卡", "显存", "5090", "nvidia")
-    if any(m in text.lower() or m in text for m in gpu_markers) and any(
-        m in text for m in live_markers
-    ):
+    if any(m in text.lower() or m in text for m in gpu_markers) and any(m in text for m in live_markers):
         return "get_gpu_status"
     return None
 
@@ -182,9 +179,7 @@ def infer_hardware_tool(user_msg: str) -> str | None:
     for pattern, tool in HARDWARE_PATTERNS:
         if re.search(pattern, text, re.IGNORECASE):
             return tool
-    if re.search(r"(显卡|GPU|显存)", text, re.IGNORECASE) and not any(
-        m in text for m in perf_markers
-    ):
+    if re.search(r"(显卡|GPU|显存)", text, re.IGNORECASE) and not any(m in text for m in perf_markers):
         return "get_system_info"
     return None
 

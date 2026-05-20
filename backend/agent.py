@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import json
 import os
 import re
@@ -8,19 +8,11 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from tools.search import web_search
-from tools.local_crawl import local_scrape_url, local_search
-from tools.file_ops import read_file, write_file, list_files, resolve_user_path
-from tools.http_tool import http_request
-from tools.db_query import query_database
-from tools.mcp_invoke import mcp_invoke
-from subagent_runner import run_parallel_subagents_sync
-from orchestrator import run_orchestration
+from tools.file_ops import resolve_user_path
 from memory_store import (
     build_knowledge_context,
     build_memory_context,
     build_playbook_context,
-    ingest_notebook_corpus,
     list_playbook_entries,
     remember_from_message,
 )
@@ -34,7 +26,7 @@ from workflow_store import build_workflow_context, record_task_review
 from agent_runtime import get_runtime, orchestration_defaults, reload_runtime
 from context_pack import compress_for_llm, compress_tool_result_for_llm
 from hooks import notify_agent_completed
-from llm_client import chat_complete_async, chat_complete_sync
+from llm_client import chat_complete_async
 from self_evolve import distill_playbook_with_llm, ingest_review_lesson
 from skill_pack import build_skill_pack_context
 from agent_session import (
@@ -42,6 +34,8 @@ from agent_session import (
     persist_agent_answer,
     save_user_turn,
 )
+from agent_prompts import SYSTEM_PROMPT_BASE, TOOLS_DESC
+from agent_tool_map import TOOL_MAP, _normalize_parsed_tool
 
 
 def _agent_run_stream_error_message(exc: Exception) -> str:
@@ -74,8 +68,6 @@ def _agent_run_stream_error_message(exc: Exception) -> str:
 
 router = APIRouter()
 
-from agent_prompts import SYSTEM_PROMPT_BASE, TOOLS_DESC
-
 SYSTEM_PROMPT = SYSTEM_PROMPT_BASE + TOOLS_DESC
 
 
@@ -103,11 +95,6 @@ def _build_system_prompt() -> str:
         "- 未授权入侵、批量隐私搜集、违法绕过类请求：拒绝并说明合规边界。"
     )
     return "\n\n".join(parts)
-
-
-
-from agent_tool_map import TOOL_MAP, _normalize_parsed_tool, _web_search_tool
-
 
 
 DIRECTORY_HINTS = {
@@ -487,6 +474,16 @@ def infer_tool_from_message(message: str):
             "parameters": {"command": shell_cmd, "cwd": "project"},
         }
 
+    if _looks_like_model_download_research(text):
+        return {
+            "name": "local_search",
+            "parameters": {
+                "query": _model_download_search_query(text),
+                "limit": 8,
+                "scrape": True,
+            },
+        }
+
     inferred = build_inferred_tool_call(text)
     if inferred:
         return inferred
@@ -498,16 +495,6 @@ def infer_tool_from_message(message: str):
         if any(k in text.lower() or k in text for k in ("gpu", "显卡", "5090", "nvidia")):
             return {"name": "get_gpu_status", "parameters": {}}
         return {"name": "get_process_list", "parameters": {"top_n": 15, "sort_by": "memory"}}
-
-    if _looks_like_model_download_research(text):
-        return {
-            "name": "local_search",
-            "parameters": {
-                "query": _model_download_search_query(text),
-                "limit": 8,
-                "scrape": True,
-            },
-        }
 
     if _looks_like_research_or_recommendation_request(text):
         return {
@@ -1400,10 +1387,7 @@ async def run_agent(
                     {"role": "assistant", "content": response},
                     {
                         "role": "user",
-                        "content": (
-                            f"{block.get('message')}\n"
-                            "请向用户说明需要确认的操作，不要假装已执行。"
-                        ),
+                        "content": (f"{block.get('message')}\n请向用户说明需要确认的操作，不要假装已执行。"),
                     },
                 ]
                 continue
@@ -1528,9 +1512,10 @@ async def run_agent(
                     cleaned,
                     last_tool_result or "",
                 )
-        elif not tool_used and _looks_like_action_request(message) and (
-            _looks_like_manual_instructions(cleaned)
-            or _looks_like_options_only_answer(cleaned)
+        elif (
+            not tool_used
+            and _looks_like_action_request(message)
+            and (_looks_like_manual_instructions(cleaned) or _looks_like_options_only_answer(cleaned))
         ):
             retry = infer_tool_from_message(message)
             if retry and retry.get("name") not in ("route_capability_intent",):
@@ -1541,9 +1526,7 @@ async def run_agent(
                     }
                 )
                 try:
-                    result = await asyncio.to_thread(
-                        _execute_tool_sync, retry["name"], retry.get("parameters") or {}
-                    )
+                    result = await asyncio.to_thread(_execute_tool_sync, retry["name"], retry.get("parameters") or {})
                     tool_used = True
                     last_tool_name = retry["name"]
                     last_tool_result = compress_tool_result_for_llm(
@@ -1564,15 +1547,9 @@ async def run_agent(
                         }
                     )
                     if not _tool_result_failed(last_tool_name, str(result)):
-                        cleaned = _fallback_answer_from_tool_result(
-                            message, last_tool_name, last_tool_result
-                        )
-                        record_task_outcome(
-                            "agent_run", "success", "agent_late_tool", cleaned[:300]
-                        )
-                        last_review = record_task_review(
-                            message, "success", last_tool_name, cleaned, str(result)
-                        )
+                        cleaned = _fallback_answer_from_tool_result(message, last_tool_name, last_tool_result)
+                        record_task_outcome("agent_run", "success", "agent_late_tool", cleaned[:300])
+                        last_review = record_task_review(message, "success", last_tool_name, cleaned, str(result))
                         if not _looks_like_garbled_text(message):
                             remember_from_message(sid, "assistant", cleaned)
                         await emit_step({"type": "final_answer", "content": cleaned})

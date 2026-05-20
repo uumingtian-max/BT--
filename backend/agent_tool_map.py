@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -84,12 +82,7 @@ def _execute_capability_tool(params: dict) -> str:
         from intent_router import route_intent
         from capability_runtime import execute_runtime_capability
 
-        message = (
-            params.get("message")
-            or params.get("text")
-            or params.get("query")
-            or ""
-        )
+        message = params.get("message") or params.get("text") or params.get("query") or ""
         message = str(message).strip()
         if not message:
             return "execute_capability error: missing message"
@@ -111,12 +104,7 @@ def _run_shell_tool(params: dict) -> str:
     try:
         from tools.shell_exec import run_shell
 
-        command = (
-            params.get("command")
-            or params.get("cmd")
-            or params.get("script")
-            or ""
-        )
+        command = params.get("command") or params.get("cmd") or params.get("script") or ""
         command = str(command).strip()
         if not command:
             return "run_shell error: missing command"
@@ -133,13 +121,7 @@ def _capability_route_tool(params: dict) -> str:
     try:
         from intent_router import route_intent
 
-        message = (
-            params.get("message")
-            or params.get("text")
-            or params.get("query")
-            or params.get("user_text")
-            or ""
-        )
+        message = params.get("message") or params.get("text") or params.get("query") or params.get("user_text") or ""
         message = str(message).strip()
         if not message:
             return "route_capability_intent error: missing message"
@@ -268,8 +250,6 @@ def _text_to_speech_tool(params: dict) -> str:
 
 
 def _run_project_check_tool(params: dict) -> str:
-    import subprocess
-    import sys
     from pathlib import Path
 
     target = str(params.get("target") or "all").strip().lower()

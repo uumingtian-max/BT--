@@ -52,9 +52,7 @@ def get_system_info(params: dict[str, Any]) -> str:
             info["cpu"] = out.strip()
     except Exception as e:
         try:
-            info["cpu"] = (
-                f"{psutil.cpu_count(logical=False)} 物理核 / {psutil.cpu_count()} 逻辑核"
-            )
+            info["cpu"] = f"{psutil.cpu_count(logical=False)} 物理核 / {psutil.cpu_count()} 逻辑核"
         except Exception:
             info["cpu"] = f"获取失败: {e}"
 
