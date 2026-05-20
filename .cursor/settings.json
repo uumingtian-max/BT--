@@ -1,9 +1,6 @@
 {
   "python.defaultInterpreterPath": "C:\\Users\\ROG\\miniconda3\\envs\\bt-heiguang\\python.exe",
   "python.analysis.diagnosticMode": "workspace",
-  "python.analysis.venvPath": "C:\\Users\\ROG\\miniconda3\\envs",
-  "python.analysis.venv": "bt-heiguang",
-  "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
   "python.analysis.include": [
     "${workspaceFolder}/backend/**/*.py",
     "${workspaceFolder}/scripts/**/*.py",
@@ -12,29 +9,12 @@
   "python.analysis.exclude": [
     "**/miniconda3/**",
     "**/site-packages/**",
-    "**/_pytest/**",
-    "**/Lib/site-packages/**"
+    "**/_pytest/**"
   ],
   "python.analysis.ignore": [
     "**/miniconda3/**",
     "**/site-packages/**"
   ],
-  "basedpyright.analysis.diagnosticMode": "workspace",
-  "basedpyright.analysis.venvPath": "C:\\Users\\ROG\\miniconda3\\envs",
-  "basedpyright.analysis.venv": "bt-heiguang",
-  "basedpyright.analysis.include": [
-    "${workspaceFolder}/backend",
-    "${workspaceFolder}/scripts",
-    "${workspaceFolder}/start.py"
-  ],
-  "basedpyright.analysis.exclude": [
-    "**/miniconda3/**",
-    "**/site-packages/**",
-    "**/_pytest/**"
-  ],
-  "cursorpyright.analysis.diagnosticMode": "workspace",
-  "cursorpyright.analysis.venvPath": "C:\\Users\\ROG\\miniconda3\\envs",
-  "cursorpyright.analysis.venv": "bt-heiguang",
   "cursorpyright.analysis.include": [
     "${workspaceFolder}/backend",
     "${workspaceFolder}/scripts",
@@ -55,38 +35,28 @@
     "reportGeneralTypeIssues": "none"
   },
   "css.validate": false,
-  "css.lint.unknownProperties": "ignore",
-  "css.lint.compatibleVendorPrefixes": "ignore",
-  "scss.validate": false,
-  "less.validate": false,
   "vscode-edge-devtools.webhint": false,
   "edgeTools.webhint": false,
-  "files.exclude": {
-    "**/miniconda3": true,
-    "**/.codex": true,
-    "**/site-packages": true
-  },
-  "search.exclude": {
-    "**/miniconda3/**": true,
-    "**/site-packages/**": true,
-    "**/_pytest/**": true,
-    "**/.codex/**": true
-  },
-  "files.watcherExclude": {
-    "**/miniconda3/**": true,
-    "**/site-packages/**": true
-  },
-  "files.scanExcludedFolders": [
-    "C:\\Users\\ROG\\miniconda3",
-    "C:\\Users\\ROG\\miniconda3\\envs",
-    "C:\\Users\\ROG\\miniconda3\\Lib",
-    "C:\\Users\\ROG\\miniconda3\\envs\\bt-heiguang\\Lib"
-  ],
   "files.associations": {
     "C:\\Users\\ROG\\miniconda3\\**\\*.py": "plaintext",
     "C:\\Users\\ROG\\miniconda3\\**\\*.pyi": "plaintext",
     "**/miniconda3/**": "plaintext",
     "**/site-packages/**": "plaintext",
     "**/_pytest/**": "plaintext"
-  }
+  },
+  "files.exclude": {
+    "**/miniconda3": true,
+    "**/site-packages": true
+  },
+  "search.exclude": {
+    "**/miniconda3/**": true,
+    "**/site-packages/**": true,
+    "**/_pytest/**": true
+  },
+  "files.scanExcludedFolders": [
+    "C:\\Users\\ROG\\miniconda3",
+    "C:\\Users\\ROG\\miniconda3\\envs",
+    "C:\\Users\\ROG\\miniconda3\\Lib",
+    "C:\\Users\\ROG\\miniconda3\\envs\\bt-heiguang\\Lib"
+  ]
 }

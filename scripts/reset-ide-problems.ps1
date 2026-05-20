@@ -3,10 +3,10 @@ $ErrorActionPreference = "Continue"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 Write-Host "`n=== 重置 IDE 问题面板 ===" -ForegroundColor Cyan
-Write-Host "1. 关闭所有 miniconda3 / site-packages / _pytest 相关标签页"
-Write-Host "2. 用工作区打开: ai-agent-project.code-workspace"
+Write-Host "1. 关闭所有 miniconda3 / site-packages / _pytest / terminal.py 标签页（右键 -> Close All）"
+Write-Host "2. 文件 -> 打开工作区 -> ai-agent-project.code-workspace"
 Write-Host "3. Ctrl+Shift+P -> Developer: Reload Window"
-Write-Host "4. 扩展里禁用: Microsoft Edge Tools for VS Code`n"
+Write-Host "4. 扩展 -> 禁用 Microsoft Edge Tools for VS Code（若仍见 CSS 兼容告警）`n"
 
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $ws = Join-Path $root "ai-agent-project.code-workspace"

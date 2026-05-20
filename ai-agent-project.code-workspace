@@ -8,36 +8,20 @@
   "settings": {
     "python.defaultInterpreterPath": "C:\\Users\\ROG\\miniconda3\\envs\\bt-heiguang\\python.exe",
     "python.analysis.diagnosticMode": "workspace",
-    "python.analysis.venvPath": "C:\\Users\\ROG\\miniconda3\\envs",
-    "python.analysis.venv": "bt-heiguang",
     "python.analysis.include": [
       "${workspaceFolder}/backend/**/*.py",
       "${workspaceFolder}/scripts/**/*.py",
       "${workspaceFolder}/start.py"
     ],
-    "python.analysis.exclude": [
-      "**/miniconda3/**",
-      "**/site-packages/**",
-      "**/_pytest/**"
-    ],
-    "python.analysis.ignore": [
-      "**/miniconda3/**",
-      "**/site-packages/**"
-    ],
+    "python.analysis.exclude": ["**/miniconda3/**", "**/site-packages/**", "**/_pytest/**"],
+    "python.analysis.ignore": ["**/miniconda3/**", "**/site-packages/**"],
     "cursorpyright.analysis.include": [
       "${workspaceFolder}/backend",
       "${workspaceFolder}/scripts",
       "${workspaceFolder}/start.py"
     ],
-    "cursorpyright.analysis.exclude": [
-      "**/miniconda3/**",
-      "**/site-packages/**",
-      "**/_pytest/**"
-    ],
-    "cursorpyright.analysis.ignore": [
-      "**/miniconda3/**",
-      "**/site-packages/**"
-    ],
+    "cursorpyright.analysis.exclude": ["**/miniconda3/**", "**/site-packages/**", "**/_pytest/**"],
+    "cursorpyright.analysis.ignore": ["**/miniconda3/**", "**/site-packages/**"],
     "cursorpyright.analysis.diagnosticSeverityOverrides": {
       "reportMissingImports": "none",
       "reportMissingModuleSource": "none",
@@ -46,6 +30,13 @@
     "css.validate": false,
     "vscode-edge-devtools.webhint": false,
     "edgeTools.webhint": false,
+    "files.associations": {
+      "C:\\Users\\ROG\\miniconda3\\**\\*.py": "plaintext",
+      "C:\\Users\\ROG\\miniconda3\\**\\*.pyi": "plaintext",
+      "**/miniconda3/**": "plaintext",
+      "**/site-packages/**": "plaintext",
+      "**/_pytest/**": "plaintext"
+    },
     "files.exclude": {
       "**/miniconda3": true,
       "**/site-packages": true
@@ -60,12 +51,7 @@
       "C:\\Users\\ROG\\miniconda3\\envs",
       "C:\\Users\\ROG\\miniconda3\\Lib",
       "C:\\Users\\ROG\\miniconda3\\envs\\bt-heiguang\\Lib"
-    ],
-    "files.associations": {
-      "**/miniconda3/**": "plaintext",
-      "**/site-packages/**": "plaintext",
-      "**/_pytest/**": "plaintext"
-    }
+    ]
   },
   "extensions": {
     "recommendations": ["ms-python.python"],

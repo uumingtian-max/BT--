@@ -85,6 +85,7 @@ htmlcov/
 .vscode/*
 !.vscode/settings.json
 !.vscode/launch.json
+!.vscode/extensions.json
 !ai-agent-project.code-workspace
 
 # 本机实验（不进 GitHub，避免问题面板扫到半成品）

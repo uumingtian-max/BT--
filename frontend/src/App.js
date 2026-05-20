@@ -2,7 +2,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import ReactMarkdown from 'react-markdown';
 import './App.css';
-import './electron-frame.css';
 import BrandLogo, { BrandHero } from './BrandLogo';
 import { DashboardPanel, SystemPanel, SkillsPanel, SchedulerPanel } from './OperatorPanels';
 import { LOCKED_MODEL_ID, LOCKED_MODEL_LABEL, labelForModel } from './modelCatalog';
@@ -506,6 +505,21 @@ export default function App() {
   useEffect(() => {
     sessionIdRef.current = activeSession;
   }, [activeSession]);
+
+  // Electron 无边框窗口拖拽区（注入 style，避免单独 CSS 文件触发 IDE 兼容性误报）
+  useEffect(() => {
+    const id = 'bklt-electron-frame';
+    if (document.getElementById(id)) return undefined;
+    const el = document.createElement('style');
+    el.id = id;
+    el.textContent =
+      '.titlebar{-webkit-app-region:drag}.titlebar-controls{-webkit-app-region:no-drag}';
+    document.head.appendChild(el);
+    return () => {
+      const node = document.getElementById(id);
+      if (node) node.remove();
+    };
+  }, []);
 
   const loadSkillsCatalog = async () => {
     try {
