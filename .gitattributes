@@ -1,0 +1,69 @@
+# 统一行尾：仓库内源码用 LF，Windows 脚本用 CRLF，消除 git stash/commit 时的 LF/CRLF 警告
+* text=auto
+
+# ── 源码 / 配置（跨平台，统一 LF）────────────────────────────────────────────
+*.py            text eol=lf
+*.pyi           text eol=lf
+*.js            text eol=lf
+*.jsx           text eol=lf
+*.ts            text eol=lf
+*.tsx           text eol=lf
+*.mjs           text eol=lf
+*.cjs           text eol=lf
+*.json          text eol=lf
+*.yaml          text eol=lf
+*.yml           text eol=lf
+*.md            text eol=lf
+*.txt           text eol=lf
+*.html          text eol=lf
+*.css           text eol=lf
+*.scss          text eol=lf
+*.xml           text eol=lf
+*.toml          text eol=lf
+*.ini           text eol=lf
+*.env.example   text eol=lf
+*.gitignore     text eol=lf
+*.gitattributes text eol=lf
+*.dockerfile    text eol=lf
+Dockerfile*     text eol=lf
+*.sh            text eol=lf
+.editorconfig   text eol=lf
+
+# ── Windows 启动脚本（保留 CRLF）──────────────────────────────────────────────
+*.bat           text eol=crlf
+*.cmd           text eol=crlf
+*.ps1           text eol=crlf
+*.vbs           text eol=crlf
+
+# ── 二进制（禁止行尾转换）────────────────────────────────────────────────────
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.webp          binary
+*.ico           binary
+*.svg           binary
+*.woff          binary
+*.woff2         binary
+*.ttf           binary
+*.eot           binary
+*.zip           binary
+*.gz            binary
+*.7z            binary
+*.db            binary
+*.sqlite        binary
+*.wasm          binary
+*.pt            binary
+*.pth           binary
+*.onnx          binary
+*.pkl           binary
+*.bin           binary
+*.mp3           binary
+*.mp4           binary
+*.wav           binary
+*.pdf           binary
+
+# ── 生成物 / 锁文件（按原样保存，减少无意义 diff）────────────────────────────
+package-lock.json -diff
+*.min.js          -diff
+*.min.css         -diff

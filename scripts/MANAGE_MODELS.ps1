@@ -5,23 +5,25 @@ $ErrorActionPreference = "Continue"
 $ResidentModels = @(
     "nomic-embed-text:latest",
     "functiongemma:latest",
-    "qwen3.5:4b",
-    "deepseek-r1:7b"
+    "qwen3.5:9b",
+    "deepseek-r1:7b",
+    "deepseek-coder-v2:16b"
 )
-$OnDemandModels = @("deepseek-coder-v2:16b")
-$PinModels = $ResidentModels + $OnDemandModels
+$OnDemandModels = @()
+$PinModels = $ResidentModels
 $RemovedModels = @(
+    "qwen3.5:4b",
     "qwen3.5:0.8b",
     "nemotron-3-nano:4b",
-    "granite4:3b"
+    "granite4:3b",
+    "qwen3:14b"
 )
 
 function Show-Menu {
     Write-Host "`n=== 黑光 Ollama 模型管理 ===" -ForegroundColor Cyan
-    Write-Host "常驻(~9.7G): embed + router + qwen3.5:4b + r1"
-    Write-Host "按需(~8.9G): deepseek-coder-v2:16b（复杂代码，用完自动 unload）"
+    Write-Host "全常驻: 5模型一直挂VRAM (~20-22G) | 画图SD 语音F5"
     Write-Host "画图: generate_image / SD，不是 Ollama`n"
-    Write-Host "[1] 拉取/更新 5 个岗位模型 (ollama pull)"
+    Write-Host "[1] 拉取/更新 5 个全常驻模型 (ollama pull)"
     Write-Host "[2] 预热并 pin (keep_alive，需 backend/.env)"
     Write-Host "[3] 查看 ollama list / ollama ps"
     Write-Host "[4] 删除已裁重叠模型 ($($RemovedModels -join ', '))"
@@ -59,16 +61,18 @@ backend/.env 岗位键（勿重复定义 AGENT_DEFAULT_MODEL）:
 
   EMBED_MODEL          -> nomic-embed-text
   AGENT_ROUTER_MODEL   -> functiongemma
-  AGENT_DEFAULT_MODEL  -> qwen3.5:4b   (答案/主聊/视觉)
-  FAST_MODEL           -> qwen3.5:4b
-  TASK_MODEL           -> qwen3.5:4b
-  ORCH_VISION_MODEL    -> qwen3.5:4b
+  AGENT_DEFAULT_MODEL  -> qwen3.5:9b   (主聊/视觉/tools)
+  FAST_MODEL           -> qwen3.5:9b
+  TASK_MODEL           -> qwen3.5:9b
+  ORCH_VISION_MODEL    -> qwen3.5:9b
   REASONING_MODEL      -> deepseek-r1:7b
   ORCH_PLANNER_MODEL   -> deepseek-r1:7b
-  CODE_MODEL           -> deepseek-coder-v2:16b  (复杂代码，按需，不常驻)
-  OLLAMA_RESIDENT_MODELS / OLLAMA_ON_DEMAND_MODELS / OLLAMA_RELEASE_ON_DEMAND=1
-  CODE_SIMPLE_MODEL    -> qwen3.5:4b           (简单代码)
+  CODE_MODEL           -> deepseek-coder-v2:16b  (常驻)
+  BOSS_MODEL           -> deepseek-r1:7b (极限题，常驻)
+  OLLAMA_RELEASE_ON_DEMAND=0  (不卸载，一直挂)
+  CODE_SIMPLE_MODEL    -> qwen3.5:9b
   ORCH_CODER_MODEL     -> deepseek-coder-v2:16b
+  一键重装: scripts\install-ollama-stack-2026.ps1
 
   LLM_BACKEND=ollama
   OLLAMA_KEEP_ALIVE=24h
