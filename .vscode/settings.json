@@ -1,19 +1,45 @@
 {
   "python.defaultInterpreterPath": "C:\\Users\\ROG\\miniconda3\\envs\\bt-heiguang\\python.exe",
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.venvPath": "C:\\Users\\ROG\\miniconda3\\envs",
+  "python.analysis.venv": "bt-heiguang",
   "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
   "python.analysis.exclude": [
     "**/miniconda3/**",
-    "**/site-packages/_pytest/**"
+    "**/site-packages/**",
+    "**/Lib/site-packages/**"
   ],
+  "basedpyright.analysis.diagnosticMode": "workspace",
+  "basedpyright.analysis.venvPath": "C:\\Users\\ROG\\miniconda3\\envs",
+  "basedpyright.analysis.venv": "bt-heiguang",
+  "basedpyright.analysis.extraPaths": ["${workspaceFolder}/backend"],
+  "basedpyright.analysis.exclude": [
+    "**/miniconda3/**",
+    "**/site-packages/**",
+    "**/Lib/site-packages/**"
+  ],
+  "cursorpyright.analysis.venvPath": "C:\\Users\\ROG\\miniconda3\\envs",
+  "cursorpyright.analysis.venv": "bt-heiguang",
+  "cursorpyright.analysis.extraPaths": ["${workspaceFolder}/backend"],
+  "cursorpyright.analysis.exclude": [
+    "**/miniconda3/**",
+    "**/site-packages/**"
+  ],
+  "cursorpyright.analysis.diagnosticSeverityOverrides": {
+    "reportMissingImports": "none",
+    "reportMissingModuleSource": "none"
+  },
   "css.lint.compatibleVendorPrefixes": "ignore",
+  "css.lint.unknownProperties": "ignore",
   "files.watcherExclude": {
-    "**/miniconda3/**": true
+    "**/miniconda3/**": true,
+    "**/site-packages/**": true
   },
   "search.exclude": {
     "**/miniconda3/**": true,
     "**/site-packages/**": true
   },
   "files.exclude": {
-    "**/miniconda3/**": true
+    "**/miniconda3": true
   }
 }

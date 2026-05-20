@@ -1,20 +1,29 @@
 {
-  "venvPath": "C:/Users/ROG/miniconda3/envs",
-  "venv": "bt-heiguang",
-  "extraPaths": ["backend"],
-  "executionEnvironments": [
-    { "root": "backend" },
-    { "root": "scripts", "extraPaths": ["backend"] }
-  ],
+  "include": ["backend", "scripts", "start.py"],
   "exclude": [
     "**/node_modules",
     "**/__pycache__",
-    "**/miniconda3/**",
-    "**/site-packages/**",
+    "**/miniconda3",
+    "**/site-packages",
     "archive",
-    "frontend/build",
-    "frontend/node_modules"
+    "frontend",
+    "electron",
+    "outputs",
+    "data",
+    "logs",
+    "tmp"
   ],
-  "reportMissingImports": "warning",
-  "pythonVersion": "3.11"
+  "venvPath": "C:/Users/ROG/miniconda3/envs",
+  "venv": "bt-heiguang",
+  "pythonVersion": "3.12",
+  "pythonPlatform": "Windows",
+  "extraPaths": ["backend"],
+  "executionEnvironments": [
+    { "root": "backend" },
+    { "root": "scripts", "extraPaths": ["backend"] },
+    { "root": ".", "extraPaths": ["backend"] }
+  ],
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "none",
+  "reportMissingModuleSource": "none"
 }

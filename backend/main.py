@@ -1,3 +1,4 @@
+# pyright: reportMissingImports=false
 import env_bootstrap
 
 env_bootstrap.load_backend_dotenv()
