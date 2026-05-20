@@ -1,9 +1,15 @@
 from fastapi import APIRouter
 
 from agent_events import timeline_contract
-from tool_registry import TOOL_GROUPS, list_tool_metadata, validate_tool_registry
+from tool_registry import TOOL_GROUPS, get_full_registry, list_tool_metadata, validate_tool_registry
 
 router = APIRouter()
+
+
+@router.get("/tools/full")
+def full_tool_registry():
+    """完整工具注册表 + 风险统计（前端工作台一键拉取）。"""
+    return {"ok": True, "data": get_full_registry()}
 
 
 @router.get("/tools/registry")

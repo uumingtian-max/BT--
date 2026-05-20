@@ -1,19 +1,36 @@
-# BT（黑光）
+# BT（黑光）— 持久记忆 AI Agent 工作台
 
-本地 AI Agent 自动化工作台 · Local AI Agent Automation Workbench
+**一个随时间成长的本地 AI Agent。每次对话、每次执行，都在让它更懂你。**
 
 [![CI](https://github.com/uumingtian-max/ai-agent-project/actions/workflows/ci.yml/badge.svg)](https://github.com/uumingtian-max/ai-agent-project/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)](https://python.org)
 [![Node](https://img.shields.io/badge/Node.js-18%2B-green?logo=node.js)](https://nodejs.org)
+[![Ollama](https://img.shields.io/badge/Ollama-ready-black?logo=ollama)](https://ollama.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](#license)
+[![CLAUDE.md](https://img.shields.io/badge/CLAUDE.md-agent%20ready-blueviolet)](./CLAUDE.md)
+[![Skills](https://img.shields.io/badge/skills-3%20exported-orange)](./skills/)
 
-聊天 · 工具 Agent · 执行时间线 · 插件化工具 · 长期记忆 · 任务编排 · 设备画像 · 习惯体检 · TTS
+聊天 · 工具 Agent · 执行时间线 · 智能模型路由 · 持久记忆 · 习惯体检 · 技能自进化 · TTS
 
 ---
 
-BT（黑光）不是普通聊天机器人（旧名/兼容名：BKLT 黑光、ONYX-OVERRIDE），而是一个本地优先的 AI Agent 自动化工作台。它通过 Electron + React + FastAPI 把模型、工具、记忆、任务执行和可视化过程整合在一起，让用户能看到 AI 在做什么、用了什么工具、结果是什么、哪里失败了、下一步准备做什么。
+> BT（黑光）不是无状态聊天窗口。它记住你的习惯、学习你的工作方式、在每次执行后自动更新技能包。
+> 你的数据完全在本机，模型完全自选，没有云端依赖。
 
-目录说明见 **[docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md)**（按后端 / 前端 / 桌面 / 启动 / 文档 / 脚本 / 本机数据分类）。Windows 一键启动见 **[`launcher/README.md`](launcher/README.md)**。
+旧名 / 兼容名：BKLT 黑光、ONYX-OVERRIDE
+
+目录说明见 **[docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md)**。Windows 一键启动见 **[`launcher/README.md`](launcher/README.md)**。AI 编程 Agent（Claude Code / Cursor）使用规范见 **[`CLAUDE.md`](./CLAUDE.md)**。
+
+## 为什么选 BT（黑光）
+
+| | BT（黑光）| 普通聊天 AI | 云端 Agent |
+|---|---|---|---|
+| 数据位置 | 完全本机 | 云端 | 云端 |
+| 跨会话记忆 | ✅ 持久 SQLite + 向量索引 | ❌ 无 | ✅ 但在服务商 |
+| 模型自选 | ✅ Ollama / vLLM / llama.cpp | ❌ 锁定 | ❌ 锁定 |
+| 技能自进化 | ✅ 习惯体检 + 自动更新技能包 | ❌ 无 | 部分 |
+| 可视化执行 | ✅ 每步 thinking/tool/result | ❌ 无 | 部分 |
+| 成本 | 一次性硬件 | 按量 | 按量 |
 
 ## 架构总览
 
@@ -28,21 +45,35 @@ BT（黑光）不是普通聊天机器人（旧名/兼容名：BKLT 黑光、ONY
                                            │
                    ┌───────────────────────┼───────────────┐
                    │                       │               │
-            ┌──────▼──────┐        ┌───────▼──────┐  ┌────▼─────┐
-            │   Ollama    │        │ llama.cpp    │  │  F5-TTS  │
-            │ 可选本地模型 │        │ :8001 OpenAI │  │  语音合成  │
-            └─────────────┘        └──────────────┘  └──────────┘
+            ┌──────▼──────┐        ┌───────▼──────┐  ┌──────▼─────┐  │
+            │   Ollama    │        │ llama.cpp /  │  │  F5-TTS   │  │
+            │ 多模型栈     │        │ vLLM :8001   │  │  语音合成  │  │
+            └─────────────┘        └──────────────┘  └────────────┘  │
 ```
 
-## 当前进化方向
+### 智能模型路由（5090 · 五模型栈示例）
 
-| 方向 | 说明 |
+| 模型 | 大小 | 职责 |
+|------|------|------|
+| nomic-embed-text | 0.3G | 向量嵌入 · RAG · 记忆召回 |
+| functiongemma | 0.3G | 工具路由 · 意图解析 |
+| qwen3.5:9b | 8.6G | 主脑 · 快答 · 编排审查 |
+| deepseek-r1:7b | 4.7G | 推理 · 规划 · 自我进化 |
+| deepseek-coder-v2:16b | 8.9G | 复杂代码（按需加载）|
+
+详见 [`skills/smart-model-routing.md`](./skills/smart-model-routing.md)
+
+## 核心能力
+
+| 能力 | 说明 |
 | ------ | ------ |
-| Agent 工作台 | 把每次任务拆成 thinking、tool_call、tool_result、final_answer 等可视化步骤 |
-| 插件化工具 | 工具拥有分组、描述、风险等级、参数 schema，方便前端渲染工具面板 |
-| 记忆树 | 长期记忆、playbook、技能包和本地知识库共同组成可压缩上下文 |
-| 自动化执行 | 支持文件读写、代码执行、网页搜索、浏览器自动化、项目检查和任务编排 |
-| 安全分层 | 工具按 safe / confirm / dangerous 分层，为后续确认弹窗和权限控制做准备 |
+| **持久记忆** | SQLite + 向量索引，跨会话记住你的习惯和偏好，详见 [`skills/persistent-memory.md`](./skills/persistent-memory.md) |
+| **Agent 工作台** | 每次任务拆成 thinking → tool_call → tool_result → final_answer，全程可视化 |
+| **智能模型路由** | 按任务类型选最小合适模型，详见 [`skills/smart-model-routing.md`](./skills/smart-model-routing.md) |
+| **习惯体检** | 每天 9:00 / 21:00 自动执行，行为变化时更新技能包，详见 [`skills/habit-check.md`](./skills/habit-check.md) |
+| **插件化工具** | 工具有分组、描述、风险等级、参数 schema，方便前端渲染 |
+| **技能自进化** | Agent 执行后异步记录进化日志，定期压缩写回技能包 |
+| **安全分层** | 工具按 safe / confirm / dangerous 分层，dangerous 操作须 confirmed=true |
 
 ## 快速开始
 
@@ -120,7 +151,7 @@ python start.py mobile   # 手机访问模式
 | `/scheduler` | 定时任务 |
 | `/mode chat` / `/mode agent` | 切换模式 |
 | `/model Gemma4-26B-A4B-Uncensored-HauhauCS-Balanced-Q5_K_P` | 切换到当前锁定的 llama.cpp 模型（须与 `.env` 一致） |
-| `/model qwen3.5:4b` | 切换到 Ollama 主聊模型 |
+| `/model qwen3.5:9b` | 切换到 Ollama 主脑模型（须与 `.env` 一致） |
 | `/skill <id>` | 挂载指定技能 |
 | `/tools` | 列出 Agent 工具 |
 
@@ -157,6 +188,7 @@ BACKEND_PORT=8000
 | GET | `/meta/skills` | 技能目录 |
 | GET | `/meta/models` | 模型列表 |
 | GET | `/meta/tools/registry` | UI 可直接使用的结构化工具注册表 |
+| GET | `/meta/tools/full` | 完整工具注册表 + 风险统计（工作台一键拉取） |
 | GET | `/meta/tools/risks` | 工具风险分层摘要 |
 | POST | `/chat/` | 聊天（SSE 流式） |
 | POST | `/agent/run` | Agent 执行（SSE 流式） |
@@ -258,6 +290,8 @@ ai-agent-project/
 ├── assets/           品牌资源
 ├── data/             本机数据（知识库等）
 ├── archive/          历史快照（勿作日常目录）
+├── skills/           可复用技能文档（对外展示 / fork）
+├── CLAUDE.md         Claude Code / Cursor Agent 说明
 ├── start.py          统一启动入口
 ├── README.md
 ├── .env.example

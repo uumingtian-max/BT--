@@ -60,7 +60,7 @@ jobs:
         env:
           LLM_BACKEND: ollama
           OLLAMA_HOST: http://127.0.0.1:11434   # 不会真正连接，单测 mock
-          AGENT_DEFAULT_MODEL: qwen3:14b
+          AGENT_DEFAULT_MODEL: qwen3.5:9b
           HABIT_CHECK_ENABLED: "false"
         run: |
           if [ -d backend/tests ]; then

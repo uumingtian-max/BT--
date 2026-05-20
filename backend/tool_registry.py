@@ -387,3 +387,17 @@ def validate_tool_registry() -> list[str]:
             if name not in names:
                 problems.append(f"{table_name} contains unknown tool: {name}")
     return problems
+
+
+def get_full_registry() -> dict[str, Any]:
+    """给前端用的完整工具信息 + risk_summary。"""
+    tools = list_tool_metadata()
+    return {
+        "tools": tools,
+        "groups": TOOL_GROUPS,
+        "risk_summary": {
+            "safe": len([t for t in tools if t.get("risk_level") == "safe"]),
+            "confirm": len([t for t in tools if t.get("risk_level") == "confirm"]),
+            "dangerous": len([t for t in tools if t.get("risk_level") == "dangerous"]),
+        }
+    }

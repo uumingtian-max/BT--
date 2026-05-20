@@ -44,6 +44,29 @@ from agent_runtime import get_runtime, validate_llm_config
 from settings import get_settings, validate_startup_settings
 
 
+async def warmup_models() -> None:
+    """启动时预热默认模型 / Ollama 常驻 pin（失败不阻塞启动）。"""
+    import logging
+
+    log = logging.getLogger("main")
+    try:
+        rt = get_runtime()
+        warm = os.environ.get("OLLAMA_WARM_ON_STARTUP", "1").strip().lower() in ("1", "true", "yes", "on")
+        if rt.llm_backend == "ollama" and warm:
+            from ollama_pins import warm_all_pinned_models
+
+            await asyncio.to_thread(warm_all_pinned_models)
+            log.info("Ollama pinned models warmed on startup")
+            return
+        from llm_client import chat_complete_async
+
+        model = rt.default_chat_model
+        await chat_complete_async([{"role": "user", "content": "ping"}], model, temperature=0.0)
+        log.info("LLM warmup done: %s", model)
+    except Exception as exc:
+        log.warning("Model warmup skipped: %s", exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     env_bootstrap.configure_root_logging()
@@ -72,6 +95,7 @@ async def lifespan(app: FastAPI):
     pattern_task = asyncio.create_task(background_pattern_maintenance())
     scheduler_task = asyncio.create_task(background_scheduler_loop())
     habit_task = asyncio.create_task(background_habit_loop())
+    asyncio.create_task(warmup_models())
     yield
     observe_task.cancel()
     memory_task.cancel()
@@ -97,6 +121,12 @@ async def lifespan(app: FastAPI):
     try:
         await habit_task
     except asyncio.CancelledError:
+        pass
+    try:
+        from llm_client import close_shared_clients
+
+        await close_shared_clients()
+    except Exception:
         pass
 
 
