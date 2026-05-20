@@ -78,8 +78,19 @@ from agent_prompts import SYSTEM_PROMPT_BASE, TOOLS_DESC
 
 SYSTEM_PROMPT = SYSTEM_PROMPT_BASE + TOOLS_DESC
 
+import time as _time
+
+_system_prompt_cache: str = ""
+_system_prompt_cache_ts: float = 0.0
+_SYSTEM_PROMPT_TTL = 60.0
+
 
 def _build_system_prompt() -> str:
+    global _system_prompt_cache, _system_prompt_cache_ts
+    now = _time.monotonic()
+    if _system_prompt_cache and (now - _system_prompt_cache_ts) < _SYSTEM_PROMPT_TTL:
+        return _system_prompt_cache
+
     rt = get_runtime()
     runtime = get_runtime_adjustments()
     parts = [SYSTEM_PROMPT]
@@ -104,7 +115,10 @@ def _build_system_prompt() -> str:
         "- 不要输出「无法进行需外部交互的操作」这种一刀切限制；要改成「当前缺少对应外部交互工具，但可后续接入」。\n"
         "- 未授权入侵、对他人隐私的批量搜集、用于欺骗的反检测/指纹绕过、违法或高风险绕过类请求：拒绝并说明合规边界。"
     )
-    return "\n\n".join(parts)
+    result = "\n\n".join(parts)
+    _system_prompt_cache = result
+    _system_prompt_cache_ts = now
+    return result
 
 
 
@@ -1258,6 +1272,7 @@ async def run_agent(
         workflow_context,
         playbook_context,
         skill_context,
+        forced_tool_call,
     ) = await asyncio.gather(
         asyncio.to_thread(lambda: compress_for_llm(build_memory_context(message), mx, "memory")),
         asyncio.to_thread(lambda: compress_for_llm(build_knowledge_context(message), mx, "knowledge")),
@@ -1265,6 +1280,7 @@ async def run_agent(
         asyncio.to_thread(lambda: compress_for_llm(build_workflow_context(message), mx, "workflow")),
         asyncio.to_thread(lambda: compress_for_llm(build_playbook_context(message), mx, "playbook")),
         asyncio.to_thread(lambda: compress_for_llm(build_skill_pack_context(message), mx, "skills")),
+        asyncio.to_thread(lambda: infer_tool_from_message(message)),
     )
     system_context_parts = [SYSTEM_PROMPT]
     if memory_context:
@@ -1281,12 +1297,11 @@ async def run_agent(
         system_context_parts.append(workflow_context)
     system_context_parts[0] = _build_system_prompt()
     system_content = "\n\n".join(system_context_parts)
-    messages = build_messages_with_history(system_content, sid)
+    messages = await asyncio.to_thread(build_messages_with_history, system_content, sid)
     tool_used = False
     last_tool_name = None
     last_tool_result = None
     last_review: dict | None = None
-    forced_tool_call = infer_tool_from_message(message)
 
     for _ in range(rt.agent_max_steps):
         if forced_tool_call is not None and not tool_used:

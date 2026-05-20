@@ -108,6 +108,12 @@ async def lifespan(app: FastAPI):
         await habit_task
     except asyncio.CancelledError:
         pass
+    try:
+        from llm_client import close_shared_clients
+
+        await close_shared_clients()
+    except Exception:
+        pass
 
 
 app = FastAPI(
