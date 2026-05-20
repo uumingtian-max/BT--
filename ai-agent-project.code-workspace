@@ -22,6 +22,7 @@
       "**/_pytest/**"
     ],
     "cursorpyright.analysis.typeCheckingMode": "off",
+    "cursorpyright.analysis.diagnosticMode": "openFilesOnly",
     "cursorpyright.analysis.configFilePath": "${workspaceFolder}",
     "css.validate": false,
     "vscode-edge-devtools.webhint": false,

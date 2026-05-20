@@ -33,7 +33,7 @@
     "reportGeneralTypeIssues": "none"
   },
   "cursorpyright.analysis.typeCheckingMode": "off",
-  "cursorpyright.analysis.diagnosticMode": "workspace",
+  "cursorpyright.analysis.diagnosticMode": "openFilesOnly",
   "cursorpyright.analysis.configFilePath": "${workspaceFolder}",
   "cursorpyright.analysis.exclude": [
     "C:/Users/ROG/miniconda3/**",

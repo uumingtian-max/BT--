@@ -52,8 +52,9 @@
     "reportCallIssue": "none",
     "reportAttributeAccessIssue": "none"
   },
+  "cursorpyright.disableLanguageServices": false,
   "cursorpyright.analysis.typeCheckingMode": "off",
-  "cursorpyright.analysis.diagnosticMode": "workspace",
+  "cursorpyright.analysis.diagnosticMode": "openFilesOnly",
   "cursorpyright.analysis.configFilePath": "${workspaceFolder}",
   "cursorpyright.analysis.include": [
     "${workspaceFolder}/backend",
