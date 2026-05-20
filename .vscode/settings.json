@@ -1,0 +1,19 @@
+{
+  "python.defaultInterpreterPath": "C:\\Users\\ROG\\miniconda3\\envs\\bt-heiguang\\python.exe",
+  "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
+  "python.analysis.exclude": [
+    "**/miniconda3/**",
+    "**/site-packages/_pytest/**"
+  ],
+  "css.lint.compatibleVendorPrefixes": "ignore",
+  "files.watcherExclude": {
+    "**/miniconda3/**": true
+  },
+  "search.exclude": {
+    "**/miniconda3/**": true,
+    "**/site-packages/**": true
+  },
+  "files.exclude": {
+    "**/miniconda3/**": true
+  }
+}
