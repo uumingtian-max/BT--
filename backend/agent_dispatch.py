@@ -71,7 +71,7 @@ def check_tool_execution(
             "risk_level": risk,
             "message": (
                 f"工具 `{tool_name}` 为 {risk} 级别，需用户确认后再执行。"
-                "请在 parameters 中加入 \"confirmed\": true 后重试，"
+                '请在 parameters 中加入 "confirmed": true 后重试，'
                 "或设置环境变量 AGENT_TOOL_AUTO_CONFIRM=1（仅建议本机开发）。"
             ),
         }

@@ -33,6 +33,17 @@ os.environ["ENABLE_IMAGE_PLACEHOLDER"] = "1"
 # 单测需要习惯体检 API 为启用态（CI workflow 可能设 HABIT_CHECK_ENABLED=false）
 os.environ["HABIT_CHECK_ENABLED"] = "1"
 
+# 避免项目内 tmp/pytest-* 目录权限导致 Windows 单测 ERROR
+_pytest_tmp = Path(os.environ.get("TEMP", os.environ.get("TMP", "."))) / "onyx-pytest"
+_pytest_tmp.mkdir(parents=True, exist_ok=True)
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.option.basetemp = str(_pytest_tmp / "pytest-tmp")
+    cache = _pytest_tmp / "pytest-cache"
+    cache.mkdir(parents=True, exist_ok=True)
+    config.option.cache_dir = str(cache)
+
 
 @pytest.fixture(scope="module")
 def client() -> TestClient:

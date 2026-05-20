@@ -27,7 +27,6 @@ TOOL_GROUPS: dict[str, list[str]] = {
     "capability_control": ["route_capability_intent", "execute_capability"],
     "search_crawl": ["web_search", "local_search", "local_scrape_url"],
     "files_code": ["read_file", "write_file", "list_files", "execute_python", "run_shell"],
-    "system_exec": ["run_shell", "execute_capability"],
     "system_info": [
         "get_system_info",
         "get_gpu_status",
@@ -414,10 +413,15 @@ TOOL_INPUT_SCHEMAS: dict[str, dict[str, Any]] = {
 
 
 def all_tool_names() -> list[str]:
-    """Return all registered tool names in stable display order."""
+    """Return all registered tool names in stable display order (deduped)."""
     names: list[str] = []
+    seen: set[str] = set()
     for group_names in TOOL_GROUPS.values():
-        names.extend(group_names)
+        for name in group_names:
+            if name in seen:
+                continue
+            seen.add(name)
+            names.append(name)
     return names
 
 
@@ -482,5 +486,5 @@ def get_full_registry() -> dict[str, Any]:
             "safe": len([t for t in tools if t.get("risk_level") == "safe"]),
             "confirm": len([t for t in tools if t.get("risk_level") == "confirm"]),
             "dangerous": len([t for t in tools if t.get("risk_level") == "dangerous"]),
-        }
+        },
     }

@@ -183,7 +183,7 @@ def test_local_scrape_invalid_url():
 
 
 def test_web_search_missing_query():
-    from agent import _web_search_tool
+    from agent_tool_map import _web_search_tool
 
     out = _web_search_tool({})
     assert "error" in out.lower() or "缺少" in out
