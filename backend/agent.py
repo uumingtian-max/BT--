@@ -35,7 +35,7 @@ from agent_runtime import get_runtime, orchestration_defaults, reload_runtime
 from context_pack import compress_for_llm, compress_tool_result_for_llm
 from hooks import notify_agent_completed
 from llm_client import chat_complete_async, chat_complete_sync
-from self_evolve import critic_evaluate, distill_playbook_with_llm, ingest_review_lesson, record_critic_lesson
+from self_evolve import distill_playbook_with_llm, ingest_review_lesson
 from skill_pack import build_skill_pack_context
 from agent_session import (
     build_messages_with_history,
@@ -78,19 +78,8 @@ from agent_prompts import SYSTEM_PROMPT_BASE, TOOLS_DESC
 
 SYSTEM_PROMPT = SYSTEM_PROMPT_BASE + TOOLS_DESC
 
-import time as _time
-
-_system_prompt_cache: str = ""
-_system_prompt_cache_ts: float = 0.0
-_SYSTEM_PROMPT_TTL = 60.0
-
 
 def _build_system_prompt() -> str:
-    global _system_prompt_cache, _system_prompt_cache_ts
-    now = _time.monotonic()
-    if _system_prompt_cache and (now - _system_prompt_cache_ts) < _SYSTEM_PROMPT_TTL:
-        return _system_prompt_cache
-
     rt = get_runtime()
     runtime = get_runtime_adjustments()
     parts = [SYSTEM_PROMPT]
@@ -115,10 +104,7 @@ def _build_system_prompt() -> str:
         "- 不要输出「无法进行需外部交互的操作」这种一刀切限制；要改成「当前缺少对应外部交互工具，但可后续接入」。\n"
         "- 未授权入侵、对他人隐私的批量搜集、用于欺骗的反检测/指纹绕过、违法或高风险绕过类请求：拒绝并说明合规边界。"
     )
-    result = "\n\n".join(parts)
-    _system_prompt_cache = result
-    _system_prompt_cache_ts = now
-    return result
+    return "\n\n".join(parts)
 
 
 
@@ -484,26 +470,6 @@ def infer_tool_from_message(message: str):
     filename = _extract_filename(text)
     directory_hint = _detect_directory_hint(text)
 
-    # BKLT_FORCE_ORCHESTRATION_BEFORE_SEARCH
-    if any(
-        k in text
-        for k in [
-            "多模型", "复杂任务", "拆解任务", "完整项目", "协作完成",
-            "任务分解", "执行计划", "编排", "orchestrate", "orchestration",
-            "多角色", "协作汇总", "总控", "方案对比", "复杂方案",
-            "对比方案", "用编排",
-        ]
-    ):
-        od = orchestration_defaults()
-        return {
-            "name": "run_task_orchestration",
-            "parameters": {
-                "message": text,
-                "planner_model": od["planner_model"],
-                "coder_model": od["coder_model"],
-                "reviewer_model": od["reviewer_model"],
-            },
-        }
     if _looks_like_model_download_research(text):
         return {
             "name": "local_search",
@@ -1272,7 +1238,6 @@ async def run_agent(
         workflow_context,
         playbook_context,
         skill_context,
-        forced_tool_call,
     ) = await asyncio.gather(
         asyncio.to_thread(lambda: compress_for_llm(build_memory_context(message), mx, "memory")),
         asyncio.to_thread(lambda: compress_for_llm(build_knowledge_context(message), mx, "knowledge")),
@@ -1280,7 +1245,6 @@ async def run_agent(
         asyncio.to_thread(lambda: compress_for_llm(build_workflow_context(message), mx, "workflow")),
         asyncio.to_thread(lambda: compress_for_llm(build_playbook_context(message), mx, "playbook")),
         asyncio.to_thread(lambda: compress_for_llm(build_skill_pack_context(message), mx, "skills")),
-        asyncio.to_thread(lambda: infer_tool_from_message(message)),
     )
     system_context_parts = [SYSTEM_PROMPT]
     if memory_context:
@@ -1297,11 +1261,12 @@ async def run_agent(
         system_context_parts.append(workflow_context)
     system_context_parts[0] = _build_system_prompt()
     system_content = "\n\n".join(system_context_parts)
-    messages = await asyncio.to_thread(build_messages_with_history, system_content, sid)
+    messages = build_messages_with_history(system_content, sid)
     tool_used = False
     last_tool_name = None
     last_tool_result = None
     last_review: dict | None = None
+    forced_tool_call = infer_tool_from_message(message)
 
     for _ in range(rt.agent_max_steps):
         if forced_tool_call is not None and not tool_used:
@@ -1351,27 +1316,6 @@ async def run_agent(
             from agent_dispatch import check_tool_execution
 
             block = check_tool_execution(tool_name, params, tool_map=TOOL_MAP)
-            if block and block.get("status") == "policy_denied":
-                await emit_step(
-                    {
-                        "type": "policy_denied",
-                        "tool": tool_name,
-                        "params": params,
-                        "policy_rule": block.get("policy_rule"),
-                        "content": block.get("message"),
-                    }
-                )
-                messages += [
-                    {"role": "assistant", "content": response},
-                    {
-                        "role": "user",
-                        "content": (
-                            f"策略拦截：{block.get('message')}\n"
-                            "向用户说明该操作被 PolicyGuard 拒绝，不要假装已执行。"
-                        ),
-                    },
-                ]
-                continue
             if block and block.get("status") == "confirm_required":
                 await emit_step(
                     {
@@ -1587,21 +1531,6 @@ async def run_agent(
 
     if rt.agent_self_evolve and last_review is not None:
         ingest_review_lesson(message, last_review)
-        final_for_critic = ""
-        for s in reversed(steps):
-            if s.get("type") == "final_answer":
-                final_for_critic = s.get("content") or ""
-                break
-        if final_for_critic:
-            critic = critic_evaluate(message, final_for_critic, steps_summary=str(len(steps)))
-            record_critic_lesson(critic, message)
-            if critic.get("should_retry"):
-                await emit_step(
-                    {
-                        "type": "thinking",
-                        "content": f"[Critic] 评分 {critic.get('score')}/10，已记录修正建议供下次任务参考。",
-                    }
-                )
 
     persist_agent_answer(sid, steps)
 
@@ -1738,4 +1667,3 @@ def list_tools():
         "groups": TOOL_GROUPS,
         "metadata": list_tool_metadata(),
     }
-

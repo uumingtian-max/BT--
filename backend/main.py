@@ -18,7 +18,6 @@ from fastapi.responses import JSONResponse
 from a2a_bridge import router as a2a_router
 from agent import router as agent_router
 from automation_routes import router as automation_router
-from capability_routes import router as capability_router
 from chat import router as chat_router
 from content_routes import router as content_router
 from local_agent_api import init_legacy_db, router as local_agent_router
@@ -41,7 +40,6 @@ from scheduler_routes import router as scheduler_router
 from gateway_routes import router as gateway_router
 from mcp_routes import router as mcp_router
 from tool_registry_routes import router as tool_registry_router
-from skillhub_routes import router as skillhub_router
 from agent_runtime import get_runtime, validate_llm_config
 from settings import get_settings, validate_startup_settings
 
@@ -67,14 +65,6 @@ async def lifespan(app: FastAPI):
             from meta_routes import _schedule_ollama_tags_refresh
 
             _schedule_ollama_tags_refresh(rt.ollama_base)
-            from ollama_pins import warm_on_startup, warm_all_pinned_models
-
-            if warm_on_startup():
-
-                async def _warm_resident_ollama() -> None:
-                    await asyncio.to_thread(warm_all_pinned_models)
-
-                asyncio.create_task(_warm_resident_ollama())
     except Exception:
         pass
     observe_task = asyncio.create_task(background_collector())
@@ -107,12 +97,6 @@ async def lifespan(app: FastAPI):
     try:
         await habit_task
     except asyncio.CancelledError:
-        pass
-    try:
-        from llm_client import close_shared_clients
-
-        await close_shared_clients()
-    except Exception:
         pass
 
 
@@ -245,8 +229,6 @@ if request_log_enabled():
 
 app.include_router(meta_router, prefix="/meta", tags=["meta"])
 app.include_router(tool_registry_router, prefix="/meta", tags=["tools"])
-app.include_router(skillhub_router, prefix="/meta", tags=["skillhub"])
-app.include_router(capability_router, prefix="/meta", tags=["capabilities"])
 app.include_router(telegraf_router)
 app.include_router(notebook_router, prefix="/notebook", tags=["notebook"])
 app.include_router(content_router, prefix="/content", tags=["content"])

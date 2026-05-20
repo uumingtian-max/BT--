@@ -4,7 +4,6 @@ import ReactMarkdown from 'react-markdown';
 import './App.css';
 import BrandLogo, { BrandHero } from './BrandLogo';
 import { DashboardPanel, SystemPanel, SkillsPanel, SchedulerPanel } from './OperatorPanels';
-import NeuralTopology from './NeuralTopology';
 import { LOCKED_MODEL_ID, LOCKED_MODEL_LABEL, labelForModel } from './modelCatalog';
 import { extractClipboardFiles } from './clipboardAttachments';
 
@@ -88,7 +87,6 @@ function TimelineStep({ step, index, isLast }) {
     thinking: { icon: 'cpu', color: '#7c6bff', label: '推理中', bg: 'rgba(124,107,255,0.08)', border: 'rgba(124,107,255,0.2)' },
     tool_call: { icon: meta.icon, color: meta.color, label: meta.label, bg: 'rgba(251,146,60,0.06)', border: 'rgba(251,146,60,0.18)' },
     tool_confirm_required: { icon: 'zap', color: '#fbbf24', label: '待确认', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.25)' },
-    policy_denied: { icon: 'zap', color: '#f97316', label: '策略拦截', bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.35)' },
     tool_result: { icon: 'check', color: '#4ade80', label: '执行结果', bg: 'rgba(74,222,128,0.06)', border: 'rgba(74,222,128,0.15)' },
     final_answer: { icon: 'zap', color: '#a78bfa', label: '最终回答', bg: 'rgba(167,139,250,0.07)', border: 'rgba(167,139,250,0.2)' },
   };
@@ -321,7 +319,6 @@ function AgentStepsMessage({ msg, isStreaming }) {
     <div className="msg msg-assistant">
       <div className="agent-avatar"><Icon name="agent" size={14} /></div>
       <div className="agent-steps-wrap">
-        <NeuralTopology apiBase={API} agentSteps={steps} />
         <ExecutionProgress steps={steps} isRunning={isStreaming && !finalStep} />
 
         {otherSteps.length > 0 && (

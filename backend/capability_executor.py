@@ -55,6 +55,15 @@ def execute_capability_request(
     if dry_run:
         return _preview(cap, route, plan, dry_run=True, summary="已生成能力执行预案，未执行真实动作。")
 
+    if cap.get("requires_confirmation") and not allow_confirmed:
+        return _preview(
+            cap,
+            route,
+            plan,
+            dry_run=False,
+            summary="该能力为 confirm 风险级别，需要用户确认后才能执行真实动作。",
+        )
+
     runtime = execute_runtime_capability(selected_id, message)
     return {
         "ok": bool(runtime.get("ok")),

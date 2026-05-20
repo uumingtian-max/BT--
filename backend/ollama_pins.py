@@ -16,19 +16,20 @@ logger = logging.getLogger("ollama_pins")
 _DEFAULT_RESIDENT: tuple[str, ...] = (
     "nomic-embed-text:latest",
     "functiongemma:latest",
-    "qwen3.5:4b",
+    "qwen3.5:9b",
     "deepseek-r1:7b",
+    "deepseek-coder-v2:16b",
 )
 
-# 按需加载，用完释放（约 8.9G，不占常驻）
-_DEFAULT_ON_DEMAND: tuple[str, ...] = ("deepseek-coder-v2:16b",)
+# 全常驻模式：默认可按需列表为空（24G 勿同时常驻 27b）
+_DEFAULT_ON_DEMAND: tuple[str, ...] = ()
 
 MODEL_DEDICATED_ROLES: dict[str, str] = {
     "nomic-embed-text:latest": "向量嵌入（技能/RAG/记忆）· 常驻",
     "functiongemma:latest": "工具路由 / 意图解析 · 常驻",
-    "qwen3.5:4b": "答案 / 视觉 / 快答 / 审查 / 结构化 · 常驻",
-    "deepseek-r1:7b": "推理 / 规划 / 自进化 · 常驻",
-    "deepseek-coder-v2:16b": "复杂写码 / 编排实现 · 按需（用完 unload）",
+    "qwen3.5:9b": "主聊 / 视觉 / tools / 审查 · 全常驻",
+    "deepseek-r1:7b": "推理 / 规划 / 极限题 · 全常驻",
+    "deepseek-coder-v2:16b": "写码 / 编排 · 全常驻",
 }
 
 # 仅用于从 .env 收集「常驻」名单（不含 CODE / ORCH_CODER）
@@ -137,6 +138,45 @@ def _ollama_base() -> str:
     return (os.environ.get("OLLAMA_HOST") or "http://127.0.0.1:11434").rstrip("/")
 
 
+def _warm_chat_options() -> dict[str, Any]:
+    """预热时必须带上 num_ctx，否则大模型会按默认 32k 上下文占满显存。"""
+    from agent_runtime import get_runtime
+
+    opts: dict[str, Any] = {"temperature": 0}
+    num_ctx = int(get_runtime().ollama_num_ctx or 0)
+    if num_ctx > 0:
+        opts["num_ctx"] = num_ctx
+    return opts
+
+
+def resident_warm_order(models: list[str]) -> list[str]:
+    """单卡只能常驻 1 个大模型时，最后预热主脑，保证 ollama ps 里是 qwen3.5:9b。"""
+    if not models:
+        return []
+    primary = os.environ.get("AGENT_DEFAULT_MODEL", "").strip() or "qwen3.5:9b"
+    embed = os.environ.get("EMBED_MODEL", "").strip()
+    router = os.environ.get("AGENT_ROUTER_MODEL", "").strip()
+    reasoning = os.environ.get("REASONING_MODEL", "").strip()
+    ordered: list[str] = []
+    for name in (embed, router):
+        if name in models and name not in ordered:
+            ordered.append(name)
+    for name in models:
+        if name in ordered or name == primary:
+            continue
+        if name == reasoning:
+            continue
+        ordered.append(name)
+    if reasoning in models and reasoning not in ordered:
+        ordered.append(reasoning)
+    if primary in models:
+        ordered.append(primary)
+    for name in models:
+        if name not in ordered:
+            ordered.append(name)
+    return ordered
+
+
 def ollama_chat_body(
     model: str,
     messages: list[dict[str, Any]],
@@ -171,7 +211,7 @@ def _warm_chat_model(
                 model,
                 [{"role": "user", "content": "ping"}],
                 stream=False,
-                options={"temperature": 0},
+                options=_warm_chat_options(),
                 keep_alive=keep_alive if keep_alive is not None else keep_alive_duration(),
             ),
             timeout=httpx.Timeout(connect=30.0, read=600.0, write=30.0, pool=10.0),
@@ -300,14 +340,41 @@ def maybe_release_ollama_model(model: str) -> None:
         release_on_demand_model(model)
 
 
+def _count_loaded_resident_models(models: list[str]) -> tuple[int, list[str]]:
+    """Parse `ollama ps` and count how many resident tags are still in VRAM."""
+    try:
+        out = subprocess.check_output(
+            ["ollama", "ps"],
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=15,
+        )
+    except Exception:
+        return 0, []
+    loaded: list[str] = []
+    for line in out.splitlines()[1:]:
+        name = (line.split() or [""])[0].strip()
+        if not name:
+            continue
+        for want in models:
+            if name == want or name.startswith(want.split(":")[0] + ":"):
+                if want not in loaded:
+                    loaded.append(want)
+                break
+    return len(loaded), loaded
+
+
 def warm_all_pinned_models() -> dict[str, Any]:
     """Warm resident models only (on-demand models are skipped)."""
     base = _ollama_base()
-    models = resident_models_from_env()
+    models = resident_warm_order(resident_models_from_env())
+    primary = os.environ.get("AGENT_DEFAULT_MODEL", "").strip()
     embed_name = os.environ.get("EMBED_MODEL", "nomic-embed-text:latest").strip()
     ok: list[str] = []
     fail: list[str] = []
     skipped = list(_on_demand_set())
+    num_ctx = _warm_chat_options().get("num_ctx")
     with httpx.Client() as client:
         for model in models:
             if model == embed_name or "embed" in model.lower():
@@ -320,15 +387,23 @@ def warm_all_pinned_models() -> dict[str, Any]:
                     ok.append(model)
                 else:
                     fail.append(model)
+    ps_count, ps_loaded = _count_loaded_resident_models(models)
     return {
         "ok": True,
         "keep_alive": keep_alive_duration(),
+        "num_ctx": num_ctx,
+        "warm_order": models,
+        "primary_model": primary,
         "strict_roles": strict_model_roles(),
         "resident": models,
         "on_demand": on_demand_models(),
         "skipped_on_demand": skipped,
         "warmed": ok,
         "failed": fail,
+        "ps_count": ps_count,
+        "ps_loaded": ps_loaded,
+        "ps_expected": len(models),
+        "primary_in_vram": primary in ps_loaded if primary else None,
     }
 
 

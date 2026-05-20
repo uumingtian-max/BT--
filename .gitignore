@@ -69,7 +69,11 @@ frontend/build/
 
 # ── Electron ─────────────────────────────────────────────────────────────────────
 electron/dist/
-release/
+/release/
+# GitHub Actions 工作流必须纳入版本管理（勿被 release/ 等规则误伤）
+!.github/
+!.github/workflows/
+!.github/workflows/*.yml
 
 # ── pytest ───────────────────────────────────────────────────────────────────────
 .pytest_cache/

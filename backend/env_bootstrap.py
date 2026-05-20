@@ -39,6 +39,18 @@ def configure_root_logging() -> None:
 
 DEFAULT_BACKEND_PORT = 8000
 
+# 这些键以 backend/.env 为准（避免 PowerShell 用户环境里残留的 OLLAMA_NUM_CTX=8192 等覆盖项目配置）
+_DOTENV_OVERWRITE_KEYS = frozenset(
+    {
+        "OLLAMA_NUM_CTX",
+        "OLLAMA_RESIDENT_MODELS",
+        "OLLAMA_ON_DEMAND_MODELS",
+        "OLLAMA_RELEASE_ON_DEMAND",
+        "OLLAMA_KEEP_ALIVE",
+        "OLLAMA_MAX_LOADED_MODELS",
+    }
+)
+
 
 def get_backend_listen_port() -> int:
     raw = (os.environ.get("BACKEND_PORT") or "").strip()
@@ -75,4 +87,7 @@ def load_backend_dotenv() -> None:
             if v.isdigit():
                 os.environ[key] = v
             continue
-        os.environ.setdefault(key, val)
+        if key in _DOTENV_OVERWRITE_KEYS:
+            os.environ[key] = val
+        else:
+            os.environ.setdefault(key, val)
