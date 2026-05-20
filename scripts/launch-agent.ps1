@@ -40,6 +40,23 @@ function Test-Backend {
   }
 }
 
+function Test-BackendCurrent {
+  if (-not (Test-Backend)) { return $false }
+  try {
+    Invoke-WebRequest -Uri "http://127.0.0.1:8000/meta/tools/full" -UseBasicParsing -TimeoutSec 3 | Out-Null
+    return $true
+  } catch {
+    return $false
+  }
+}
+
+function Stop-BackendPort8000 {
+  Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue |
+    ForEach-Object {
+      try { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } catch {}
+    }
+}
+
 function Wait-Backend {
   for ($i = 0; $i -lt 40; $i++) {
     if (Test-Backend) { return $true }
@@ -75,7 +92,12 @@ if (-not (Test-Path (Join-Path $Root "frontend\build\index.html"))) {
 
 Stop-OldAgentProcesses
 
-if (-not (Test-Backend)) {
+if (-not (Test-BackendCurrent)) {
+  if (Test-Backend) {
+    Write-Host "[INFO] Stale backend on :8000 (missing /meta/tools/full) — restarting..."
+    Stop-BackendPort8000
+    Start-Sleep -Seconds 2
+  }
   Write-Host "[INFO] Starting backend..."
   $BackendOut = Join-Path $Logs "backend.out.log"
   $BackendErr = Join-Path $Logs "backend.err.log"

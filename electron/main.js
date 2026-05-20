@@ -113,9 +113,9 @@ function ensureOllama() {
   }
 }
 
-function pingBackend() {
+function pingBackendPath(pathname) {
   return new Promise((resolve) => {
-    const req = http.get(`${BACKEND_URL}/health`, (res) => {
+    const req = http.get(`${BACKEND_URL}${pathname}`, (res) => {
       resolve(res.statusCode === 200)
       res.resume()
     })
@@ -125,6 +125,37 @@ function pingBackend() {
       resolve(false)
     })
   })
+}
+
+function pingBackend() {
+  return pingBackendPath('/health')
+}
+
+/** 新后端必须提供 /meta/tools/full；仅 /health 通说明是旧进程，需重启。 */
+async function pingBackendCurrent() {
+  const healthy = await pingBackend()
+  if (!healthy) return false
+  return pingBackendPath('/meta/tools/full')
+}
+
+function killBackendPortListeners() {
+  if (backendProcess) {
+    try {
+      backendProcess.kill()
+    } catch (_) {
+      /* ignore */
+    }
+    backendProcess = null
+  }
+  if (process.platform !== 'win32') return
+  try {
+    execSync(
+      `powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort ${BACKEND_PORT} -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"`,
+      { windowsHide: true, timeout: 15000 }
+    )
+  } catch (_) {
+    /* ignore */
+  }
 }
 
 async function waitForBackend(maxAttempts = 60) {
@@ -311,8 +342,14 @@ app.whenReady().then(async () => {
   )
   ensureOllama()
   setSplashStatus('正在连接后端…')
-  const backendReady = await pingBackend()
-  if (!backendReady) {
+  const backendCurrent = await pingBackendCurrent()
+  if (!backendCurrent) {
+    const stale = await pingBackend()
+    if (stale) {
+      console.log(`[Backend] stale process on port ${BACKEND_PORT} — restarting`)
+      killBackendPortListeners()
+      await wait(1500)
+    }
     setSplashStatus('正在启动后端…')
     startBackend()
     const ready = await waitForBackend()
@@ -321,7 +358,7 @@ app.whenReady().then(async () => {
       console.warn(`[Backend] 健康检查超时，界面仍会打开；请确认后端 ${BACKEND_PORT} 端口已启动`)
     }
   } else {
-    console.log(`[Backend] reusing existing backend on 127.0.0.1:${BACKEND_PORT}`)
+    console.log(`[Backend] reusing current backend on 127.0.0.1:${BACKEND_PORT}`)
   }
   setSplashStatus('正在加载界面…')
   createWindow()
