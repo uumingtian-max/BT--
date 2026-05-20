@@ -6,7 +6,6 @@ reversible tool actions. It is intentionally broad, not tied to one example.
 
 from __future__ import annotations
 
-import json
 import re
 from typing import Any
 

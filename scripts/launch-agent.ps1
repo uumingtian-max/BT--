@@ -4,7 +4,11 @@ $ErrorActionPreference = "Continue"
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $Backend = Join-Path $Root "backend"
 $Logs = Join-Path $Root "logs"
-$Python = Join-Path $env:USERPROFILE "miniconda3\envs\quant\python.exe"
+$resolve = Join-Path $Root "scripts\resolve-python.cjs"
+$Python = (& node $resolve 2>$null).Trim()
+if (-not $Python) {
+  $Python = Join-Path $env:USERPROFILE "miniconda3\envs\bt-heiguang\python.exe"
+}
 $ElectronCmd = Join-Path $Root "node_modules\.bin\electron.cmd"
 
 New-Item -ItemType Directory -Force -Path $Logs | Out-Null
@@ -43,8 +47,8 @@ function Test-Backend {
 function Test-BackendCurrent {
   if (-not (Test-Backend)) { return $false }
   try {
-    Invoke-WebRequest -Uri "http://127.0.0.1:8000/meta/tools/full" -UseBasicParsing -TimeoutSec 3 | Out-Null
-    return $true
+    $reg = Invoke-RestMethod -Uri "http://127.0.0.1:8000/meta/tools/registry" -TimeoutSec 3
+    return ($reg.ok -eq $true)
   } catch {
     return $false
   }
@@ -68,11 +72,6 @@ function Wait-Backend {
 Set-Location $Root
 
 if (-not (Test-Path $Python)) {
-  $ResolvedPython = (& node (Join-Path $Root "scripts\resolve-python.cjs")).Trim()
-  if ($ResolvedPython) { $Python = $ResolvedPython }
-}
-
-if (-not (Test-Path $Python)) {
   Write-Host "[ERROR] Python not found: $Python"
   exit 1
 }
@@ -94,7 +93,7 @@ Stop-OldAgentProcesses
 
 if (-not (Test-BackendCurrent)) {
   if (Test-Backend) {
-    Write-Host "[INFO] Stale backend on :8000 (missing /meta/tools/full) — restarting..."
+    Write-Host "[INFO] Stale backend on :8000 (missing /meta/tools/registry) — restarting..."
     Stop-BackendPort8000
     Start-Sleep -Seconds 2
   }

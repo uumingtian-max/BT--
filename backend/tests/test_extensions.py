@@ -14,6 +14,15 @@ def test_meta_doctor(client: TestClient) -> None:
     assert any(c["name"] == "agent_tools" for c in j["checks"])
 
 
+def test_meta_tools_registry_is_canonical_probe(client: TestClient) -> None:
+    r = client.get("/meta/tools/registry")
+    assert r.status_code == 200
+    j = r.json()
+    assert j.get("ok") is True
+    assert isinstance(j.get("tools"), list)
+    assert len(j.get("tools") or []) >= 1
+
+
 def test_habit_pipeline(client: TestClient) -> None:
     r = client.get("/meta/habit")
     assert r.status_code == 200
