@@ -1,5 +1,10 @@
 {
-  "folders": [{ "name": "ai-agent-project", "path": "." }],
+  "folders": [
+    {
+      "name": "BT（黑光）ai-agent-project",
+      "path": "C:\\Users\\ROG\\Desktop\\ai-agent-project"
+    }
+  ],
   "settings": {
     "python.defaultInterpreterPath": "C:\\Users\\ROG\\miniconda3\\envs\\bt-heiguang\\python.exe",
     "python.analysis.typeCheckingMode": "off",

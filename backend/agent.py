@@ -96,13 +96,11 @@ def _build_system_prompt() -> str:
         parts.append("## 默认工具优先级\n" + " -> ".join(runtime["preferred_tools"][:8]))
     parts.append(
         "## 输出质量硬约束\n"
-        "- 不要复述用户问题。\n"
-        "- 不要讲空泛教程，不要重复同一句意思。\n"
-        "- 先给结论，再给真正可执行的下一步。\n"
-        "- 如果拿到了工具结果，必须基于真实结果回答。\n"
-        "- 如果没拿到真实结果，就明确承认没完成，不要装作已经做完。\n"
-        "- 不要输出「无法进行需外部交互的操作」这种一刀切限制；要改成「当前缺少对应外部交互工具，但可后续接入」。\n"
-        "- 未授权入侵、对他人隐私的批量搜集、用于欺骗的反检测/指纹绕过、违法或高风险绕过类请求：拒绝并说明合规边界。"
+        "- 不要复述用户问题；不要列「方法一/方法二/你可以…」当敷衍。\n"
+        "- 能调用工具就必须先调用，再回答；禁止未执行就声称已完成。\n"
+        "- 先给结论（基于工具输出），再给必要细节。\n"
+        "- 工具失败：贴 exit_code/错误摘要，说明卡在哪，不要给假选项。\n"
+        "- 未授权入侵、批量隐私搜集、违法绕过类请求：拒绝并说明合规边界。"
     )
     return "\n\n".join(parts)
 
@@ -205,11 +203,21 @@ def _extract_windows_path(message: str) -> Optional[str]:
 FAST_TOOL_FINALS = {
     "list_files",
     "read_file",
+    "get_system_info",
+    "get_gpu_status",
+    "get_process_list",
+    "get_network_status",
+    "search_files",
+    "optimize_gpu_memory",
     "get_device_profile",
     "get_recent_desktop_files",
     "get_recent_work_summary",
     "get_evolution_profile",
     "run_project_check",
+    "run_shell",
+    "execute_capability",
+    "local_search",
+    "query_database",
 }
 
 
@@ -469,6 +477,27 @@ def infer_tool_from_message(message: str):
     url = _extract_url(text)
     filename = _extract_filename(text)
     directory_hint = _detect_directory_hint(text)
+
+    from agent_intent import build_inferred_tool_call, extract_shell_command
+
+    shell_cmd = extract_shell_command(text)
+    if shell_cmd:
+        return {
+            "name": "run_shell",
+            "parameters": {"command": shell_cmd, "cwd": "project"},
+        }
+
+    inferred = build_inferred_tool_call(text)
+    if inferred:
+        return inferred
+
+    perf_markers = ("优化", "性能", "卡顿", "慢", "占用", "负载")
+    if any(k in text for k in perf_markers):
+        if any(k in text for k in ("显存", "清理显存", "释放显存", "cuda")):
+            return {"name": "optimize_gpu_memory", "parameters": {}}
+        if any(k in text.lower() or k in text for k in ("gpu", "显卡", "5090", "nvidia")):
+            return {"name": "get_gpu_status", "parameters": {}}
+        return {"name": "get_process_list", "parameters": {"top_n": 15, "sort_by": "memory"}}
 
     if _looks_like_model_download_research(text):
         return {
@@ -751,6 +780,19 @@ def infer_tool_from_message(message: str):
         ]
     )
     wants_browse = any(k in text for k in ["看看", "看一下", "帮我看看"])
+    _browse_block = (
+        "git",
+        "显卡",
+        "gpu",
+        "性能",
+        "优化",
+        "pytest",
+        "npm",
+        "终端",
+        "命令",
+    )
+    if any(b in lower or b in text for b in _browse_block):
+        wants_browse = False
 
     if wants_listing or ((wants_browse or "list files" in lower) and not filename):
         return {
@@ -830,31 +872,36 @@ def infer_tool_from_message(message: str):
             "parameters": {"code": code_match.group(1).strip()},
         }
 
+    if any(k in lower for k in ("pytest",)) or ("测试" in text and any(k in text for k in ("跑", "执行", "运行"))):
+        cmd = "pytest backend/tests/ -q --tb=short"
+        if "frontend" in lower or "前端" in text:
+            cmd = "npm test --prefix frontend"
+        return {"name": "run_shell", "parameters": {"command": cmd, "cwd": "project"}}
+
+    if any(k in text for k in ("推送到github", "推到远程", "同步远程", "提交并推送", "push到")):
+        return {"name": "run_shell", "parameters": {"command": "git status -sb", "cwd": "project"}}
+
+    if any(
+        k in text
+        for k in (
+            "整理桌面",
+            "桌面整理",
+            "护眼",
+            "窗口列表",
+            "自检",
+            "健康检查",
+            "项目自检",
+        )
+    ) and not _looks_like_research_or_recommendation_request(text):
+        return {"name": "execute_capability", "parameters": {"message": text}}
+
     return None
 
 
 def _looks_like_action_request(message: str) -> bool:
-    triggers = [
-        "帮我",
-        "给我",
-        "看看",
-        "读取",
-        "打开",
-        "列出",
-        "查一下",
-        "搜索",
-        "总结",
-        "分析",
-        "整理",
-        "写入",
-        "创建",
-        "执行",
-        "运行",
-        "生成",
-        "拆解",
-        "查看",
-    ]
-    return any(token in message for token in triggers)
+    from agent_intent import looks_like_action_request
+
+    return looks_like_action_request(message)
 
 
 def _is_tool_error_text(text: str) -> bool:
@@ -871,8 +918,20 @@ def _is_tool_error_text(text: str) -> bool:
     return any(flag in lowered for flag in flags)
 
 
+def _looks_like_options_only_answer(text: str) -> bool:
+    from agent_intent import looks_like_options_only
+
+    return looks_like_options_only(text)
+
+
 def _tool_result_failed(tool_name: str | None, text: str) -> bool:
     lowered = (text or "").lower().strip()
+    if (tool_name or "").lower() == "run_shell":
+        if lowered.startswith("error:") or "error: command blocked" in lowered:
+            return True
+        if "exit_code=" in lowered:
+            return not re.search(r"exit_code=0(?:\s|$)", lowered)
+        return _is_tool_error_text(text)
     if (tool_name or "").lower() == "local_search":
         if not lowered:
             return True
@@ -1305,6 +1364,17 @@ async def run_agent(
                 break
             tool_call = parse_tool(response)
 
+        if not tool_call and not tool_used:
+            late = infer_tool_from_message(message)
+            if late and late.get("name") != "route_capability_intent":
+                tool_call = late
+                await emit_step(
+                    {
+                        "type": "thinking",
+                        "content": "模型未输出工具调用，已按意图自动执行。",
+                    }
+                )
+
         if tool_call:
             tool_name = tool_call.get("name")
             params = tool_call.get("parameters", {})
@@ -1458,8 +1528,58 @@ async def run_agent(
                     cleaned,
                     last_tool_result or "",
                 )
-        elif not tool_used and _looks_like_action_request(message) and _looks_like_manual_instructions(cleaned):
-            cleaned = _build_honest_failure_answer(message)
+        elif not tool_used and _looks_like_action_request(message) and (
+            _looks_like_manual_instructions(cleaned)
+            or _looks_like_options_only_answer(cleaned)
+        ):
+            retry = infer_tool_from_message(message)
+            if retry and retry.get("name") not in ("route_capability_intent",):
+                await emit_step(
+                    {
+                        "type": "thinking",
+                        "content": "检测到仅给建议未执行，正在补跑工具…",
+                    }
+                )
+                try:
+                    result = await asyncio.to_thread(
+                        _execute_tool_sync, retry["name"], retry.get("parameters") or {}
+                    )
+                    tool_used = True
+                    last_tool_name = retry["name"]
+                    last_tool_result = compress_tool_result_for_llm(
+                        str(result), rt.tool_result_max_chars, last_tool_name
+                    )
+                    await emit_step(
+                        {
+                            "type": "tool_call",
+                            "tool": last_tool_name,
+                            "params": retry.get("parameters") or {},
+                        }
+                    )
+                    await emit_step(
+                        {
+                            "type": "tool_result",
+                            "tool": last_tool_name,
+                            "result": last_tool_result[:8000],
+                        }
+                    )
+                    if not _tool_result_failed(last_tool_name, str(result)):
+                        cleaned = _fallback_answer_from_tool_result(
+                            message, last_tool_name, last_tool_result
+                        )
+                        record_task_outcome(
+                            "agent_run", "success", "agent_late_tool", cleaned[:300]
+                        )
+                        last_review = record_task_review(
+                            message, "success", last_tool_name, cleaned, str(result)
+                        )
+                        if not _looks_like_garbled_text(message):
+                            remember_from_message(sid, "assistant", cleaned)
+                        await emit_step({"type": "final_answer", "content": cleaned})
+                        break
+                except Exception as exc:
+                    last_tool_result = f"Tool error: {exc}"
+            cleaned = _build_honest_failure_answer(message, last_tool_name, last_tool_result)
             record_task_outcome("agent_run", "failed", "agent_manual_fallback", cleaned[:300])
             last_review = record_task_review(message, "failed", "agent_manual_fallback", cleaned, "")
         elif tool_used and _is_low_quality_answer(message, cleaned):

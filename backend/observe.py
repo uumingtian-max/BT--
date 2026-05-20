@@ -444,10 +444,13 @@ def get_runtime_adjustments() -> dict[str, Any]:
         ]
 
     preferred_tools += [
+        "run_shell",
+        "execute_capability",
         "list_files",
         "read_file",
         "get_recent_work_summary",
         "get_device_profile",
+        "run_project_check",
         "run_task_orchestration",
         "web_search",
         "execute_python",
@@ -460,8 +463,9 @@ def get_runtime_adjustments() -> dict[str, Any]:
             deduped.append(tool)
 
     prompt_hints = [
-        "优先使用工具拿到可核验结果，再组织语言回答。",
-        "涉及路径与文件时，先解析再读写，避免凭空猜测。",
+        "优先使用工具拿到可核验结果，再组织语言回答；禁止只给选项不执行。",
+        "git/npm/pytest/终端命令 → run_shell；高层任务 → execute_capability。",
+        "涉及路径与文件时，先 list_files/read_file，避免凭空猜测。",
         "回答保持中文、先结论后细节，避免复述用户原话。",
         "不确定时明确说缺什么信息或哪一步未执行，不要装作已完成。",
     ]
@@ -669,6 +673,100 @@ async def background_pattern_maintenance(interval_sec: int = 900, startup_delay_
             break
 
 
+def get_hardware_snapshot() -> str:
+    """本机硬件实测（GPU/CPU/内存），禁止模型凭空编造。"""
+    import psutil
+
+    lines = ["## 本机硬件实测（工具采集）"]
+    try:
+        lines.append(f"- CPU: {psutil.cpu_count(logical=False)} 物理核 / {psutil.cpu_count()} 逻辑核")
+        freq = psutil.cpu_freq()
+        if freq and freq.max:
+            lines.append(f"- CPU 频率上限约: {freq.max:.0f} MHz")
+    except Exception as exc:
+        lines.append(f"- CPU 读取失败: {exc}")
+
+    try:
+        vm = psutil.virtual_memory()
+        lines.append(
+            f"- 内存: 共 {vm.total // (1024**3)} GB，已用 {vm.percent:.1f}%"
+        )
+    except Exception as exc:
+        lines.append(f"- 内存读取失败: {exc}")
+
+    try:
+        disk = psutil.disk_usage("/") if sys.platform != "win32" else psutil.disk_usage("C:\\")
+        lines.append(
+            f"- 系统盘: 共 {disk.total // (1024**3)} GB，已用 {disk.percent:.1f}%"
+        )
+    except Exception as exc:
+        lines.append(f"- 磁盘读取失败: {exc}")
+
+    gpus: list[str] = []
+    if sys.platform == "win32":
+        try:
+            import subprocess
+
+            proc = subprocess.run(
+                [
+                    "powershell.exe",
+                    "-NoProfile",
+                    "-Command",
+                    "Get-CimInstance Win32_VideoController | "
+                    "Select-Object Name,AdapterRAM,DriverVersion | "
+                    "ForEach-Object { $_.Name + ' | VRAM_B=' + $_.AdapterRAM + ' | Driver=' + $_.DriverVersion }",
+                ],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=15,
+            )
+            if proc.stdout.strip():
+                for row in proc.stdout.strip().splitlines():
+                    row = row.strip()
+                    if row:
+                        gpus.append(row)
+        except Exception as exc:
+            gpus.append(f"(WMI 失败: {exc})")
+
+        try:
+            import subprocess
+
+            proc = subprocess.run(
+                [
+                    "nvidia-smi",
+                    "--query-gpu=name,driver_version,memory.total,memory.used,utilization.gpu,temperature.gpu",
+                    "--format=csv,noheader",
+                ],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=10,
+            )
+            if proc.returncode == 0 and proc.stdout.strip():
+                lines.append("- NVIDIA-SMI:")
+                for row in proc.stdout.strip().splitlines():
+                    lines.append(f"  - {row.strip()}")
+            elif proc.stderr.strip():
+                lines.append(f"- nvidia-smi: {proc.stderr.strip()[:200]}")
+        except FileNotFoundError:
+            lines.append("- nvidia-smi: 未安装或不在 PATH")
+        except Exception as exc:
+            lines.append(f"- nvidia-smi 失败: {exc}")
+
+    if gpus:
+        lines.append("- 系统识别的显卡 (WMI):")
+        for g in gpus[:6]:
+            lines.append(f"  - {g}")
+
+    lines.append(
+        "- 说明: 以上为本机命令输出；若某字段缺失，回答时写「未采集到」，不要猜测型号。"
+    )
+    return "\n".join(lines)
+
+
 def format_profile_for_llm() -> str:
     """供 Agent 工具读取的纯文本摘要。"""
     p24 = aggregate_profile(24)
@@ -688,6 +786,11 @@ def format_profile_for_llm() -> str:
             lines.append(f"  - {pr['name']} ({pr['count']})")
     for ins in build_insights(p7d):
         lines.append("- " + ins)
+    try:
+        lines.append("")
+        lines.append(get_hardware_snapshot())
+    except Exception as exc:
+        lines.append(f"- 硬件快照失败: {exc}")
     return "\n".join(lines)
 
 

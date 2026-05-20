@@ -24,9 +24,19 @@ class ToolMetadata(TypedDict):
 
 
 TOOL_GROUPS: dict[str, list[str]] = {
-    "capability_control": ["route_capability_intent"],
+    "capability_control": ["route_capability_intent", "execute_capability"],
     "search_crawl": ["web_search", "local_search", "local_scrape_url"],
-    "files_code": ["read_file", "write_file", "list_files", "execute_python"],
+    "files_code": ["read_file", "write_file", "list_files", "execute_python", "run_shell"],
+    "system_exec": ["run_shell", "execute_capability"],
+    "system_info": [
+        "get_system_info",
+        "get_gpu_status",
+        "optimize_gpu_memory",
+        "get_process_list",
+        "kill_process",
+        "get_network_status",
+    ],
+    "files_enhanced": ["search_files"],
     "profile_orchestrate": [
         "get_device_profile",
         "get_recent_desktop_files",
@@ -65,7 +75,9 @@ TOOL_GROUPS: dict[str, list[str]] = {
 }
 
 TOOL_DESCRIPTIONS: dict[str, str] = {
-    "route_capability_intent": "把自然语言路由到黑光高层能力图谱，只生成计划和风险判断，不执行真实动作。",
+    "route_capability_intent": "仅做能力意图分类与计划预览，不执行。用户要做事时用 execute_capability 或具体工具。",
+    "execute_capability": "根据用户意图自动匹配高层能力并立即执行（项目检查、桌面扫描、浏览器等）。",
+    "run_shell": "在本机项目目录执行 PowerShell/cmd 命令（git、pytest、npm、构建等），返回真实输出。",
     "web_search": "联网搜索最新信息。",
     "local_search": "使用本地无 Key 搜索，并可抓取搜索结果正文。",
     "local_scrape_url": "抓取指定网页并提取可读 Markdown 文本。",
@@ -73,6 +85,19 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
     "write_file": "写入或创建本地文件。",
     "list_files": "列出目录内容。",
     "execute_python": "执行 Python 代码。",
+    "get_system_info": (
+        "检测本机硬件信息：CPU 型号/核心数、GPU 型号/显存、内存、磁盘、系统版本。"
+        "用户问电脑配置、硬件参数、显卡型号、内存大小时必须调用，禁止猜测。"
+    ),
+    "get_gpu_status": (
+        "获取 GPU 实时状态：利用率、显存占用、温度、功耗（nvidia-smi）。"
+        "用户问显存占用、GPU 负载、温度、5090 状态时必须调用。"
+    ),
+    "optimize_gpu_memory": "清理 GPU 显存缓存（torch.cuda.empty_cache），释放未用 CUDA 内存。",
+    "get_process_list": "获取系统进程列表，按 CPU 或内存占用排序。",
+    "kill_process": "结束指定进程（需 pid 或进程名）。高风险，需用户确认。",
+    "get_network_status": "网络 IO 统计、网卡地址、连接与端口占用（可筛指定端口）。",
+    "search_files": "在桌面/文档/下载/项目目录按文件名或扩展名搜索，非全盘扫描。",
     "get_device_profile": "读取本机设备画像与使用习惯摘要。",
     "get_recent_desktop_files": "读取最近有变化的桌面文件。",
     "get_recent_work_summary": "综合设备画像与最近桌面文件，总结最近工作内容。",
@@ -106,6 +131,8 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
 
 TOOL_RISK_LEVELS: dict[str, RiskLevel] = {
     "route_capability_intent": "safe",
+    "execute_capability": "safe",
+    "run_shell": "confirm",
     "web_search": "safe",
     "local_search": "safe",
     "local_scrape_url": "safe",
@@ -113,6 +140,13 @@ TOOL_RISK_LEVELS: dict[str, RiskLevel] = {
     "write_file": "confirm",
     "list_files": "safe",
     "execute_python": "dangerous",
+    "get_system_info": "safe",
+    "get_gpu_status": "safe",
+    "optimize_gpu_memory": "confirm",
+    "get_process_list": "safe",
+    "kill_process": "dangerous",
+    "get_network_status": "safe",
+    "search_files": "safe",
     "get_device_profile": "safe",
     "get_recent_desktop_files": "safe",
     "get_recent_work_summary": "safe",
@@ -193,6 +227,55 @@ TOOL_INPUT_SCHEMAS: dict[str, dict[str, Any]] = {
         "type": "object",
         "properties": {"code": {"type": "string"}},
         "required": ["code"],
+    },
+    "run_shell": {
+        "type": "object",
+        "properties": {
+            "command": {"type": "string"},
+            "cwd": {"type": "string", "description": "project | desktop | home | path"},
+            "shell": {"type": "string", "enum": ["powershell", "cmd"]},
+        },
+        "required": ["command"],
+    },
+    "execute_capability": {
+        "type": "object",
+        "properties": {"message": {"type": "string"}},
+        "required": ["message"],
+    },
+    "get_gpu_status": _DEFAULT_SCHEMA,
+    "optimize_gpu_memory": _DEFAULT_SCHEMA,
+    "get_process_list": {
+        "type": "object",
+        "properties": {
+            "top_n": {"type": "integer", "minimum": 1, "maximum": 50},
+            "sort_by": {"type": "string", "enum": ["cpu", "memory"]},
+        },
+    },
+    "kill_process": {
+        "type": "object",
+        "properties": {
+            "pid": {"type": "integer"},
+            "name": {"type": "string"},
+            "force": {"type": "boolean"},
+        },
+    },
+    "get_network_status": {
+        "type": "object",
+        "properties": {
+            "include_connections": {"type": "boolean"},
+            "port": {"type": "integer"},
+        },
+    },
+    "search_files": {
+        "type": "object",
+        "properties": {
+            "query": {"type": "string"},
+            "directory": {"type": "string"},
+            "extension": {"type": "string"},
+            "max_results": {"type": "integer", "minimum": 1, "maximum": 80},
+            "regex": {"type": "boolean"},
+            "modified_within_hours": {"type": "number"},
+        },
     },
     "run_task_orchestration": {
         "type": "object",

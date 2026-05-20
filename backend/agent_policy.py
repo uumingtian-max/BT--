@@ -134,4 +134,14 @@ def check_tool_policy(tool_name: str, params: dict[str, Any] | None = None) -> d
         if reason:
             return {"status": "policy_denied", "tool": tool_name, "policy_rule": "http_scheme", "message": reason}
 
+    if tool_name == "kill_process":
+        pid = params.get("pid")
+        if pid is not None and int(pid) <= 4:
+            return {
+                "status": "policy_denied",
+                "tool": tool_name,
+                "policy_rule": "protected_pid",
+                "message": f"策略拒绝：不能结束系统 PID={pid}。",
+            }
+
     return None

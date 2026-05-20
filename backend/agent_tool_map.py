@@ -15,6 +15,11 @@ from tools.file_ops import read_file, write_file, list_files
 from tools.http_tool import http_request
 from tools.db_query import query_database
 from tools.mcp_invoke import mcp_invoke
+from tools.system_info import get_system_info
+from tools.gpu_monitor import get_gpu_status, optimize_gpu_memory
+from tools.process_info import get_process_list, kill_process
+from tools.network_info import get_network_status
+from tools.search_files import search_files
 from subagent_runner import run_parallel_subagents_sync
 from orchestrator import run_orchestration
 from memory_store import ingest_notebook_corpus
@@ -72,6 +77,56 @@ def _evolution_profile_tool(_: dict) -> str:
         return get_evolution_profile_text()
     except Exception as e:
         return f"get_evolution_profile error: {e}"
+
+
+def _execute_capability_tool(params: dict) -> str:
+    try:
+        from intent_router import route_intent
+        from capability_runtime import execute_runtime_capability
+
+        message = (
+            params.get("message")
+            or params.get("text")
+            or params.get("query")
+            or ""
+        )
+        message = str(message).strip()
+        if not message:
+            return "execute_capability error: missing message"
+        route = route_intent(message, max_matches=3)
+        matches = route.get("matches") or []
+        if not matches:
+            return json.dumps(
+                {"ok": False, "error": "no_capability_match", "route": route},
+                ensure_ascii=False,
+            )
+        cap_id = matches[0]["capability"]["id"]
+        result = execute_runtime_capability(cap_id, message)
+        return json.dumps(result, ensure_ascii=False)
+    except Exception as e:
+        return f"execute_capability error: {e}"
+
+
+def _run_shell_tool(params: dict) -> str:
+    try:
+        from tools.shell_exec import run_shell
+
+        command = (
+            params.get("command")
+            or params.get("cmd")
+            or params.get("script")
+            or ""
+        )
+        command = str(command).strip()
+        if not command:
+            return "run_shell error: missing command"
+        return run_shell(
+            command,
+            cwd=str(params.get("cwd") or "project"),
+            shell=params.get("shell"),
+        )
+    except Exception as e:
+        return f"run_shell error: {e}"
 
 
 def _capability_route_tool(params: dict) -> str:
@@ -405,6 +460,8 @@ def _lazy_browser_playwright(params: dict) -> str:
 
 TOOL_MAP = {
     "route_capability_intent": lambda p: _capability_route_tool(p),
+    "execute_capability": lambda p: _execute_capability_tool(p),
+    "run_shell": lambda p: _run_shell_tool(p),
     "web_search": lambda p: _web_search_tool(p),
     "local_search": lambda p: local_search(
         p.get("query") or p.get("q") or p.get("search") or "",
@@ -419,6 +476,13 @@ TOOL_MAP = {
     "write_file": lambda p: write_file(p["path"], p["content"]),
     "list_files": lambda p: list_files(p.get("directory") or p.get("path") or "~/Desktop"),
     "execute_python": lambda p: _lazy_execute_python(p),
+    "get_system_info": lambda p: get_system_info(p),
+    "get_gpu_status": lambda p: get_gpu_status(p),
+    "optimize_gpu_memory": lambda p: optimize_gpu_memory(p),
+    "get_process_list": lambda p: get_process_list(p),
+    "kill_process": lambda p: kill_process(p),
+    "get_network_status": lambda p: get_network_status(p),
+    "search_files": lambda p: search_files(p),
     "get_device_profile": lambda p: _device_profile_tool(p),
     "get_recent_desktop_files": lambda p: _recent_desktop_files_tool(p),
     "get_recent_work_summary": lambda p: _recent_work_summary_tool(p),

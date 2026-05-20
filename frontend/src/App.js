@@ -474,7 +474,7 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState('chat');
+  const [mode, setMode] = useState('agent');
   const [panel, setPanel] = useState('chat');
   const [model, setModel] = useState(LOCKED_MODEL_ID);
   const [modelLabel, setModelLabel] = useState(LOCKED_MODEL_LABEL);
@@ -909,7 +909,10 @@ export default function App() {
     }
     setLoading(true);
     setMessages((prev) => [...prev, { role: 'user', content: text || '请查看我上传的附件。', attachments: outgoingAttachments }]);
-    if (mode === 'agent') await sendAgent(msgText, sid);
+    const actionHints = /显卡|GPU|性能|优化|git |pytest|npm |执行|运行|检查|列出|读取|提交|推送|帮我|去把/i;
+    const useAgent = mode === 'agent' || actionHints.test(msgText);
+    if (useAgent && mode !== 'agent') setMode('agent');
+    if (useAgent) await sendAgent(msgText, sid);
     else await sendChat(msgText, sid);
     loadSessions();
     setLoading(false);

@@ -230,34 +230,31 @@ async def chat(req: ChatRequest):
 
     # 用户名和模型地址从环境变量 / 运行时读取，不硬编码在源码里
     _user_name = os.environ.get("AGENT_USER_NAME", "权哥").strip() or "权哥"
-    _agent_name = os.environ.get("AGENT_NAME", "小涵").strip() or "小涵"
+    _agent_name = os.environ.get("AGENT_NAME", "BT（黑光）").strip() or "BT（黑光）"
     _model_desc = ""
     if rt.llm_backend == "openai_compatible" and rt.openai_base_url:
         _model_desc = f"You run through an OpenAI-compatible backend at {rt.openai_base_url}."
     elif rt.llm_backend == "ollama":
         _model_desc = f"You run through Ollama at {rt.ollama_base}."
 
+    from chat_action_prefetch import (
+        looks_like_action_in_chat,
+        prefetch_facts_for_chat,
+        should_nudge_agent_mode,
+    )
+
     guard = (
-        f"You are {_agent_name}, {_user_name}'s dedicated local AI Agent running inside ONYX/ai-agent-project. "
-        f"Always call the user {_user_name}. Always reply in Simplified Chinese unless {_user_name} explicitly asks for another language. "
+        f"你是 {_agent_name}，{_user_name} 本机 AI 工作台（BT/黑光）里的助手，不是泛用客服机器人。 "
+        f"称呼用户为 {_user_name}。默认简体中文。\n"
         + (_model_desc + "\n" if _model_desc else "")
-        + "Mode: this chat endpoint explains, plans, and gives operational guidance. It does not silently modify files, "
-        "run tests, or change local tools unless the surrounding application/tooling explicitly performs such actions.\n"
-        f"Continuity: actively use long-term memory to understand who {_user_name} is, who {_agent_name} is, the local machine state, "
-        "project preferences, and ongoing work. Keep identity and context continuous across sessions.\n"
-        f"Memory policy: when {_user_name} states identity, preferences, defaults, project facts, device facts, or says to remember "
-        "something, treat it as long-term memory material. If memory conflicts with the current explicit instruction, "
-        "follow the current instruction for this turn.\n"
-        "Style: for technical issues, be rigorous, professional, concise, and practical. Say clearly when uncertain; "
-        "do not fabricate facts, paths, commands, logs, or background work. Casual chat may be natural and warm, while "
-        "staying within safety boundaries.\n"
-        "Do not output Thinking, hidden chain-of-thought, or long internal reasoning. Output only key conclusions, "
-        "necessary basis, and directly usable commands or steps.\n"
-        "For important technical operations, give a short option comparison, recommended plan, and risk note. Wait for "
-        f"{_user_name}'s confirmation before high-risk actions.\n"
-        "Hard rules: do not invent local paths or claim you edited files unless the tool actually did it. If asked where "
-        "to configure this project, point to backend/.env for LLM_BACKEND, OPENAI_BASE_URL, and model settings, then "
-        "restart the backend. Keep answers short and direct."
+        + "【聊天模式限制】本接口不能直接改文件或跑终端；下方【本机实测】是唯一可信硬件来源。\n"
+        "【严禁】编造显卡型号、CPU、内存占用、已执行的优化步骤。没实测数据就说「未采集到」。\n"
+        "【严禁】假装正在检查/优化（「请稍等」「我会帮你…」）—— 没有工具结果就不要说在做。\n"
+        "【严禁】没问清楚就劝用户换显卡、说显卡老旧。只能根据【本机实测】里的型号说话。\n"
+        "用户要你「去做」某事（优化、检查、git、安装）时：说明需切换到界面上的 **Agent 模式** 才能真正执行；"
+        "本回合仅根据【本机实测】给可核验结论与 1–3 条可操作建议。\n"
+        "回答要短：先结论，再依据（引用实测字段），不要长篇选项列表。\n"
+        "配置 LLM：backend/.env，改后重启后端。"
     )
     blocks: list[str] = [guard.strip()]
     blocks.append(
@@ -272,6 +269,14 @@ async def chat(req: ChatRequest):
         blocks.append("【技能包片段（仅供参考）】\n" + skill_context)
     if knowledge_context:
         blocks.append("【本地知识库片段（仅供参考）】\n" + knowledge_context)
+    if looks_like_action_in_chat(req.message):
+        prefetched = prefetch_facts_for_chat(req.message)
+        if prefetched:
+            blocks.append(prefetched)
+        if should_nudge_agent_mode(req.message):
+            blocks.append(
+                "【系统提示】本条任务需要 Agent 模式（/mode agent）才能执行终端/写文件等操作。"
+            )
     blocks.append(
         "【连贯性·最高优先级】回答必须与对话里「上下句」自然衔接、指代一致。"
         "若上方【】摘录与对话话题冲突或会打断衔接，忽略该摘录或一句话带过，禁止硬编进回答里造成跳题。"

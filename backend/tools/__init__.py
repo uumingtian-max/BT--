@@ -1,6 +1,11 @@
 """Agent tools package (search, crawl, files, code, desktop control, browser)."""
 
 from .code_exec import execute_python
+from .shell_exec import run_shell
+from .gpu_monitor import get_gpu_status, optimize_gpu_memory
+from .process_info import get_process_list, kill_process
+from .network_info import get_network_status
+from .search_files import search_files
 from .external_control import (
     click_screen,
     focus_window,
@@ -31,6 +36,13 @@ __all__ = [
     "list_files",
     "resolve_user_path",
     "execute_python",
+    "run_shell",
+    "get_gpu_status",
+    "optimize_gpu_memory",
+    "get_process_list",
+    "kill_process",
+    "get_network_status",
+    "search_files",
     "open_url",
     "open_path",
     "get_foreground_window",

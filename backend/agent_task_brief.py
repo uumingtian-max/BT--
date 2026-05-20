@@ -15,6 +15,10 @@ _TOOL_TITLES: dict[str, str] = {
     "execute_python": "执行 Python 代码",
     "run_task_orchestration": "多模型协作（规划→编码→审查）",
     "get_device_profile": "采集设备与工作画像",
+    "get_gpu_status": "读取 GPU 实时状态",
+    "optimize_gpu_memory": "清理 GPU 显存缓存",
+    "get_process_list": "列出进程占用排名",
+    "kill_process": "结束指定进程",
     "browser_navigate": "浏览器打开页面",
     "browser_screenshot": "网页截图",
     "generate_image": "生成图片",
@@ -22,6 +26,8 @@ _TOOL_TITLES: dict[str, str] = {
     "text_to_speech": "文字转语音",
     "notebook_ingest": "写入知识库",
     "open_url": "打开链接",
+    "run_shell": "执行终端命令",
+    "execute_capability": "执行匹配的高层能力",
 }
 
 
