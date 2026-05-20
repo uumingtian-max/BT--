@@ -1,6 +1,7 @@
 {
   "recommendations": ["ms-python.python"],
   "unwantedRecommendations": [
+    "detachhead.basedpyright",
     "ms-edgedevtools.vscode-edge-devtools",
     "ms-edgedevtools.vscode-edge-devtools-network"
   ]

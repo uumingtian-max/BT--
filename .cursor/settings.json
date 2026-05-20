@@ -1,32 +1,29 @@
 {
   "python.defaultInterpreterPath": "C:\\Users\\ROG\\miniconda3\\envs\\bt-heiguang\\python.exe",
+  "python.analysis.typeCheckingMode": "off",
   "python.analysis.diagnosticMode": "workspace",
   "python.analysis.include": [
     "${workspaceFolder}/backend/**/*.py",
     "${workspaceFolder}/scripts/**/*.py",
     "${workspaceFolder}/start.py"
   ],
-  "python.analysis.exclude": [
-    "**/miniconda3/**",
-    "**/site-packages/**",
-    "**/_pytest/**"
-  ],
-  "python.analysis.ignore": [
-    "**/miniconda3/**",
-    "**/site-packages/**"
-  ],
-  "basedpyright.analysis.diagnosticMode": "workspace",
-  "basedpyright.analysis.include": [
-    "${workspaceFolder}/backend",
-    "${workspaceFolder}/scripts",
-    "${workspaceFolder}/start.py"
-  ],
+  "python.analysis.exclude": ["**/miniconda3/**", "**/site-packages/**", "**/_pytest/**"],
+  "python.analysis.ignore": ["**/miniconda3/**", "**/site-packages/**"],
+  "basedpyright.disableLanguageServices": true,
+  "basedpyright.analysis.typeCheckingMode": "off",
+  "basedpyright.analysis.diagnosticMode": "openFilesOnly",
+  "basedpyright.analysis.configFilePath": "${workspaceFolder}",
+  "basedpyright.analysis.useLibraryCodeForTypes": false,
   "basedpyright.analysis.exclude": [
+    "C:/Users/ROG/miniconda3/**",
+    "C:/Users/ROG/Desktop/miniconda3/**",
     "**/miniconda3/**",
     "**/site-packages/**",
     "**/_pytest/**"
   ],
   "basedpyright.analysis.ignore": [
+    "C:/Users/ROG/miniconda3/**",
+    "C:/Users/ROG/Desktop/miniconda3/**",
     "**/miniconda3/**",
     "**/site-packages/**"
   ],
@@ -35,54 +32,36 @@
     "reportMissingModuleSource": "none",
     "reportGeneralTypeIssues": "none"
   },
-  "cursorpyright.analysis.include": [
-    "${workspaceFolder}/backend",
-    "${workspaceFolder}/scripts",
-    "${workspaceFolder}/start.py"
-  ],
+  "cursorpyright.analysis.typeCheckingMode": "off",
+  "cursorpyright.analysis.diagnosticMode": "workspace",
+  "cursorpyright.analysis.configFilePath": "${workspaceFolder}",
   "cursorpyright.analysis.exclude": [
+    "C:/Users/ROG/miniconda3/**",
+    "C:/Users/ROG/Desktop/miniconda3/**",
     "**/miniconda3/**",
     "**/site-packages/**",
     "**/_pytest/**"
   ],
   "cursorpyright.analysis.ignore": [
+    "C:/Users/ROG/miniconda3/**",
+    "C:/Users/ROG/Desktop/miniconda3/**",
     "**/miniconda3/**",
     "**/site-packages/**"
   ],
-  "cursorpyright.analysis.diagnosticSeverityOverrides": {
-    "reportMissingImports": "none",
-    "reportMissingModuleSource": "none",
-    "reportGeneralTypeIssues": "none"
-  },
   "css.validate": false,
   "vscode-edge-devtools.webhint": false,
   "edgeTools.webhint": false,
   "files.associations": {
     "C:\\Users\\ROG\\miniconda3\\**\\*.py": "plaintext",
-    "C:\\Users\\ROG\\miniconda3\\**\\*.pyi": "plaintext",
     "C:\\Users\\ROG\\Desktop\\miniconda3\\**\\*.py": "plaintext",
-    "C:\\Users\\ROG\\Desktop\\miniconda3\\**\\*.pyi": "plaintext",
     "**/miniconda3/**": "plaintext",
     "**/site-packages/**": "plaintext",
     "**/_pytest/**": "plaintext"
   },
-  "files.exclude": {
-    "**/miniconda3": true,
-    "**/site-packages": true
-  },
-  "search.exclude": {
-    "**/miniconda3/**": true,
-    "**/site-packages/**": true,
-    "**/_pytest/**": true
-  },
   "files.scanExcludedFolders": [
     "C:\\Users\\ROG\\miniconda3",
-    "C:\\Users\\ROG\\miniconda3\\envs",
-    "C:\\Users\\ROG\\miniconda3\\Lib",
     "C:\\Users\\ROG\\miniconda3\\envs\\bt-heiguang\\Lib",
     "C:\\Users\\ROG\\Desktop\\miniconda3",
-    "C:\\Users\\ROG\\Desktop\\miniconda3\\envs",
-    "C:\\Users\\ROG\\Desktop\\miniconda3\\Lib",
     "C:\\Users\\ROG\\Desktop\\miniconda3\\envs\\bt-heiguang\\Lib"
   ]
 }

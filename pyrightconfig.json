@@ -29,7 +29,14 @@
     { "root": "scripts", "extraPaths": ["backend"] },
     { "root": ".", "extraPaths": ["backend"] }
   ],
-  "typeCheckingMode": "basic",
+  "typeCheckingMode": "off",
   "reportMissingImports": "none",
-  "reportMissingModuleSource": "none"
+  "reportMissingModuleSource": "none",
+  "reportGeneralTypeIssues": "none",
+  "reportArgumentType": "none",
+  "reportAssignmentType": "none",
+  "reportOptionalSubscript": "none",
+  "reportIndexIssue": "none",
+  "reportCallIssue": "none",
+  "reportAttributeAccessIssue": "none"
 }

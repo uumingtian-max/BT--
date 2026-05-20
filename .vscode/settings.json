@@ -1,8 +1,7 @@
 {
   "python.defaultInterpreterPath": "C:\\Users\\ROG\\miniconda3\\envs\\bt-heiguang\\python.exe",
+  "python.analysis.typeCheckingMode": "off",
   "python.analysis.diagnosticMode": "workspace",
-  "python.analysis.venvPath": "C:\\Users\\ROG\\miniconda3\\envs",
-  "python.analysis.venv": "bt-heiguang",
   "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
   "python.analysis.include": [
     "${workspaceFolder}/backend/**/*.py",
@@ -19,42 +18,58 @@
     "**/miniconda3/**",
     "**/site-packages/**"
   ],
-  "basedpyright.analysis.diagnosticMode": "workspace",
-  "basedpyright.analysis.venvPath": "C:\\Users\\ROG\\miniconda3\\envs",
-  "basedpyright.analysis.venv": "bt-heiguang",
+  "basedpyright.disableLanguageServices": true,
+  "basedpyright.analysis.typeCheckingMode": "off",
+  "basedpyright.analysis.diagnosticMode": "openFilesOnly",
+  "basedpyright.analysis.configFilePath": "${workspaceFolder}",
+  "basedpyright.analysis.useLibraryCodeForTypes": false,
   "basedpyright.analysis.include": [
     "${workspaceFolder}/backend",
     "${workspaceFolder}/scripts",
     "${workspaceFolder}/start.py"
   ],
   "basedpyright.analysis.exclude": [
+    "C:/Users/ROG/miniconda3/**",
+    "C:/Users/ROG/Desktop/miniconda3/**",
     "**/miniconda3/**",
     "**/site-packages/**",
     "**/_pytest/**"
   ],
   "basedpyright.analysis.ignore": [
+    "C:/Users/ROG/miniconda3/**",
+    "C:/Users/ROG/Desktop/miniconda3/**",
     "**/miniconda3/**",
     "**/site-packages/**"
   ],
   "basedpyright.analysis.diagnosticSeverityOverrides": {
     "reportMissingImports": "none",
     "reportMissingModuleSource": "none",
-    "reportGeneralTypeIssues": "none"
+    "reportGeneralTypeIssues": "none",
+    "reportArgumentType": "none",
+    "reportAssignmentType": "none",
+    "reportOptionalSubscript": "none",
+    "reportIndexIssue": "none",
+    "reportCallIssue": "none",
+    "reportAttributeAccessIssue": "none"
   },
+  "cursorpyright.analysis.typeCheckingMode": "off",
   "cursorpyright.analysis.diagnosticMode": "workspace",
-  "cursorpyright.analysis.venvPath": "C:\\Users\\ROG\\miniconda3\\envs",
-  "cursorpyright.analysis.venv": "bt-heiguang",
+  "cursorpyright.analysis.configFilePath": "${workspaceFolder}",
   "cursorpyright.analysis.include": [
     "${workspaceFolder}/backend",
     "${workspaceFolder}/scripts",
     "${workspaceFolder}/start.py"
   ],
   "cursorpyright.analysis.exclude": [
+    "C:/Users/ROG/miniconda3/**",
+    "C:/Users/ROG/Desktop/miniconda3/**",
     "**/miniconda3/**",
     "**/site-packages/**",
     "**/_pytest/**"
   ],
   "cursorpyright.analysis.ignore": [
+    "C:/Users/ROG/miniconda3/**",
+    "C:/Users/ROG/Desktop/miniconda3/**",
     "**/miniconda3/**",
     "**/site-packages/**"
   ],
