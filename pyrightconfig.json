@@ -1,0 +1,20 @@
+{
+  "venvPath": "C:/Users/ROG/miniconda3/envs",
+  "venv": "bt-heiguang",
+  "extraPaths": ["backend"],
+  "executionEnvironments": [
+    { "root": "backend" },
+    { "root": "scripts", "extraPaths": ["backend"] }
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/miniconda3/**",
+    "**/site-packages/**",
+    "archive",
+    "frontend/build",
+    "frontend/node_modules"
+  ],
+  "reportMissingImports": "warning",
+  "pythonVersion": "3.11"
+}
