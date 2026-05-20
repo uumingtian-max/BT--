@@ -8,7 +8,7 @@ BKLT 黑光 / BLACKLIGHT - NVIDIA Agent Stack Downloader
   powershell -ExecutionPolicy Bypass -File .\scripts\download-nvidia-agent-stack.ps1
 
 如果 Hugging Face 要求登录：
-  huggingface-cli login
+  hf auth login
 然后再运行本脚本。
 #>
 
@@ -33,22 +33,33 @@ function Ensure-Command($Name, $InstallHint) {
   }
 }
 
+function Refresh-PythonScriptsPath() {
+  $candidates = @(
+    (Join-Path $env:APPDATA "Python\Python312\Scripts"),
+    (Join-Path $env:APPDATA "Python\Python311\Scripts"),
+    (Join-Path $env:APPDATA "Python\Python310\Scripts"),
+    (Join-Path $env:USERPROFILE "miniconda3\Scripts"),
+    (Join-Path $env:USERPROFILE "anaconda3\Scripts")
+  )
+  foreach ($p in $candidates) {
+    if ((Test-Path $p) -and ($env:Path -notlike "*$p*")) {
+      $env:Path += ";$p"
+    }
+  }
+}
+
 function Download-HFRepo($RepoId, $LocalName) {
   $Target = Join-Path $ModelRoot $LocalName
   Write-Step "Downloading $RepoId -> $Target"
   New-Item -ItemType Directory -Force -Path $Target | Out-Null
-  huggingface-cli download $RepoId --local-dir $Target --resume-download
+  hf download $RepoId --local-dir $Target
 }
 
-Write-Step "Checking Python / pip / huggingface-cli"
+Write-Step "Checking Python / pip / hf CLI"
 Ensure-Command python "请先安装 Python 3.10+，并勾选 Add Python to PATH。"
 python -m pip install -U huggingface_hub hf_xet
-
-if (-not (Get-Command huggingface-cli -ErrorAction SilentlyContinue)) {
-  $userScripts = Join-Path $env:APPDATA "Python\Python312\Scripts"
-  if (Test-Path $userScripts) { $env:Path += ";$userScripts" }
-}
-Ensure-Command huggingface-cli "请执行：python -m pip install -U huggingface_hub hf_xet，然后重新打开 PowerShell。"
+Refresh-PythonScriptsPath
+Ensure-Command hf "请执行：python -m pip install -U huggingface_hub hf_xet，然后重新打开 PowerShell。"
 
 New-Item -ItemType Directory -Force -Path $ModelRoot | Out-Null
 
