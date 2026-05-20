@@ -84,6 +84,22 @@ htmlcov/
 .idea/
 .vscode/*
 !.vscode/settings.json
+!.vscode/launch.json
+!ai-agent-project.code-workspace
+
+# 本机实验（不进 GitHub，避免问题面板扫到半成品）
+.codex/
+optimize_now.py
+docs/OLLAMA_STACK_*.md
+launcher/INSTALL_OLLAMA_2026.bat
+scripts/apply-team5-ondemand.ps1
+scripts/install-ollama-stack-2026.ps1
+scripts/set-ollama-multi-model-env.ps1
+scripts/team5-finish-setup.ps1
+scripts/agent_smoke_suite.py
+scripts/smoke-agent-task.py
+backend/agent_skills/mecha_policy_workflow.md
+backend/tests/test_agent_policy.py
 *.swp
 *.swo
 *~

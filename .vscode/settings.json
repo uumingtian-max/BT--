@@ -7,6 +7,7 @@
   "python.analysis.exclude": [
     "**/miniconda3/**",
     "**/site-packages/**",
+    "**/_pytest/**",
     "**/Lib/site-packages/**"
   ],
   "basedpyright.analysis.diagnosticMode": "workspace",
@@ -16,14 +17,15 @@
   "basedpyright.analysis.exclude": [
     "**/miniconda3/**",
     "**/site-packages/**",
-    "**/Lib/site-packages/**"
+    "**/_pytest/**"
   ],
   "cursorpyright.analysis.venvPath": "C:\\Users\\ROG\\miniconda3\\envs",
   "cursorpyright.analysis.venv": "bt-heiguang",
   "cursorpyright.analysis.extraPaths": ["${workspaceFolder}/backend"],
   "cursorpyright.analysis.exclude": [
     "**/miniconda3/**",
-    "**/site-packages/**"
+    "**/site-packages/**",
+    "**/_pytest/**"
   ],
   "cursorpyright.analysis.diagnosticSeverityOverrides": {
     "reportMissingImports": "none",
@@ -31,15 +33,26 @@
   },
   "css.lint.compatibleVendorPrefixes": "ignore",
   "css.lint.unknownProperties": "ignore",
+  "vscode-edge-devtools.webhint": false,
+  "files.exclude": {
+    "**/miniconda3": true,
+    "**/.codex": true,
+    "backend/.vscode": true
+  },
+  "search.exclude": {
+    "**/miniconda3/**": true,
+    "**/site-packages/**": true,
+    "**/.codex/**": true,
+    "**/_pytest/**": true
+  },
   "files.watcherExclude": {
     "**/miniconda3/**": true,
     "**/site-packages/**": true
   },
-  "search.exclude": {
-    "**/miniconda3/**": true,
-    "**/site-packages/**": true
-  },
-  "files.exclude": {
-    "**/miniconda3": true
-  }
+  "files.scanExcludedFolders": [
+    "C:\\Users\\ROG\\miniconda3",
+    "C:\\Users\\ROG\\miniconda3\\envs",
+    "C:\\Users\\ROG\\miniconda3\\Lib\\site-packages"
+  ],
+  "problems.sortOrder": "severity"
 }
