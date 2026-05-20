@@ -1,4 +1,4 @@
-# 结束 8000 端口旧后端并启动当前仓库最新代码（修复 /meta/tools/full 404 等）
+# 结束 8000 端口旧后端并启动当前仓库最新代码（以 /meta/tools/registry 为就绪探针）
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
@@ -34,11 +34,12 @@ for ($i = 0; $i -lt 40; $i++) {
 }
 
 try {
-  $full = Invoke-WebRequest "http://127.0.0.1:8000/meta/tools/full" -UseBasicParsing -TimeoutSec 5
+  $reg = Invoke-RestMethod "http://127.0.0.1:8000/meta/tools/registry" -TimeoutSec 5
+  if ($reg.ok -ne $true) { throw "registry ok=false" }
   Write-Host "  /health OK" -ForegroundColor Green
-  Write-Host "  /meta/tools/full -> $($full.StatusCode)" -ForegroundColor Green
+  Write-Host "  /meta/tools/registry -> ok count=$($reg.count)" -ForegroundColor Green
 } catch {
-  Write-Host "  [WARN] /meta/tools/full 仍不可用: $($_.Exception.Message)" -ForegroundColor Red
+  Write-Host "  [WARN] /meta/tools/registry 仍不可用: $($_.Exception.Message)" -ForegroundColor Red
   Write-Host "  查看 logs\backend.err.log" -ForegroundColor Yellow
   exit 1
 }

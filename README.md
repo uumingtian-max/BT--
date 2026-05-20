@@ -187,8 +187,8 @@ BACKEND_PORT=8000
 | GET | `/meta/doctor` | 系统自检 |
 | GET | `/meta/skills` | 技能目录 |
 | GET | `/meta/models` | 模型列表 |
-| GET | `/meta/tools/registry` | UI 可直接使用的结构化工具注册表 |
-| GET | `/meta/tools/full` | 完整工具注册表 + 风险统计（工作台一键拉取） |
+| GET | `/meta/tools/registry` | **稳定接口**：UI 工具面板 / 启动探针（`ok` + `tools` + `groups`） |
+| GET | `/meta/tools/full` | 兼容别名：完整注册表 + 风险统计（新集成优先用 registry） |
 | GET | `/meta/tools/risks` | 工具风险分层摘要 |
 | POST | `/chat/` | 聊天（SSE 流式） |
 | POST | `/agent/run` | Agent 执行（SSE 流式） |
