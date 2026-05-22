@@ -8,7 +8,8 @@ if str(BACKEND_DIR) not in sys.path:
 from visual_event_bus import clear_events, list_events, publish_event  # noqa: E402
 
 
-def test_visual_event_bus_publish_and_filter():
+def test_visual_event_bus_publish_and_filter(monkeypatch):
+    monkeypatch.setenv("RUN_GRAPH_TEST_CLEAR", "1")
     clear_events()
     first = publish_event(
         event_type="automation_run_started",

@@ -16,7 +16,8 @@ from typing import Any
 
 from automation_store import finish_run, start_run
 from run_graph_store import begin_run as graph_begin_run
-from run_graph_store import finish_run_graph, record_steps_from_result
+from run_graph_store import finish_run_graph as graph_finish_run_graph
+from run_graph_store import record_steps_from_result
 from visual_event_bus import publish_event
 
 ROOT = Path(__file__).resolve().parent.parent
