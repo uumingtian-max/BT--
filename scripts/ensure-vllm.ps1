@@ -49,9 +49,10 @@ if (-not $WslModelDir) {
     if (-not $WslModelDir) { $WslModelDir = ConvertTo-WslPath $ModelDir }
 }
 
-$wslScript = "$(ConvertTo-WslPath $root)/scripts/vllm-serve-wsl.sh"
-$wslLog = "/mnt/c/Users/ROG/Desktop/ai-agent-project/logs/vllm-wsl.log"
+$wslScript = "$(ConvertTo-WslPath $root)/scripts/start-omni-vllm-wsl.sh"
+$wslLog = "$(ConvertTo-WslPath $logDir)/vllm-wsl.log"
 $wslMirror = Join-Path $logDir "vllm-wsl.log"
+$wslLaunch = "$(ConvertTo-WslPath $logDir)/vllm-launch.sh"
 
 function Test-VllmUp {
     try {
@@ -108,14 +109,38 @@ wsl -d Ubuntu -u root -e bash -c "ln -sf /home/rog/miniconda/bin/ninja /usr/bin/
 
 wsl -d Ubuntu -- bash -lc "pkill -f 'vllm.entrypoints.openai.api_server' 2>/dev/null || true"
 Start-Sleep -Seconds 2
-wsl -d Ubuntu -- bash -lc "sed -i 's/\r$//' '$wslScript' 2>/dev/null || true; chmod +x '$wslScript'; : > '$wslLog'"
 
 $modelEsc = $WslModelDir -replace "'", "'\''"
-# 单行启动，避免 PowerShell here-string 注入 CRLF 导致 bash $'\r' 错误
-$launch = "export CUDA_HOME=/usr/local/cuda-12.9 CC=/usr/bin/gcc-13 CXX=/usr/bin/g++-13 CUDAHOSTCXX=/usr/bin/g++-13 PATH=/usr/local/cuda-12.9/bin:/usr/bin:`$HOME/miniconda/bin:`$HOME/.local/bin MODEL_DIR='$modelEsc' PORT=$Port VLLM_LOG='$wslLog' VLLM_GPU_UTIL=0.78 VLLM_MAX_MODEL_LEN=4096; rm -rf `$HOME/.cache/flashinfer; find '$(ConvertTo-WslPath $root)/scripts' -maxdepth 1 -name '*.sh' -exec sed -i 's/\r$//' {} +; chmod +x '$wslScript'; nohup bash '$wslScript' </dev/null >>'$wslLog' 2>&1 & echo started"
-
-$pidOut = wsl -d Ubuntu -e bash -lc $launch
-Write-Host "[vLLM] $pidOut" -ForegroundColor DarkGray
+$rootEsc = (ConvertTo-WslPath $root) -replace "'", "'\''"
+$launchBody = @"
+#!/usr/bin/env bash
+set -euo pipefail
+export CUDA_HOME=/usr/local/cuda-12.9
+export CC=/usr/bin/gcc-13 CXX=/usr/bin/g++-13 CUDAHOSTCXX=/usr/bin/g++-13
+export PATH="/usr/local/cuda-12.9/bin:/home/rog/miniconda/bin:/usr/bin:${PATH:-}"
+export MODEL_DIR='$modelEsc'
+export PORT=$Port
+export VLLM_LOG='$wslLog'
+export VLLM_GPU_UTIL=0.78
+export VLLM_MAX_MODEL_LEN=4096
+export VLLM_MAX_NUM_SEQS=2
+rm -rf "`$HOME/.cache/flashinfer" 2>/dev/null || true
+find '$rootEsc/scripts' -maxdepth 1 -name '*.sh' -exec sed -i 's/\r$//' {} + 2>/dev/null || true
+chmod +x '$wslScript'
+: > "`$VLLM_LOG"
+if command -v setsid >/dev/null 2>&1; then
+  setsid bash '$wslScript' >> "`$VLLM_LOG" 2>&1 &
+else
+  nohup bash '$wslScript' >> "`$VLLM_LOG" 2>&1 &
+fi
+echo "started pid=$!"
+"@
+$launchWin = Join-Path $logDir "vllm-launch.sh"
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+[System.IO.File]::WriteAllText($launchWin, ($launchBody -replace "`r`n", "`n"), $utf8NoBom)
+$launchOut = wsl -d Ubuntu -- bash -lc "sed -i 's/\r$//' '$wslLaunch' && chmod +x '$wslLaunch' && bash '$wslLaunch'"
+Write-Host "[vLLM] $launchOut" -ForegroundColor DarkGray
+Write-Host "[vLLM] 已在 WSL 后台启动（start-omni-vllm-wsl.sh）" -ForegroundColor DarkGray
 Write-Host "[vLLM] 日志: tail -f $wslMirror" -ForegroundColor DarkGray
 
 $deadline = (Get-Date).AddSeconds($WaitSec)

@@ -105,6 +105,16 @@ def runs_list(limit: int = 50):
     return {"ok": True, "runs": list_runs(limit=limit)}
 
 
+@router.get("/runs/{run_id}/graph")
+def runs_graph_detail(run_id: str):
+    from run_graph_store import get_run_detail
+
+    detail = get_run_detail(run_id)
+    if not detail:
+        raise HTTPException(404, "run graph not found")
+    return {"ok": True, "graph": detail}
+
+
 @router.get("/events")
 def events_list(limit: int = 100, run_id: str | None = None):
     return {

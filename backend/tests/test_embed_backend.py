@@ -23,21 +23,19 @@ def test_embed_one_uses_ollama_when_not_openvino(monkeypatch):
     m.assert_called_once_with("hi")
 
 
-def test_embed_one_openvino_fallback_to_ollama(monkeypatch):
+def test_embed_one_openvino_raises_without_ollama_fallback(monkeypatch):
     monkeypatch.setenv("EMBED_BACKEND", "openvino")
     with patch.object(
         embed_backend,
         "_openvino_embed_one",
         side_effect=RuntimeError("npu busy"),
     ):
-        with patch.object(
-            embed_backend,
-            "_ollama_embed_one",
-            return_value=[1.0, 0.0],
-        ) as m:
-            out = embed_backend.embed_one("hi")
-    assert out == [1.0, 0.0]
-    m.assert_called_once_with("hi")
+        try:
+            embed_backend.embed_one("hi")
+            raised = False
+        except RuntimeError:
+            raised = True
+    assert raised
 
 
 def test_l2_normalize():

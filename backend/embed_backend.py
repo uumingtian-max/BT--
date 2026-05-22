@@ -200,10 +200,7 @@ def embed_one(text: str) -> list[float]:
     """Return embedding vector for *text* using configured backend."""
     backend = embed_backend_name()
     if backend in ("openvino", "ov", "npu"):
-        try:
-            return _openvino_embed_one(text)
-        except Exception as e:
-            logger.warning("OpenVINO embed failed, falling back to Ollama: %s", e)
+        return _openvino_embed_one(text)
     return _ollama_embed_one(text)
 
 

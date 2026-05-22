@@ -759,3 +759,20 @@ def meta_visual_events(limit: int = 80, source: str | None = None, run_id: str |
     from visual_event_bus import list_events
 
     return {"ok": True, "events": list_events(limit=limit, source=source, run_id=run_id)}
+
+
+@router.get("/run-graph/runs")
+def meta_run_graph_list(limit: int = 50, source: str | None = None):
+    from run_graph_store import list_runs as graph_list_runs
+
+    return {"ok": True, "runs": graph_list_runs(limit=limit, source=source)}
+
+
+@router.get("/run-graph/runs/{run_id}")
+def meta_run_graph_detail(run_id: str):
+    from run_graph_store import get_run_detail
+
+    detail = get_run_detail(run_id)
+    if not detail:
+        return {"ok": False, "error": "run not found"}
+    return {"ok": True, "run": detail}

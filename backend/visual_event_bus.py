@@ -44,22 +44,69 @@ def publish_event(
     }
     with _LOCK:
         _EVENTS.appendleft(event)
+    try:
+        from run_graph_store import append_visual_event
+
+        append_visual_event(
+            event_id=event["id"],
+            event_type=event_type,
+            source=source,
+            title=title,
+            status=status,
+            payload=payload or {},
+            run_id=run_id,
+            created_at=event["created_at"],
+        )
+    except Exception:
+        pass
     return event
 
 
 def list_events(*, limit: int = 100, source: str | None = None, run_id: str | None = None) -> list[dict[str, Any]]:
-    """Return recent events newest-first."""
+    """Return recent events newest-first (SQLite + in-memory merge)."""
     limit = max(1, min(500, int(limit or 100)))
+    persisted: list[dict[str, Any]] = []
+    try:
+        from run_graph_store import list_visual_events
+
+        persisted = list_visual_events(limit=limit, source=source, run_id=run_id)
+    except Exception:
+        persisted = []
     with _LOCK:
-        items = list(_EVENTS)
+        memory = list(_EVENTS)
     if source:
-        items = [item for item in items if item.get("source") == source]
+        memory = [item for item in memory if item.get("source") == source]
     if run_id:
-        items = [item for item in items if item.get("run_id") == run_id]
-    return items[:limit]
+        memory = [item for item in memory if item.get("run_id") == run_id]
+    seen: set[str] = set()
+    merged: list[dict[str, Any]] = []
+    for item in persisted + memory:
+        eid = str(item.get("id") or "")
+        if eid and eid in seen:
+            continue
+        if eid:
+            seen.add(eid)
+        merged.append(item)
+        if len(merged) >= limit:
+            break
+    return merged[:limit]
 
 
 def clear_events() -> None:
     """Clear the in-memory event buffer. Intended for tests and local debugging."""
     with _LOCK:
         _EVENTS.clear()
+    try:
+        import os
+
+        from run_graph_store import DB_PATH, init_run_graph_db
+
+        init_run_graph_db()
+        if os.environ.get("RUN_GRAPH_TEST_CLEAR") == "1" and os.path.isfile(DB_PATH):
+            import sqlite_wal as sqlite3
+
+            with sqlite3.connect(DB_PATH) as conn:
+                conn.execute("DELETE FROM visual_events")
+                conn.commit()
+    except Exception:
+        pass

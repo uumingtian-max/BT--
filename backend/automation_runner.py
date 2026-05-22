@@ -15,6 +15,8 @@ from pathlib import Path
 from typing import Any
 
 from automation_store import finish_run, start_run
+from run_graph_store import begin_run as graph_begin_run
+from run_graph_store import finish_run_graph, record_steps_from_result
 from visual_event_bus import publish_event
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -63,6 +65,13 @@ def run_automation_task(
     started = time.perf_counter()
     run = start_run(task_kind=task_kind, target=target, job_id=job_id)
     run_id = run["id"]
+    graph_begin_run(
+        run_id=run_id,
+        source="automation",
+        kind=task_kind,
+        target=target,
+        job_id=job_id,
+    )
     publish_event(
         event_type="automation_run_started",
         source="automation",
@@ -82,6 +91,14 @@ def run_automation_task(
         summary = f"自动化任务失败：{exc}"
 
     duration_ms = int((time.perf_counter() - started) * 1000)
+    record_steps_from_result(run_id, result)
+    graph_finish_run_graph(
+        run_id,
+        status=status,
+        summary=summary,
+        duration_ms=duration_ms,
+        meta={"result_ok": bool(result.get("ok"))},
+    )
     stored = finish_run(
         run_id,
         status=status,

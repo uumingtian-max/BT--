@@ -43,7 +43,13 @@ npm run build
 
 上传附件测试：vLLM 未起时应 **503**；`:8001` 正常时应走真多模态（见 `docs/BT_VIDEO_CAPABILITIES.md`）。
 
-## 4. 常见问题
+## 4. Run Graph（自动化时间线）
+
+- 库：`backend/run_graph.db`（已在 `.gitignore` 忽略 `*.db`）
+- 接口：`GET /meta/run-graph/runs/{run_id}`、`GET /automation/runs/{run_id}/graph`
+- 事件：`/meta/visual-events` 会合并 SQLite，重启后时间线不丢
+
+## 5. 常见问题
 
 | 现象 | 处理 |
 | --- | --- |
