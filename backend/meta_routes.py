@@ -391,6 +391,34 @@ def _meta_doctor_payload(*, strict_probe: bool = True) -> dict[str, object]:
 
     add("agent_tools", len(TOOL_MAP) >= 20, f"{len(TOOL_MAP)} tools registered")
 
+    try:
+        from embed_backend import embed_status
+
+        strict_embed = os.environ.get("EMBED_DOCTOR_PROBE", "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+        est = embed_status(probe=strict_embed)
+        backend = str(est.get("backend") or "ollama")
+        if backend in ("openvino", "ov", "npu"):
+            ok = bool(est.get("openvino_ok"))
+            if est.get("openvino_probe") == "skipped":
+                detail = f"dir ok ({est.get('ov_dir')}); set EMBED_DOCTOR_PROBE=1 to compile NPU"
+            elif ok:
+                detail = f"device={est.get('openvino_device')} dim={est.get('dim')}"
+            else:
+                detail = str(est.get("openvino_error", "openvino probe failed"))
+            add("embed_npu", ok, detail)
+        else:
+            add(
+                "embed_backend",
+                True,
+                f"ollama @ {est.get('ollama_base')} model={est.get('ollama_model')}",
+            )
+    except Exception as e:
+        add("embed_backend", False, str(e), optional=True)
+
     failed = [c for c in checks if c["status"] == "fail"]
     return {
         "ok": len(failed) == 0,

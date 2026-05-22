@@ -1,9 +1,9 @@
 import json
 import os
 import sqlite_wal as sqlite3
-from typing import Optional
+from typing import Any, Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -158,11 +158,19 @@ def _init_messages_fts(conn: sqlite3.Connection) -> None:
 init_db()
 
 
+class AttachmentRef(BaseModel):
+    path: str
+    filename: str = ""
+    content_type: str = ""
+    url: str = ""
+
+
 class ChatRequest(BaseModel):
     session_id: str
     message: str
     model: str = Field(default_factory=lambda: get_runtime().default_chat_model)
     stream: bool = True
+    attachments: list[AttachmentRef] = Field(default_factory=list)
 
 
 class PreferenceUpdate(BaseModel):
@@ -217,11 +225,20 @@ async def stream_llm(messages: list, model: str):
 @router.post("/")
 async def chat(req: ChatRequest):
     from model_lock import enforce_locked_model
+    from mm_openai_payload import assert_attachments_can_run
 
     req.model = enforce_locked_model(req.model, user_input=req.message, mode="chat")
+    att_payload: list[dict[str, Any]] = [a.model_dump() for a in req.attachments]
+    try:
+        assert_attachments_can_run(att_payload)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
     history = get_history(req.session_id)
-    save_message(req.session_id, "user", req.message)
-    remember_from_message(req.session_id, "user", req.message)
+    user_text = (req.message or "").strip() or (
+        "请分析我上传的附件。" if att_payload else ""
+    )
+    save_message(req.session_id, "user", user_text)
+    remember_from_message(req.session_id, "user", user_text)
     rt = get_runtime()
     memory_context = compress_for_llm(build_memory_context(req.message), rt.context_block_max_chars, "memory")
     knowledge_context = compress_for_llm(build_knowledge_context(req.message), rt.context_block_max_chars, "knowledge")
@@ -283,7 +300,10 @@ async def chat(req: ChatRequest):
     )
     merged_system = "\n\n---\n\n".join(blocks)
     messages = [{"role": "system", "content": merged_system}]
-    messages += history + [{"role": "user", "content": req.message}]
+    last_user: dict[str, Any] = {"role": "user", "content": user_text}
+    if att_payload:
+        last_user["attachments"] = att_payload
+    messages += history + [last_user]
     collected: list[str] = []
 
     async def generate():

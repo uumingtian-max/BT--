@@ -9,7 +9,8 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
-from skill_pack import EMBED_MODEL, _cosine, _ollama_embed_one
+from embed_backend import embed_one
+from skill_pack import EMBED_MODEL, _cosine
 
 INDEX_PATH = Path(__file__).resolve().parent / ".memory_vector_index.json"
 _LOCK = Lock()
@@ -54,7 +55,7 @@ class VectorMemoryStore:
             return
         key = str(memory_id)
         try:
-            vector = _ollama_embed_one(content[:4000])
+            vector = embed_one(content[:4000])
         except Exception:
             return
         with _LOCK:
@@ -67,7 +68,7 @@ class VectorMemoryStore:
         if len(q) < 2 or not self.vectors:
             return []
         try:
-            query_vec = _ollama_embed_one(q[:2000])
+            query_vec = embed_one(q[:2000])
         except Exception:
             return []
         scored: list[tuple[float, str]] = []

@@ -131,7 +131,15 @@ def _ollama_chat_options(temperature: float) -> dict[str, Any]:
 
 
 def _openai_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [{"role": m["role"], "content": m.get("content", "")} for m in messages if m.get("content") is not None]
+    from mm_openai_payload import apply_multimodal_to_messages
+
+    merged = apply_multimodal_to_messages(messages)
+    out: list[dict[str, Any]] = []
+    for m in merged:
+        if m.get("content") is None:
+            continue
+        out.append({"role": m["role"], "content": m.get("content", "")})
+    return out
 
 
 def _openai_chat_url_headers_body(

@@ -16,8 +16,6 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
-import httpx
-
 from agent_runtime import get_runtime
 
 SKILL_DIR = Path(__file__).resolve().parent / "agent_skills"
@@ -170,20 +168,10 @@ def _ollama_base_url() -> str:
     return base.rstrip("/")
 
 
-def _ollama_embed_one(text: str) -> list[float]:
-    base = _ollama_base_url()
-    payload = {"model": EMBED_MODEL, "input": text}
-    with httpx.Client(timeout=EMBED_TIMEOUT_SEC) as client:
-        resp = client.post(f"{base}/api/embed", json=payload)
-        if resp.status_code == 404:
-            resp = client.post(f"{base}/api/embeddings", json={"model": EMBED_MODEL, "prompt": text})
-        resp.raise_for_status()
-        data = resp.json()
-    if isinstance(data.get("embeddings"), list) and data["embeddings"]:
-        return [float(x) for x in data["embeddings"][0]]
-    if isinstance(data.get("embedding"), list):
-        return [float(x) for x in data["embedding"]]
-    raise RuntimeError("Ollama embedding response missing embedding vector")
+def _embed_one(text: str) -> list[float]:
+    from embed_backend import embed_one
+
+    return embed_one(text)
 
 
 def _cosine(a: list[float], b: list[float]) -> float:
@@ -219,7 +207,7 @@ def _build_embedding_index(skills: list[SkillDoc]) -> dict[str, Any]:
     for sk in skills:
         if sk.stem == "learned_habit_auto":
             continue
-        vectors[sk.stem] = _ollama_embed_one(_skill_embedding_text(sk))
+        vectors[sk.stem] = _embed_one(_skill_embedding_text(sk))
     data = {
         "model": EMBED_MODEL,
         "ollama_base": _ollama_base_url(),
@@ -249,7 +237,7 @@ def _embedding_route_skills(user_message: str, skills: list[SkillDoc]) -> list[t
             index = _load_embedding_index(skills)
             if index is None:
                 index = _build_embedding_index(skills)
-        query_vec = _ollama_embed_one(user_message)
+        query_vec = _embed_one(user_message)
         vectors = index.get("vectors", {})
         by_stem = {sk.stem: sk for sk in skills}
         scored: list[tuple[float, SkillDoc]] = []

@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 import re
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
@@ -114,10 +114,18 @@ DIRECTORY_HINTS = {
 _GEMMA4_ID = "nvidia/Gemma-4-26B-A4B-NVFP4"
 
 
+class AttachmentRef(BaseModel):
+    path: str
+    filename: str = ""
+    content_type: str = ""
+    url: str = ""
+
+
 class AgentRequest(BaseModel):
     message: str
     model: str = Field(default_factory=lambda: get_runtime().default_chat_model)
     session_id: str | None = None
+    attachments: list[AttachmentRef] = Field(default_factory=list)
 
 
 def _candidate_models(requested_model: str, user_input: str = "") -> list[str]:
@@ -1244,6 +1252,7 @@ async def run_agent(
     model: str,
     session_id: str | None = None,
     on_step=None,
+    attachments: list[dict[str, Any]] | None = None,
 ):
     from model_lock import enforce_locked_model
 
@@ -1260,6 +1269,16 @@ async def run_agent(
         if hasattr(maybe_awaitable, "__await__"):
             await maybe_awaitable
 
+    att_list = list(attachments or [])
+    if att_list:
+        from mm_openai_payload import assert_attachments_can_run
+
+        try:
+            assert_attachments_can_run(att_list)
+        except RuntimeError as e:
+            await emit_step({"type": "final_answer", "content": str(e)})
+            return steps
+
     if _looks_like_garbled_text(message):
         await emit_step(
             {
@@ -1268,7 +1287,8 @@ async def run_agent(
             }
         )
         return steps
-    save_user_turn(sid, message)
+    user_text = (message or "").strip() or ("请分析我上传的附件。" if att_list else "")
+    save_user_turn(sid, user_text)
     remember_from_message(sid, "user", message)
     await emit_step(
         {
@@ -1308,6 +1328,17 @@ async def run_agent(
     system_context_parts[0] = _build_system_prompt()
     system_content = "\n\n".join(system_context_parts)
     messages = build_messages_with_history(system_content, sid)
+    if att_list:
+        for i in range(len(messages) - 1, -1, -1):
+            if messages[i].get("role") == "user":
+                messages[i] = {
+                    **messages[i],
+                    "content": user_text,
+                    "attachments": att_list,
+                }
+                break
+        else:
+            messages.append({"role": "user", "content": user_text, "attachments": att_list})
     tool_used = False
     last_tool_name = None
     last_tool_result = None
@@ -1716,16 +1747,26 @@ async def agent_run(req: AgentRequest):
         async def on_step(step: dict):
             await queue.put(step)
 
+        att_payload = [a.model_dump() for a in req.attachments]
+
+        def _run_agent_call():
+            call_kw: dict[str, Any] = {
+                "message": req.message,
+                "model": req.model,
+                "session_id": req.session_id,
+                "attachments": att_payload or None,
+            }
+            if supports_streaming_steps:
+                call_kw["on_step"] = on_step
+            bound = sig.bind_partial(
+                **{k: v for k, v in call_kw.items() if k in sig.parameters}
+            )
+            return run_agent(*bound.args, **bound.kwargs)
+
         async def worker():
             try:
-                if len(sig.parameters) <= 2:
-                    steps = await run_agent(req.message, req.model)
-                    for step in steps:
-                        await queue.put(step)
-                elif supports_streaming_steps:
-                    steps = await run_agent(req.message, req.model, req.session_id, on_step)
-                else:
-                    steps = await run_agent(req.message, req.model, req.session_id)
+                steps = await _run_agent_call()
+                if not supports_streaming_steps:
                     for step in steps:
                         await queue.put(step)
             except Exception as e:

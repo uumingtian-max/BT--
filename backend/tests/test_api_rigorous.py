@@ -287,7 +287,7 @@ def test_agent_run_stream_headers(client: TestClient, monkeypatch: pytest.Monkey
     """SSE endpoint returns event-stream when mocked run_agent supplies steps."""
     import agent
 
-    async def simple_run(msg: str, model: str):
+    async def simple_run(message: str, model: str, **_: object):
         return [{"type": "final_answer", "content": "stream-mock"}]
 
     monkeypatch.setattr(agent, "run_agent", simple_run)

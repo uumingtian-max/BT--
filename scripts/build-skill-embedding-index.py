@@ -31,7 +31,7 @@ def main() -> int:
                     "model": skill_pack.EMBED_MODEL,
                     "ollama_base": skill_pack._ollama_base_url(),
                     "error": str(e),
-                    "hint": "先运行: ollama pull nomic-embed-text，并确保 Ollama 服务已启动。",
+                    "hint": "OpenVINO: 设置 EMBED_BACKEND=openvino 与 EMBED_OV_NPU_DIR；或 Ollama: ollama pull nomic-embed-text 并启动服务。",
                 },
                 ensure_ascii=False,
                 indent=2,
