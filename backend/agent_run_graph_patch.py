@@ -10,10 +10,13 @@ from __future__ import annotations
 import time
 from typing import Any, Awaitable, Callable
 
-from run_graph_store import add_run_step, finish_run_graph, start_run_graph
+from fastapi import HTTPException
+
+from run_graph_store import add_run_step, finish_run_graph, get_run_graph, list_run_graphs, start_run_graph
 from visual_event_bus import publish_event
 
 _PATCHED = False
+_ROUTES_ADDED = False
 
 
 def _step_name(step: dict[str, Any]) -> str:
@@ -55,13 +58,35 @@ def _step_output(step: dict[str, Any]) -> dict[str, Any]:
     return output
 
 
+def _add_agent_graph_routes(agent_module) -> None:
+    global _ROUTES_ADDED
+    if _ROUTES_ADDED:
+        return
+
+    def agent_graphs(limit: int = 50, status: str | None = None):
+        return {"ok": True, "graphs": list_run_graphs(limit=limit, source="agent", status=status)}
+
+    def agent_run_graph_detail(run_id: str):
+        graph = get_run_graph(run_id)
+        if not graph or graph.get("source") != "agent":
+            raise HTTPException(404, "agent run graph not found")
+        return {"ok": True, "graph": graph}
+
+    agent_module.router.add_api_route("/graphs", agent_graphs, methods=["GET"], tags=["agent"])
+    agent_module.router.add_api_route("/runs/{run_id}/graph", agent_run_graph_detail, methods=["GET"], tags=["agent"])
+    _ROUTES_ADDED = True
+
+
 def apply_agent_run_graph_patch() -> bool:
     """Patch agent.run_agent once. Returns True when patched by this call."""
     global _PATCHED
-    if _PATCHED:
-        return False
 
     import agent as agent_module
+
+    _add_agent_graph_routes(agent_module)
+
+    if _PATCHED:
+        return False
 
     original_run_agent = agent_module.run_agent
 
