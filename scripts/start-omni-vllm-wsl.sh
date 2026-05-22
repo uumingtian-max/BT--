@@ -35,8 +35,11 @@ if [ "${VLLM_ENFORCE_EAGER:-0}" = "1" ]; then
 fi
 
 echo "[omni] model=$MODEL_DIR port=$PORT log=$LOG" | tee -a "$LOG"
-MM_LIMIT="${VLLM_MM_LIMIT:-'{\"image\":1,\"video\":1,\"audio\":1}'}"
-MM_MEDIA="${VLLM_MM_MEDIA:-'{\"video\":{\"fps\":1,\"num_frames\":32}}'}"
+# vLLM argparse parses JSON; do not wrap the value in extra shell quotes.
+MM_LIMIT='{"image":1,"video":1,"audio":1}'
+MM_MEDIA='{"video":{"fps":1,"num_frames":32}}'
+MM_LIMIT="${VLLM_MM_LIMIT:-$MM_LIMIT}"
+MM_MEDIA="${VLLM_MM_MEDIA:-$MM_MEDIA}"
 
 echo "[omni] skip-mm-profiling (boot only); runtime MM: image/video/audio enabled" | tee -a "$LOG"
 echo "[omni] limit-mm-per-prompt=$MM_LIMIT video-pruning=${VLLM_VIDEO_PRUNING:-0.8}" | tee -a "$LOG"
