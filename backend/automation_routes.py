@@ -20,6 +20,7 @@ from automation_store import (
     list_runs,
     set_job_enabled,
 )
+from run_graph_store import get_run_graph, list_run_graphs
 from visual_event_bus import list_events
 
 router = APIRouter()
@@ -103,6 +104,22 @@ def run_once(body: AutomationRunRequest):
 @router.get("/runs")
 def runs_list(limit: int = 50):
     return {"ok": True, "runs": list_runs(limit=limit)}
+
+
+@router.get("/graphs")
+def graphs_list(limit: int = 50, status: str | None = None):
+    return {
+        "ok": True,
+        "graphs": list_run_graphs(limit=limit, source="automation", status=status),
+    }
+
+
+@router.get("/runs/{run_id}/graph")
+def run_graph_detail(run_id: str):
+    graph = get_run_graph(run_id)
+    if not graph:
+        raise HTTPException(404, "automation run graph not found")
+    return {"ok": True, "graph": graph}
 
 
 @router.get("/events")
