@@ -1,0 +1,3 @@
+# Nemotron Omni 多模态依赖（Parakeet 音频需要 librosa）
+FROM lmsysorg/sglang:latest-cu129
+RUN pip install --no-cache-dir librosa soundfile

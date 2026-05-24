@@ -1,0 +1,61 @@
+# Nemotron NVFP4 + SGLang · RTX 5090
+# 启动: docker compose -f docker-compose.nemotron.yml up -d
+# 日志: docker logs -f bt-nemotron-sglang
+
+services:
+  nemotron-sglang:
+    build:
+      context: .
+      dockerfile: Dockerfile.nemotron
+    image: bt-nemotron-sglang:local
+    container_name: bt-nemotron-sglang
+    restart: unless-stopped
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128,expandable_segments:True
+      - SGLANG_ENABLE_JIT_DEEPGEMM=0
+    volumes:
+      - D:/models/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4:/model:ro
+      - D:/models/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4-sglang-win/config.json:/model/config.json:ro
+    ports:
+      - "8001:8000"
+    shm_size: 16gb
+    ipc: host
+    command:
+      - sglang
+      - serve
+      - --model-path
+      - /model
+      - --served-model-name
+      - nemotron-omni
+      - --trust-remote-code
+      - --dtype
+      - bfloat16
+      - --quantization
+      - modelopt_mixed
+      - --quantization-param
+      - '{"algo":"modelopt", "dtype":"nvfp4", "group_size":128}'
+      - --reasoning-parser
+      - nemotron_3
+      - --context-length
+      - "2048"
+      - --mem-fraction-static
+      - "0.74"
+      - --kv-cache-dtype
+      - fp8_e4m3
+      - --max-running-requests
+      - "1"
+      - --skip-server-warmup
+      - --disable-cuda-graph
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
