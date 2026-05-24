@@ -58,3 +58,16 @@ export async function setAutomationJobEnabled(jobId, enabled) {
     method: 'POST',
   });
 }
+
+export async function fetchAutomationRunGraphs(limit = 20, status = '') {
+  const query = new URLSearchParams({ limit: String(limit) });
+  if (status) query.set('status', status);
+  const data = await requestJson(`/automation/graphs?${query.toString()}`);
+  return data.graphs || [];
+}
+
+export async function fetchAutomationRunGraph(runId) {
+  if (!runId) return null;
+  const data = await requestJson(`/automation/runs/${encodeURIComponent(runId)}/graph`);
+  return data.graph || null;
+}
