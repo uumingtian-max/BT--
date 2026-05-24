@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import ReactMarkdown from 'react-markdown';
 import './App.css';
@@ -6,6 +6,10 @@ import BrandLogo, { BrandHero } from './BrandLogo';
 import { DashboardPanel, SystemPanel, SkillsPanel, SchedulerPanel } from './OperatorPanels';
 import { LOCKED_MODEL_ID, LOCKED_MODEL_LABEL, labelForModel } from './modelCatalog';
 import { extractClipboardFiles } from './clipboardAttachments';
+import NeuralTopology from './NeuralTopology';
+import ScreenStreamViewer from './ScreenStreamViewer';
+import WorkflowVisualization3D from './WorkflowVisualization3D';
+import DataVisualizationPanel from './DataVisualizationPanel';
 
 // Electron 通过 preload 注入真实后端地址；其余场景可由构建环境覆盖。
 const API =
@@ -501,6 +505,13 @@ export default function App() {
   const fileInputRef = useRef(null);
   /** 与 activeSession 同步；发送时优先读 ref，避免 setState 滞后导致每条请求 session_id 不一致 */
   const sessionIdRef = useRef(null);
+  const latestAgentSteps = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const msg = messages[i];
+      if (msg?.role === 'agent-steps' && Array.isArray(msg.steps)) return msg.steps;
+    }
+    return [];
+  }, [messages]);
 
   useEffect(() => {
     sessionIdRef.current = activeSession;
@@ -1285,6 +1296,15 @@ export default function App() {
             </div>
           ) : (
             <>
+              {mode === 'agent' && latestAgentSteps.length > 0 && (
+                <div className="chat-topology-wrap">
+                  <ScreenStreamViewer apiBase={API} />
+                  <WorkflowVisualization3D agentSteps={latestAgentSteps} />
+                  <DataVisualizationPanel agentSteps={latestAgentSteps} />
+                  <NeuralTopology apiBase={API} agentSteps={latestAgentSteps} />
+                </div>
+              )}
+
               <div className="messages">
                 {messages.length === 0 && (
                   <DashboardPanel
@@ -1377,4 +1397,5 @@ export default function App() {
     </div>
   );
 }
+
 

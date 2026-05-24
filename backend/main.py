@@ -43,6 +43,8 @@ from mcp_routes import router as mcp_router
 from tool_registry_routes import router as tool_registry_router
 from agent_runtime import get_runtime, validate_llm_config
 from settings import get_settings, validate_startup_settings
+from screen_capture import init_screen_capture, shutdown_screen_capture
+from screen_routes import router as screen_router
 
 
 async def warmup_models() -> None:
@@ -91,6 +93,8 @@ async def lifespan(app: FastAPI):
             _schedule_ollama_tags_refresh(rt.ollama_base)
     except Exception:
         pass
+    # 初始化屏幕捕获
+    init_screen_capture()
     observe_task = asyncio.create_task(background_collector())
     memory_task = asyncio.create_task(background_memory_maintenance())
     pattern_task = asyncio.create_task(background_pattern_maintenance())
@@ -98,6 +102,8 @@ async def lifespan(app: FastAPI):
     habit_task = asyncio.create_task(background_habit_loop())
     asyncio.create_task(warmup_models())
     yield
+    # 关闭屏幕捕获
+    shutdown_screen_capture()
     observe_task.cancel()
     memory_task.cancel()
     pattern_task.cancel()
@@ -273,6 +279,7 @@ app.include_router(scheduler_router, prefix="/scheduler", tags=["scheduler"])
 app.include_router(automation_router, prefix="/automation", tags=["automation"])
 app.include_router(gateway_router, prefix="/gateway", tags=["gateway"])
 app.include_router(mcp_router, prefix="/mcp", tags=["mcp"])
+app.include_router(screen_router, prefix="/screen", tags=["screen"])
 app.include_router(local_agent_router)
 
 _static = Path(__file__).resolve().parent.parent / "static"

@@ -1,0 +1,84 @@
+.workflow-3d-container {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  border-radius: 16px;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(34, 211, 238, 0.1), transparent 50%),
+    linear-gradient(135deg, rgba(2, 6, 23, 0.95), rgba(5, 5, 20, 0.95));
+  box-shadow:
+    inset 0 1px 0 rgba(34, 211, 238, 0.1),
+    0 20px 40px rgba(2, 6, 23, 0.6);
+  margin: 16px 0;
+}
+
+.workflow-3d-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.workflow-3d-canvas canvas {
+  display: block;
+}
+
+.workflow-3d-overlay {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.workflow-3d-overlay h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #f0f9ff;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 8px rgba(2, 6, 23, 0.8);
+}
+
+.workflow-3d-overlay p {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: #cbd5e1;
+  text-shadow: 0 1px 4px rgba(2, 6, 23, 0.8);
+}
+
+@media (max-width: 900px) {
+  .workflow-3d-container {
+    height: 350px;
+  }
+
+  .workflow-3d-overlay h3 {
+    font-size: 14px;
+  }
+
+  .workflow-3d-overlay p {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .workflow-3d-container {
+    height: 280px;
+    border-radius: 12px;
+    margin: 12px 0;
+  }
+
+  .workflow-3d-overlay {
+    top: 10px;
+    left: 12px;
+  }
+
+  .workflow-3d-overlay h3 {
+    font-size: 13px;
+  }
+
+  .workflow-3d-overlay p {
+    font-size: 9px;
+  }
+}

@@ -9,11 +9,11 @@ services:
       dockerfile: Dockerfile.nemotron
     image: bt-nemotron-sglang:local
     container_name: bt-nemotron-sglang
-    restart: unless-stopped
+    restart: on-failure:2
     environment:
       - NVIDIA_VISIBLE_DEVICES=0
       - CUDA_VISIBLE_DEVICES=0
-      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128,expandable_segments:True
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
       - SGLANG_ENABLE_JIT_DEEPGEMM=0
     volumes:
       - D:/models/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4:/model:ro
@@ -35,17 +35,25 @@ services:
       - --quantization
       - modelopt_mixed
       - --quantization-param
-      - '{"algo":"modelopt", "dtype":"nvfp4", "group_size":128}'
+      - '{"algo":"modelopt", "dtype":"fp8"}'
       - --reasoning-parser
       - nemotron_3
       - --context-length
-      - "2048"
-      - --mem-fraction-static
-      - "0.74"
+      - "1536"
       - --kv-cache-dtype
-      - fp8_e4m3
+      - bfloat16
+      - --num-reserved-decode-tokens
+      - "256"
+      - --mem-fraction-static
+      - "0.75"
+      - --cpu-offload-gb
+      - "8"
       - --max-running-requests
       - "1"
+      - --max-prefill-tokens
+      - "512"
+      - --mem-fraction-static
+      - "0.85"
       - --skip-server-warmup
       - --disable-cuda-graph
       - --host

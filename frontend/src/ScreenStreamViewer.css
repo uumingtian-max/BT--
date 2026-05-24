@@ -1,0 +1,129 @@
+.screen-stream-viewer {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(34, 211, 238, 0.1), transparent 50%),
+    linear-gradient(135deg, rgba(2, 6, 23, 0.95), rgba(5, 5, 20, 0.95));
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.5);
+}
+
+.screen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.15);
+}
+
+.screen-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #f0f9ff;
+  letter-spacing: 0.02em;
+}
+
+.fps-counter {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: #22d3ee;
+  font-size: 12px;
+}
+
+.screen-canvas-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  box-shadow: inset 0 1px 0 rgba(34, 211, 238, 0.05);
+}
+
+.screen-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: #000;
+}
+
+.screen-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.screen-info {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  margin: 8px;
+  border-radius: 8px;
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  font-size: 11px;
+  color: #cbd5e1;
+  font-family: 'JetBrains Mono', monospace;
+  backdrop-filter: blur(8px);
+}
+
+.screen-info span {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .screen-canvas-container {
+    aspect-ratio: 4 / 3;
+  }
+
+  .screen-info {
+    font-size: 10px;
+    gap: 8px;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .screen-stream-viewer {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .screen-header {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+  }
+
+  .screen-header h4 {
+    font-size: 13px;
+  }
+
+  .fps-counter {
+    font-size: 11px;
+  }
+
+  .screen-canvas-container {
+    aspect-ratio: 3 / 2;
+  }
+
+  .screen-info {
+    font-size: 9px;
+    gap: 6px;
+    padding: 5px 8px;
+    margin: 6px;
+  }
+}

@@ -118,3 +118,6 @@ frontend/src/*.zip
 # Binaries accidentally committed on main (do not track)
 Docker Desktop.exe
 chrome_proxy.exe
+
+# Docker Scout demo clone (local only)
+scout-demo-service/
