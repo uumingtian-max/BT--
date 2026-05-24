@@ -355,11 +355,20 @@ def list_artifacts(run_id: str) -> list[dict[str, Any]]:
     return out
 
 
+def _normalize_steps(steps: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Add UI-friendly aliases (dashboard expects step_index / step_type)."""
+    for step in steps:
+        step.setdefault("step_index", step.get("seq"))
+        step.setdefault("step_type", step.get("name"))
+    return steps
+
+
 def get_run_detail(run_id: str) -> dict[str, Any] | None:
     run = get_run(run_id)
     if not run:
         return None
-    run["steps"] = list_steps(run_id)
+    run.setdefault("title", run.get("kind") or run_id)
+    run["steps"] = _normalize_steps(list_steps(run_id))
     run["artifacts"] = list_artifacts(run_id)
     run["events"] = list_visual_events(limit=200, run_id=run_id)
     return run

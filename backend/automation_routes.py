@@ -105,6 +105,18 @@ def runs_list(limit: int = 50):
     return {"ok": True, "runs": list_runs(limit=limit)}
 
 
+@router.get("/graphs")
+def graphs_list(limit: int = 50, status: str | None = None):
+    from run_graph_store import list_runs as list_run_graphs
+
+    graphs = list_run_graphs(limit=limit, source="automation")
+    if status:
+        graphs = [item for item in graphs if item.get("status") == status]
+    for item in graphs:
+        item.setdefault("title", item.get("kind") or item.get("id"))
+    return {"ok": True, "graphs": graphs}
+
+
 @router.get("/runs/{run_id}/graph")
 def runs_graph_detail(run_id: str):
     from run_graph_store import get_run_detail

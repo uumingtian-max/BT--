@@ -890,12 +890,15 @@ export default function App() {
       msgText = `[skill:${pendingSkill}] ${text}`;
       setPendingSkill(null);
     }
-    const attPayload = outgoingAttachments.map((a) => ({
-      path: a.path,
-      filename: a.filename || '',
-      content_type: a.content_type || '',
-      url: a.url || '',
-    }));
+    if (outgoingAttachments.length) {
+      const attachmentContext = outgoingAttachments
+        .map((a, i) => {
+          const url = a.url?.startsWith('http') ? a.url : API + a.url;
+          return `${i + 1}. ${a.filename} | ${a.content_type} | ${formatBytes(a.size)} | url=${url} | local_path=${a.path}`;
+        })
+        .join('\n');
+      msgText += `\n\n[上传附件]\n${attachmentContext}`;
+    }
     let sid = sessionIdRef.current || activeSession;
     if (!sid) {
       sid = uuidv4();
@@ -909,13 +912,13 @@ export default function App() {
     const actionHints = /显卡|GPU|性能|优化|git |pytest|npm |执行|运行|检查|列出|读取|提交|推送|帮我|去把/i;
     const useAgent = mode === 'agent' || actionHints.test(msgText);
     if (useAgent && mode !== 'agent') setMode('agent');
-    if (useAgent) await sendAgent(msgText, sid, attPayload);
-    else await sendChat(msgText, sid, attPayload);
+    if (useAgent) await sendAgent(msgText, sid);
+    else await sendChat(msgText, sid);
     loadSessions();
     setLoading(false);
   };
 
-  const sendChat = async (text, sid, attachments = []) => {
+  const sendChat = async (text, sid) => {
     setStreamingMsg('');
     let sseBuf = '';
     let gotDone = false;
@@ -923,7 +926,7 @@ export default function App() {
       const res = await fetch(API + '/chat/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sid, message: text, model, stream: true, attachments }),
+        body: JSON.stringify({ session_id: sid, message: text, model, stream: true }),
       });
       if (!res.ok) {
         const t = await res.text();
@@ -984,14 +987,14 @@ export default function App() {
     }
   };
 
-  const sendAgent = async (text, sid, attachments = []) => {
+  const sendAgent = async (text) => {
     const steps = [];
     setMessages((prev) => [...prev, { role: 'agent-steps', steps: [], streaming: true }]);
     try {
       const res = await fetch(API + '/agent/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, model, session_id: sid, attachments }),
+        body: JSON.stringify({ message: text, model }),
       });
       if (!res.ok) {
         const t = await res.text();

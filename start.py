@@ -135,11 +135,12 @@ def kill_all():
 
 
 # ─── 各模式启动函数 ──────────────────────────────────────────
-def start_backend(dev=False, host="127.0.0.1"):
+def start_backend(dev: bool = False, host: str | None = None) -> subprocess.Popen:
     info("启动后端 FastAPI …")
+    bind_host = host or os.environ.get("BACKEND_HOST", "127.0.0.1")
     reload_flag = ["--reload"] if dev else []
     cmd = [PYTHON, "-m", "uvicorn", "main:app",
-           "--host", host, "--port", "8000"] + reload_flag
+           "--host", bind_host, "--port", "8000"] + reload_flag
     p = run(cmd, cwd=BACKEND_DIR)
     if not wait_for_port(8000, timeout=20):
         err("后端启动超时（8000 端口未就绪）")
