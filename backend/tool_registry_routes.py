@@ -8,8 +8,9 @@ router = APIRouter()
 
 @router.get("/tools/full")
 def full_tool_registry():
-    """完整工具注册表 + 风险统计（前端工作台一键拉取）。"""
-    return {"ok": True, "data": get_full_registry()}
+    """兼容别名：返回 get_full_registry()。新代码请用 GET /meta/tools/registry。"""
+    problems = validate_tool_registry()
+    return {"ok": not problems, "data": get_full_registry(), "problems": problems}
 
 
 @router.get("/tools/registry")

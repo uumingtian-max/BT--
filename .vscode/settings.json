@@ -119,5 +119,7 @@
     "**/miniconda3/**": "plaintext",
     "**/site-packages/**": "plaintext",
     "**/_pytest/**": "plaintext"
-  }
+  },
+  "workbench.editor.showTabIndex": true,
+  "workbench.editor.wrapTabs": true
 }

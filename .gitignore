@@ -1,4 +1,4 @@
-# ── 数据库（运行时生成，不入版本管理）──────────────────────────────────────────
+﻿# ── 数据库（运行时生成，不入版本管理）──────────────────────────────────────────
 *.db
 *.db-shm
 *.db-wal
@@ -114,3 +114,7 @@ vendor/*/
 
 # ── zip 打包产物（不应进 src/）──────────────────────────────────────────────────
 frontend/src/*.zip
+
+# Binaries accidentally committed on main (do not track)
+Docker Desktop.exe
+chrome_proxy.exe

@@ -131,11 +131,11 @@ function pingBackend() {
   return pingBackendPath('/health')
 }
 
-/** 新后端必须提供 /meta/tools/full；仅 /health 通说明是旧进程，需重启。 */
+/** 新后端必须提供 /meta/tools/registry；仅 /health 通说明是旧进程，需重启。 */
 async function pingBackendCurrent() {
   const healthy = await pingBackend()
   if (!healthy) return false
-  return pingBackendPath('/meta/tools/full')
+  return pingBackendPath('/meta/tools/registry')
 }
 
 function killBackendPortListeners() {
