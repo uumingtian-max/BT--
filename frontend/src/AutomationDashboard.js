@@ -53,6 +53,51 @@ function GraphCard({ graph, active, onPick }) {
   );
 }
 
+
+function DynamicRunFlow({ steps, status }) {
+  const [cursor, setCursor] = React.useState(0);
+  const safeSteps = Array.isArray(steps) ? steps : [];
+
+  React.useEffect(() => {
+    setCursor(0);
+  }, [safeSteps.length]);
+
+  React.useEffect(() => {
+    if (safeSteps.length <= 1) return undefined;
+    const timer = setInterval(() => {
+      setCursor((prev) => (prev + 1) % safeSteps.length);
+    }, 1200);
+    return () => clearInterval(timer);
+  }, [safeSteps]);
+
+  if (!safeSteps.length) return null;
+
+  return (
+    <div className="auto-flow-stage">
+      <div className="auto-flow-head">
+        <strong>动态流程</strong>
+        <StatusBadge status={status || 'running'} />
+      </div>
+      <div className="auto-flow-track" role="list" aria-label="run-flow-track">
+        {safeSteps.map((step, index) => {
+          const isActive = index === cursor;
+          const done = step.status === 'success';
+          const failed = step.status === 'failed';
+          return (
+            <div
+              key={step.id || `${step.step_type}-${index}`}
+              className={`auto-flow-node ${isActive ? 'active' : ''} ${done ? 'done' : ''} ${failed ? 'failed' : ''}`}
+            >
+              <span className="auto-flow-dot" />
+              <small>{step.name || step.step_type || `step-${index + 1}`}</small>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function TimelineStep({ step }) {
   return (
     <div className={`auto-step ${step.status === 'success' ? 'ok' : step.status === 'failed' ? 'fail' : ''}`}>
@@ -177,6 +222,7 @@ export default function AutomationDashboard() {
             <div className="auto-graph-summary">
               <div className="auto-meta-row"><span>RunID：{selectedGraph.id}</span><span>开始：{fmtTime(selectedGraph.started_at)}</span><span>结束：{fmtTime(selectedGraph.ended_at)}</span></div>
               <p>{selectedGraph.summary || '暂无摘要'}</p>
+              <DynamicRunFlow steps={selectedGraph.steps || []} status={selectedGraph.status} />
               <div className="auto-step-list">{(selectedGraph.steps || []).map((step) => <TimelineStep key={step.id} step={step} />)}</div>
             </div>
           )}
