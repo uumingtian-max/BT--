@@ -43,17 +43,33 @@ NODE = shutil.which("node") or "node"
 
 # ─── 颜色输出 ───────────────────────────────────────────────
 def c(text, color):
-    colors = {"red": "\033[91m", "green": "\033[92m", "yellow": "\033[93m",
-              "blue": "\033[94m", "cyan": "\033[96m", "reset": "\033[0m"}
+    colors = {
+        "red": "\033[91m",
+        "green": "\033[92m",
+        "yellow": "\033[93m",
+        "blue": "\033[94m",
+        "cyan": "\033[96m",
+        "reset": "\033[0m",
+    }
     if IS_WINDOWS and "WT_SESSION" not in os.environ:
         return text  # 普通 cmd 不支持 ANSI
-    return f"{colors.get(color,'')}{text}{colors['reset']}"
+    return f"{colors.get(color, '')}{text}{colors['reset']}"
 
 
-def info(msg):  print(c(f"[INFO]  {msg}", "cyan"))
-def ok(msg):    print(c(f"[OK]    {msg}", "green"))
-def warn(msg):  print(c(f"[WARN]  {msg}", "yellow"))
-def err(msg):   print(c(f"[ERROR] {msg}", "red"))
+def info(msg):
+    print(c(f"[INFO]  {msg}", "cyan"))
+
+
+def ok(msg):
+    print(c(f"[OK]    {msg}", "green"))
+
+
+def warn(msg):
+    print(c(f"[WARN]  {msg}", "yellow"))
+
+
+def err(msg):
+    print(c(f"[ERROR] {msg}", "red"))
 
 
 # ─── 环境预检 ────────────────────────────────────────────────
@@ -106,7 +122,9 @@ procs: list[subprocess.Popen] = []
 def run(cmd, cwd=None, env=None, shell=False):
     """启动子进程并加入全局列表"""
     p = subprocess.Popen(
-        cmd, cwd=cwd or ROOT, env=env,
+        cmd,
+        cwd=cwd or ROOT,
+        env=env,
         shell=shell and IS_WINDOWS,  # Windows 需要 shell=True 跑 npm
     )
     procs.append(p)
@@ -116,6 +134,7 @@ def run(cmd, cwd=None, env=None, shell=False):
 def wait_for_port(port: int, timeout=30):
     """等待端口就绪"""
     import socket
+
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
@@ -135,15 +154,16 @@ def kill_all():
 
 
 # ─── 各模式启动函数 ──────────────────────────────────────────
-def start_backend(dev=False):
+def start_backend(dev=False, host=None):
     info("启动后端 FastAPI …")
+    bind_host = host or os.environ.get("BACKEND_HOST", "127.0.0.1")
     reload_flag = ["--reload"] if dev else []
-    cmd = [PYTHON, "-m", "uvicorn", "main:app",
-           "--host", "0.0.0.0", "--port", "8000"] + reload_flag
+    cmd = [PYTHON, "-m", "uvicorn", "main:app", "--host", bind_host, "--port", "8000"] + reload_flag
     p = run(cmd, cwd=BACKEND_DIR)
     if not wait_for_port(8000, timeout=20):
         err("后端启动超时（8000 端口未就绪）")
-        kill_all(); sys.exit(1)
+        kill_all()
+        sys.exit(1)
     ok("后端就绪 → http://127.0.0.1:8000")
     return p
 
@@ -226,6 +246,7 @@ def mode_backend():
 
 def mode_mobile():
     import socket
+
     check_env()
     # 获取本机局域网 IP
     try:
@@ -236,8 +257,7 @@ def mode_mobile():
     except Exception:
         local_ip = "127.0.0.1"
 
-    os.environ["BACKEND_HOST"] = "0.0.0.0"
-    start_backend()
+    start_backend(host="0.0.0.0")
     ok(f"手机访问地址 → http://{local_ip}:8000")
     info("保持运行，按 Ctrl+C 退出")
     try:
@@ -265,7 +285,8 @@ def mode_vllm():
                 kill_all()
         else:
             err("vLLM 启动超时")
-            kill_all(); sys.exit(1)
+            kill_all()
+            sys.exit(1)
 
 
 def mode_tts():
@@ -294,9 +315,9 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-    parser.add_argument("mode", nargs="?", default="app",
-                        choices=list(MODES.keys()) + ["help"],
-                        help="启动模式（默认 app）")
+    parser.add_argument(
+        "mode", nargs="?", default="app", choices=list(MODES.keys()) + ["help"], help="启动模式（默认 app）"
+    )
     args = parser.parse_args()
 
     if args.mode == "help":
