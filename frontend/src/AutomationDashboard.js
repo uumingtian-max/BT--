@@ -5,7 +5,6 @@ import {
   fetchAutomationEvents,
   fetchAutomationRunGraph,
   fetchAutomationRunGraphs,
-  fetchAutomationRuns,
   runAutomationOnce,
 } from './automationApi';
 
@@ -71,7 +70,6 @@ function TimelineStep({ step }) {
 
 export default function AutomationDashboard() {
   const [capabilities, setCapabilities] = React.useState(null);
-  const [runs, setRuns] = React.useState([]);
   const [graphs, setGraphs] = React.useState([]);
   const [events, setEvents] = React.useState([]);
   const [selectedRunId, setSelectedRunId] = React.useState('');
@@ -84,13 +82,11 @@ export default function AutomationDashboard() {
   const refresh = React.useCallback(async (pinRunId = selectedRunId) => {
     setError('');
     try {
-      const [nextCapabilities, nextRuns, nextGraphs] = await Promise.all([
+      const [nextCapabilities, nextGraphs] = await Promise.all([
         fetchAutomationCapabilities(),
-        fetchAutomationRuns(20),
         fetchAutomationRunGraphs(20),
       ]);
       setCapabilities(nextCapabilities);
-      setRuns(nextRuns);
       setGraphs(nextGraphs);
       const runId = pinRunId || nextGraphs[0]?.id || '';
       setSelectedRunId(runId);
