@@ -83,6 +83,7 @@ async def close_shared_clients() -> None:
 # Helper utilities (unchanged)
 # ---------------------------------------------------------------------------
 
+
 def _ollama_connection_message(url: str, exc: Exception) -> str:
     return (
         f"无法连接 Ollama（{url}）：{exc}。"
@@ -177,6 +178,7 @@ def _openai_non_stream_content(data: dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def chat_complete_sync(
     messages: list[dict[str, Any]],
@@ -278,7 +280,10 @@ async def chat_stream_async(
         url, headers, body = _openai_chat_url_headers_body(rt, messages, model, temperature=temperature, stream=True)
         client = await _get_async_client()
         async with client.stream(
-            "POST", url, headers=headers, json=body,
+            "POST",
+            url,
+            headers=headers,
+            json=body,
             timeout=_streaming_http_timeout(float(timeout)),
         ) as resp:
             resp.raise_for_status()

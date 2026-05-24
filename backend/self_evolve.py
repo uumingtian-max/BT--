@@ -49,7 +49,7 @@ def critic_evaluate(
             "role": "system",
             "content": (
                 "你是严格 Critic。对 Agent 结果打分 1-10（逻辑、效率、风格、可执行性）。"
-                "只输出 JSON：{\"score\":N,\"issues\":[\"...\"],\"fix_hint\":\"...\"}"
+                '只输出 JSON：{"score":N,"issues":["..."],"fix_hint":"..."}'
             ),
         },
         {"role": "user", "content": blob},

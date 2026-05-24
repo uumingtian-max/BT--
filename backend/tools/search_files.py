@@ -103,9 +103,7 @@ def search_files(params: dict[str, Any]) -> str:
                             "path": str(entry),
                             "name": entry.name,
                             "size_kb": round(st.st_size / 1024, 1),
-                            "modified": time.strftime(
-                                "%Y-%m-%d %H:%M", time.localtime(st.st_mtime)
-                            ),
+                            "modified": time.strftime("%Y-%m-%d %H:%M", time.localtime(st.st_mtime)),
                         }
                     )
             except (OSError, PermissionError):

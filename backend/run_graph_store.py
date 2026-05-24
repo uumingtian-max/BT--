@@ -88,12 +88,8 @@ def init_run_graph_db() -> None:
             )
             """
         )
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_run_steps_run ON run_steps(run_id, seq)"
-        )
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_visual_events_created ON visual_events(created_at DESC)"
-        )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_run_steps_run ON run_steps(run_id, seq)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_visual_events_created ON visual_events(created_at DESC)")
         conn.commit()
 
 

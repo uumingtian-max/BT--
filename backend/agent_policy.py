@@ -78,10 +78,7 @@ def check_write_path_policy(path: Path) -> str | None:
                 # strict: writes only under project root (outputs/workspace still inside)
                 allowed = (proj / "outputs").resolve()
                 if allowed not in resolved.parents and resolved != allowed:
-                    return (
-                        f"策略拒绝（严格模式）：`{resolved}` 不在项目目录内。"
-                        f"允许根目录：{proj}"
-                    )
+                    return f"策略拒绝（严格模式）：`{resolved}` 不在项目目录内。允许根目录：{proj}"
         except OSError:
             pass
     return None
@@ -122,7 +119,12 @@ def check_tool_policy(tool_name: str, params: dict[str, Any] | None = None) -> d
         if p is not None:
             reason = check_write_path_policy(p)
             if reason:
-                return {"status": "policy_denied", "tool": tool_name, "policy_rule": "sensitive_write", "message": reason}
+                return {
+                    "status": "policy_denied",
+                    "tool": tool_name,
+                    "policy_rule": "sensitive_write",
+                    "message": reason,
+                }
 
     if tool_name == "execute_python":
         reason = check_execute_python_policy(str(params.get("code") or ""))

@@ -234,9 +234,7 @@ async def chat(req: ChatRequest):
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
     history = get_history(req.session_id)
-    user_text = (req.message or "").strip() or (
-        "请分析我上传的附件。" if att_payload else ""
-    )
+    user_text = (req.message or "").strip() or ("请分析我上传的附件。" if att_payload else "")
     save_message(req.session_id, "user", user_text)
     remember_from_message(req.session_id, "user", user_text)
     rt = get_runtime()
@@ -291,9 +289,7 @@ async def chat(req: ChatRequest):
         if prefetched:
             blocks.append(prefetched)
         if should_nudge_agent_mode(req.message):
-            blocks.append(
-                "【系统提示】本条任务需要 Agent 模式（/mode agent）才能执行终端/写文件等操作。"
-            )
+            blocks.append("【系统提示】本条任务需要 Agent 模式（/mode agent）才能执行终端/写文件等操作。")
     blocks.append(
         "【连贯性·最高优先级】回答必须与对话里「上下句」自然衔接、指代一致。"
         "若上方【】摘录与对话话题冲突或会打断衔接，忽略该摘录或一句话带过，禁止硬编进回答里造成跳题。"

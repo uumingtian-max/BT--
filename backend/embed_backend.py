@@ -47,11 +47,7 @@ def _ollama_base_url() -> str:
 
 
 def _ollama_embed_model() -> str:
-    return (
-        os.environ.get("SKILL_EMBED_MODEL")
-        or os.environ.get("EMBED_MODEL")
-        or "nomic-embed-text"
-    ).strip()
+    return (os.environ.get("SKILL_EMBED_MODEL") or os.environ.get("EMBED_MODEL") or "nomic-embed-text").strip()
 
 
 def _ollama_embed_one(text: str) -> list[float]:
@@ -107,10 +103,7 @@ def _load_openvino_runtime() -> dict[str, Any]:
 
     model_dir = _ov_model_dir()
     if model_dir is None:
-        raise FileNotFoundError(
-            "OpenVINO embed dir missing or no openvino_model.xml "
-            "(set EMBED_OV_NPU_DIR)"
-        )
+        raise FileNotFoundError("OpenVINO embed dir missing or no openvino_model.xml (set EMBED_OV_NPU_DIR)")
 
     meta_path = model_dir / "bt_embed_meta.json"
     seq_len = 512
@@ -173,11 +166,7 @@ def _openvino_embed_one(text: str) -> list[float]:
         max_length=int(rt["seq_len"]),
         return_tensors="np",
     )
-    inputs = {
-        k: np.asarray(v, dtype=np.int64)
-        for k, v in enc.items()
-        if k in ("input_ids", "attention_mask")
-    }
+    inputs = {k: np.asarray(v, dtype=np.int64) for k, v in enc.items() if k in ("input_ids", "attention_mask")}
     result = rt["compiled"](inputs)
     if hasattr(result, "__getitem__"):
         try:

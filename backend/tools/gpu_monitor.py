@@ -12,8 +12,7 @@ def _query_nvidia_smi() -> list[dict[str, str]]:
     proc = subprocess.run(
         [
             "nvidia-smi",
-            "--query-gpu=index,name,utilization.gpu,memory.used,memory.total,"
-            "temperature.gpu,power.draw,power.limit",
+            "--query-gpu=index,name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,power.limit",
             "--format=csv,noheader,nounits",
         ],
         capture_output=True,

@@ -46,8 +46,9 @@ def validate_startup_settings() -> list[str]:
             "BACKEND_HOST 监听所有网卡但未设置 MOBILE_ACCESS_TOKEN；"
             "远程/LAN 访问将无法鉴权。请设置 MOBILE_ACCESS_TOKEN 或将 REQUIRE_API_TOKEN_ON_LAN=0（不推荐）。"
         )
-    if s.llm_backend.lower() in ("openai", "openai_compatible", "vllm") and not os.environ.get(
-        "OPENAI_BASE_URL", ""
-    ).strip():
+    if (
+        s.llm_backend.lower() in ("openai", "openai_compatible", "vllm")
+        and not os.environ.get("OPENAI_BASE_URL", "").strip()
+    ):
         warnings.append("LLM_BACKEND 为网关类但 OPENAI_BASE_URL 为空，将回退 Ollama。")
     return warnings

@@ -185,10 +185,7 @@ def _record_from_file(*, source: str, trust_level: str, base_dir: Path, path: Pa
     title = str(meta.get("title") or _extract_heading(body) or name).strip()
     description = str(meta.get("description") or _extract_description(body) or "").strip()
     tags = tuple(
-        _as_list(
-            _nested_get(meta, ("metadata", "bklt", "tags"))
-            or _nested_get(meta, ("metadata", "hermes", "tags"))
-        )
+        _as_list(_nested_get(meta, ("metadata", "bklt", "tags")) or _nested_get(meta, ("metadata", "hermes", "tags")))
     )
     platforms = tuple(_as_list(meta.get("platforms")))
     version = str(meta.get("version") or "").strip()

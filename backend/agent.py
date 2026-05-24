@@ -1758,9 +1758,7 @@ async def agent_run(req: AgentRequest):
             }
             if supports_streaming_steps:
                 call_kw["on_step"] = on_step
-            bound = sig.bind_partial(
-                **{k: v for k, v in call_kw.items() if k in sig.parameters}
-            )
+            bound = sig.bind_partial(**{k: v for k, v in call_kw.items() if k in sig.parameters})
             return run_agent(*bound.args, **bound.kwargs)
 
         async def worker():

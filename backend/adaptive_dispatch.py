@@ -108,7 +108,9 @@ class AdaptiveDispatcher:
         if tool == "code":
             return "execute_python", {"code": goal[:8000]}
         if tool == "browser":
-            return "browser_navigate", {"url": goal if goal.startswith("http") else f"https://www.google.com/search?q={goal}"}
+            return "browser_navigate", {
+                "url": goal if goal.startswith("http") else f"https://www.google.com/search?q={goal}"
+            }
         if tool == "orchestrate":
             return "run_task_orchestration", {"message": goal}
         return "local_search", {"query": goal}
@@ -137,7 +139,7 @@ class AdaptiveDispatcher:
             publish_event(
                 event_type="neural_pulse",
                 source="adaptive_dispatch",
-                title=f"步骤 {task.get('step', i+1)} → {tool_name}",
+                title=f"步骤 {task.get('step', i + 1)} → {tool_name}",
                 payload={"task": task, "tool": tool_name},
                 run_id=run_id,
                 status="active",

@@ -28,7 +28,11 @@ def execute_runtime_capability(capability_id: str, message: str) -> dict[str, An
 
     try:
         if capability_id == "project.health_check":
-            target = "all" if any(k in message.lower() for k in ["all", "全部", "前端", "frontend", "构建", "build"]) else "backend"
+            target = (
+                "all"
+                if any(k in message.lower() for k in ["all", "全部", "前端", "frontend", "构建", "build"])
+                else "backend"
+            )
             output = call("run_project_check", {"target": target})
             return _done(capability_id, True, f"已执行项目健康检查：{target}", observations, {"output": output})
 
@@ -57,7 +61,13 @@ def execute_runtime_capability(capability_id: str, message: str) -> dict[str, An
         if capability_id == "desktop.app_control":
             fg = call("get_foreground_window", {})
             windows = call("list_windows", {"limit": 30})
-            return _done(capability_id, True, "已读取前台窗口和可见窗口列表。", observations, {"foreground": fg, "windows": windows})
+            return _done(
+                capability_id,
+                True,
+                "已读取前台窗口和可见窗口列表。",
+                observations,
+                {"foreground": fg, "windows": windows},
+            )
 
         if capability_id == "browser.web_task":
             url = _first_url(message)
@@ -97,7 +107,13 @@ def execute_runtime_capability(capability_id: str, message: str) -> dict[str, An
             if url and message.lower().startswith(("get", "查", "读取", "请求", "访问", "打开")):
                 output = call("http_request", {"url": url, "method": "GET", "timeout_sec": 20})
                 return _done(capability_id, True, f"已执行外部 GET 请求：{url}", observations, {"output": output})
-            return _done(capability_id, False, "外部服务能力需要明确 URL/API 和动作类型；写入型动作不会自动执行。", observations, {})
+            return _done(
+                capability_id,
+                False,
+                "外部服务能力需要明确 URL/API 和动作类型；写入型动作不会自动执行。",
+                observations,
+                {},
+            )
 
         if capability_id == "media.create_content":
             if any(k in message for k in ["图片", "画图", "生成图", "image"]):
@@ -124,7 +140,9 @@ def execute_runtime_capability(capability_id: str, message: str) -> dict[str, An
         return _done(capability_id, False, f"能力执行失败：{exc}", observations, {"error": str(exc)})
 
 
-def _done(capability_id: str, ok: bool, summary: str, observations: list[dict[str, Any]], result: dict[str, Any]) -> dict[str, Any]:
+def _done(
+    capability_id: str, ok: bool, summary: str, observations: list[dict[str, Any]], result: dict[str, Any]
+) -> dict[str, Any]:
     return {
         "ok": ok,
         "capability_id": capability_id,

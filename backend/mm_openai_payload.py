@@ -155,6 +155,5 @@ def assert_attachments_can_run(attachments: list[dict[str, Any]] | None) -> None
     ok, detail = check_vllm_gateway_ready()
     if not ok:
         raise RuntimeError(
-            detail
-            or "vLLM Nemotron 未就绪。请先运行 scripts/start-omni-vllm-wsl.sh，确认 :8001/health 为 200。"
+            detail or "vLLM Nemotron 未就绪。请先运行 scripts/start-omni-vllm-wsl.sh，确认 :8001/health 为 200。"
         )

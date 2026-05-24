@@ -78,19 +78,44 @@ def pool_for_kind(kind: str, preferred: str, profile, runtime) -> list[str]:
 
     if kind in ("planner", "executor", "synthesis"):
         pool = env_model_pool("ORCH_REASONING_MODELS", "ORCH_PLANNER_MODELS")
-        pool += [preferred, getattr(profile, "planner_model", ""), os.environ.get("REASONING_MODEL", ""), os.environ.get("TASK_MODEL", "")]
+        pool += [
+            preferred,
+            getattr(profile, "planner_model", ""),
+            os.environ.get("REASONING_MODEL", ""),
+            os.environ.get("TASK_MODEL", ""),
+        ]
     elif kind == "coder":
         pool = env_model_pool("ORCH_CODER_MODELS", "ORCH_REASONING_MODELS")
-        pool += [preferred, getattr(profile, "coder_model", ""), os.environ.get("CODE_MODEL", ""), os.environ.get("REASONING_MODEL", "")]
+        pool += [
+            preferred,
+            getattr(profile, "coder_model", ""),
+            os.environ.get("CODE_MODEL", ""),
+            os.environ.get("REASONING_MODEL", ""),
+        ]
     elif kind == "reviewer":
         pool = env_model_pool("ORCH_REVIEWER_MODELS", "ORCH_REASONING_MODELS")
-        pool += [preferred, getattr(profile, "reviewer_model", ""), os.environ.get("TASK_MODEL", ""), os.environ.get("REASONING_MODEL", "")]
+        pool += [
+            preferred,
+            getattr(profile, "reviewer_model", ""),
+            os.environ.get("TASK_MODEL", ""),
+            os.environ.get("REASONING_MODEL", ""),
+        ]
     elif kind == "vision":
         pool = env_model_pool("ORCH_VISION_MODELS")
-        pool += [preferred, getattr(profile, "vision_model", ""), os.environ.get("ORCH_VISION_MODEL", ""), os.environ.get("AGENT_DEFAULT_MODEL", "")]
+        pool += [
+            preferred,
+            getattr(profile, "vision_model", ""),
+            os.environ.get("ORCH_VISION_MODEL", ""),
+            os.environ.get("AGENT_DEFAULT_MODEL", ""),
+        ]
     elif kind == "speech":
         pool = env_model_pool("ORCH_SPEECH_MODELS")
-        pool += [preferred, getattr(profile, "speech_model", ""), os.environ.get("ORCH_SPEECH_MODEL", ""), os.environ.get("TASK_MODEL", "")]
+        pool += [
+            preferred,
+            getattr(profile, "speech_model", ""),
+            os.environ.get("ORCH_SPEECH_MODEL", ""),
+            os.environ.get("TASK_MODEL", ""),
+        ]
     else:
         pool = [preferred]
     return unique_models(pool + runtime_fallbacks)

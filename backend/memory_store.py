@@ -25,6 +25,7 @@ if not VAULT_DIR.is_dir() and LEGACY_VAULT_DIR.is_dir():
 # 同一线程内复用连接；sqlite_wal（WAL 模式）保证多线程读写不互相阻塞。
 # ---------------------------------------------------------------------------
 
+
 def init_memory_store() -> None:
     conn = sqlite3.connect(DB_PATH)
     conn.execute(

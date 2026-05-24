@@ -64,11 +64,7 @@ def get_network_status(params: dict[str, Any]) -> str:
                             "process": pname,
                             "status": conn.status,
                             "local": f"{conn.laddr.ip}:{lport}" if conn.laddr else "",
-                            "remote": (
-                                f"{conn.raddr.ip}:{conn.raddr.port}"
-                                if conn.raddr
-                                else ""
-                            ),
+                            "remote": (f"{conn.raddr.ip}:{conn.raddr.port}" if conn.raddr else ""),
                         }
                     )
                 except Exception:

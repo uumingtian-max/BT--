@@ -688,17 +688,13 @@ def get_hardware_snapshot() -> str:
 
     try:
         vm = psutil.virtual_memory()
-        lines.append(
-            f"- 内存: 共 {vm.total // (1024**3)} GB，已用 {vm.percent:.1f}%"
-        )
+        lines.append(f"- 内存: 共 {vm.total // (1024**3)} GB，已用 {vm.percent:.1f}%")
     except Exception as exc:
         lines.append(f"- 内存读取失败: {exc}")
 
     try:
         disk = psutil.disk_usage("/") if sys.platform != "win32" else psutil.disk_usage("C:\\")
-        lines.append(
-            f"- 系统盘: 共 {disk.total // (1024**3)} GB，已用 {disk.percent:.1f}%"
-        )
+        lines.append(f"- 系统盘: 共 {disk.total // (1024**3)} GB，已用 {disk.percent:.1f}%")
     except Exception as exc:
         lines.append(f"- 磁盘读取失败: {exc}")
 
@@ -761,9 +757,7 @@ def get_hardware_snapshot() -> str:
         for g in gpus[:6]:
             lines.append(f"  - {g}")
 
-    lines.append(
-        "- 说明: 以上为本机命令输出；若某字段缺失，回答时写「未采集到」，不要猜测型号。"
-    )
+    lines.append("- 说明: 以上为本机命令输出；若某字段缺失，回答时写「未采集到」，不要猜测型号。")
     return "\n".join(lines)
 
 

@@ -119,8 +119,7 @@ def _build_runtime_from_env() -> AgentRuntime:
         agent_skill_pack=_env_str("AGENT_SKILL_PACK", "1") != "0",
         agent_self_evolve=_env_str("AGENT_SELF_EVOLVE", "1") != "0",
         agent_evolve_llm=_env_str("AGENT_EVOLVE_LLM", "0") == "1",
-        smart_router_enabled=_env_str("SMART_ROUTER_ENABLED", "1").lower()
-        not in ("0", "false", "off", "no"),
+        smart_router_enabled=_env_str("SMART_ROUTER_ENABLED", "1").lower() not in ("0", "false", "off", "no"),
         agent_evolve_model=ev_model,
         default_chat_model=_model("AGENT_DEFAULT_MODEL"),
         fast_model=_env_str("FAST_MODEL", _FAST_MODEL_DEFAULT),
