@@ -135,11 +135,11 @@ def kill_all():
 
 
 # ─── 各模式启动函数 ──────────────────────────────────────────
-def start_backend(dev=False):
+def start_backend(dev=False, host="127.0.0.1"):
     info("启动后端 FastAPI …")
     reload_flag = ["--reload"] if dev else []
     cmd = [PYTHON, "-m", "uvicorn", "main:app",
-           "--host", "0.0.0.0", "--port", "8000"] + reload_flag
+           "--host", host, "--port", "8000"] + reload_flag
     p = run(cmd, cwd=BACKEND_DIR)
     if not wait_for_port(8000, timeout=20):
         err("后端启动超时（8000 端口未就绪）")
@@ -236,8 +236,7 @@ def mode_mobile():
     except Exception:
         local_ip = "127.0.0.1"
 
-    os.environ["BACKEND_HOST"] = "0.0.0.0"
-    start_backend()
+    start_backend(host="0.0.0.0")
     ok(f"手机访问地址 → http://{local_ip}:8000")
     info("保持运行，按 Ctrl+C 退出")
     try:
