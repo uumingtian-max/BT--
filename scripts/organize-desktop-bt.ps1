@@ -14,7 +14,12 @@ foreach ($d in @($Projects, "$Projects\BT-Backups", $Archive, $Shortcuts, $Tools
 $src = Join-Path $Desktop "ai-agent-project"
 $dst = Join-Path $Projects "BT-Blacklight"
 if ((Test-Path $src) -and -not (Test-Path $dst)) {
-    Move-Item -LiteralPath $src -Destination $dst
+    try {
+        Move-Item -LiteralPath $src -Destination $dst
+    } catch {
+        Write-Warning "Cannot move project while IDE/terminal holds the folder."
+        Write-Warning "Close Cursor, then run: scripts\rename-to-bt-blacklight.ps1"
+    }
 }
 
 $backup = Join-Path $Desktop "ai-agent-project-upgraded-review"
