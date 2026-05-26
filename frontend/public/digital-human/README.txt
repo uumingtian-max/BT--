@@ -14,7 +14,7 @@
 
 3. SadTalker 权重（conda sadtalker，从项目根跑）：
    conda activate sadtalker
-   python scripts/sadtalker_download_models.py
-   .\scripts\run_sadtalker_portrait.ps1
+   python scripts/sadtalker/download_models.py
+   .\scripts\sadtalker\run_portrait.ps1
 
 4. 前端/Electron 读取 photo.png + depth.png；口型视频接通后替换为 SadTalker MP4 流。

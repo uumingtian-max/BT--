@@ -30,8 +30,16 @@
 
 ## 下一步补丁路线
 
-1. 前端：把 DigitalHumanStage 做成 Conscious Maison Agent，增加意识环和四类信号。
-2. 后端：把 super_memory 的状态接入前端状态卡，显示当前语气判断和最新反思。
-3. 记忆：增加 focus stack 可视化，先从当前会话主题开始，不急着全量重构。
-4. 技能：把 `/meta/super-memory/learn-web` 生成的 pending 技能显示到 SkillHub 候选区。
-5. 沙箱：等隔离浏览器、确认 UI、动作审计三件套齐了再上线，不提前冒充完成。
+1. 已落地：前端 DigitalHumanStage 做成 Conscious Maison Agent，增加意识环和四类信号。
+2. 已落地：后端新增 `consciousness_loop.py`，提供低风险 TICK、状态 API 和手动 tick API。
+3. 下一步：把 super_memory / consciousness 的状态接入前端状态卡，显示当前语气判断和最新反思。
+4. 下一步：增加 focus stack 可视化，先从当前会话主题开始，不急着全量重构。
+5. 下一步：把 `/meta/super-memory/learn-web` 生成的 pending 技能显示到 SkillHub 候选区。
+6. 沙箱：等隔离浏览器、确认 UI、动作审计三件套齐了再上线，不提前冒充完成。
+
+## 后端 TICK 边界
+
+- `GET /meta/consciousness/status`：查看 TICK 状态和最近心跳。
+- `POST /meta/consciousness/tick`：手动跑一次本地自省。
+- 默认 `CONSCIOUS_TICK_ENABLED=1`，`CONSCIOUS_TICK_SEC=180`，最低 30 秒。
+- TICK 只读取本地超级记忆、候选技能、任务复盘；不执行工具、不上传、不下载、不安装。

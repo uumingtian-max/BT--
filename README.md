@@ -19,7 +19,7 @@
 
 旧名 / 兼容名：BKLT 黑光、ONYX-OVERRIDE
 
-目录说明见 **[docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md)**。Windows 一键启动见 **[`launcher/README.md`](launcher/README.md)**。AI 编程 Agent（Claude Code / Cursor）使用规范见 **[`CLAUDE.md`](./CLAUDE.md)**。
+目录说明见 **[docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md)**；白龙马++ 方向见 **[docs/design/BAILONGMA_PLUS_3D_AGENT.md](docs/design/BAILONGMA_PLUS_3D_AGENT.md)**。Windows 一键启动见 **[`launcher/README.md`](launcher/README.md)**。AI 编程 Agent（Claude Code / Cursor）使用规范见 **[`CLAUDE.md`](./CLAUDE.md)**。
 
 ## 为什么选 BT（黑光）
 

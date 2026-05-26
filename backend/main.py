@@ -24,6 +24,7 @@ from agent import router as agent_router
 from automation_routes import router as automation_router
 from chat import router as chat_router
 from content_routes import router as content_router
+from consciousness_loop import background_consciousness_loop, init_consciousness_db
 from local_agent_api import init_legacy_db, router as local_agent_router
 from memory_store import background_memory_maintenance
 from meta_routes import router as meta_router
@@ -85,6 +86,7 @@ async def lifespan(app: FastAPI):
     init_orchestrator_db()
     init_workflow_store()
     init_scheduler_db()
+    init_consciousness_db()
     try:
         ensure_scheduler_habit_jobs()
     except Exception:
@@ -104,6 +106,7 @@ async def lifespan(app: FastAPI):
     pattern_task = asyncio.create_task(background_pattern_maintenance())
     scheduler_task = asyncio.create_task(background_scheduler_loop())
     habit_task = asyncio.create_task(background_habit_loop())
+    conscious_task = asyncio.create_task(background_consciousness_loop())
     asyncio.create_task(warmup_models())
     yield
     # 关闭屏幕捕获
@@ -113,6 +116,7 @@ async def lifespan(app: FastAPI):
     pattern_task.cancel()
     scheduler_task.cancel()
     habit_task.cancel()
+    conscious_task.cancel()
     try:
         await observe_task
     except asyncio.CancelledError:
@@ -131,6 +135,10 @@ async def lifespan(app: FastAPI):
         pass
     try:
         await habit_task
+    except asyncio.CancelledError:
+        pass
+    try:
+        await conscious_task
     except asyncio.CancelledError:
         pass
     try:

@@ -87,6 +87,20 @@ def meta_super_memory_learn_web(payload: dict):
     )
 
 
+@router.get("/consciousness/status")
+def meta_consciousness_status():
+    from consciousness_loop import get_consciousness_status
+
+    return get_consciousness_status()
+
+
+@router.post("/consciousness/tick")
+def meta_consciousness_tick():
+    from consciousness_loop import run_conscious_tick
+
+    return run_conscious_tick(phase="manual")
+
+
 def _extra_model_ids() -> list[str]:
     raw = (os.environ.get("EXTRA_MODEL_IDS") or "").strip()
     return [x.strip() for x in raw.split(",") if x.strip()]

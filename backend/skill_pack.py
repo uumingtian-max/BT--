@@ -1,5 +1,5 @@
 """
-Trend-aligned skill snippets (markdown) loaded from backend/agent_skills/*.md.
+Trend-aligned skill snippets (markdown) from backend/agent_skills/*.md and backend/user_skills/*.md.
 Community pattern: explicit triggers + compact playbooks (skills repos, managed agents, MCP-style context).
 """
 
@@ -18,7 +18,10 @@ from typing import Any
 
 from agent_runtime import get_runtime
 
-SKILL_DIR = Path(__file__).resolve().parent / "agent_skills"
+SKILL_DIRS: tuple[Path, ...] = (
+    Path(__file__).resolve().parent / "agent_skills",
+    Path(__file__).resolve().parent / "user_skills",
+)
 EMBED_INDEX_PATH = Path(__file__).resolve().parent / ".skill_embedding_index.json"
 EMBED_MODEL = os.environ.get("SKILL_EMBED_MODEL", "nomic-embed-text").strip() or "nomic-embed-text"
 EMBED_TIMEOUT_SEC = float(os.environ.get("SKILL_EMBED_TIMEOUT_SEC", "8") or "8")
@@ -64,10 +67,18 @@ def _parse_skill_file(path: Path) -> SkillDoc | None:
 
 
 def _load_all_skills() -> list[SkillDoc]:
-    if not SKILL_DIR.is_dir():
+    paths: list[Path] = []
+    for skill_dir in SKILL_DIRS:
+        if skill_dir.is_dir():
+            paths.extend(sorted(skill_dir.glob("*.md")))
+    if not paths:
         return []
-    paths = sorted(SKILL_DIR.glob("*.md"))
-    signature = tuple((path.name, (st := path.stat()).st_mtime_ns, st.st_size) for path in paths)
+    # user_skills 同名覆盖 agent_skills
+    by_stem: dict[str, Path] = {}
+    for path in paths:
+        by_stem[path.stem] = path
+    paths = sorted(by_stem.values(), key=lambda p: p.stem)
+    signature = tuple((str(path), (st := path.stat()).st_mtime_ns, st.st_size) for path in paths)
     cached_signature = _SKILL_CACHE.get("signature")
     cached_skills = _SKILL_CACHE.get("skills")
     if cached_signature == signature and isinstance(cached_skills, list):

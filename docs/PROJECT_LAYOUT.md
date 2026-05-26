@@ -8,8 +8,10 @@ ai-agent-project/
 ├── frontend/         React UI
 ├── electron/         桌面壳（splash.html、启动图标）
 ├── launcher/         一键启动（START_APP.bat 等）
-├── docs/             文档（含 deploy/docker-compose.yml）
-├── scripts/          工具脚本（安装、诊断、外仓 sync、llama）
+├── docs/             文档（见 docs/README.md；design/ · digital-human/）
+├── scripts/          工具脚本（见 scripts/README.md）
+│   ├── sadtalker/    口型模型下载与推理
+│   └── digital-human/  深度图生成
 ├── assets/           品牌资源
 ├── data/             本机数据（知识库等，不进 Git）
 ├── vendor/           外仓对照（agency-agents、gstack，不进 Git 克隆体）
