@@ -130,11 +130,11 @@ scout-demo-service/
 **/*.partial
 **/*.part
 
-# Local external tools / personal generated media
-SadTalker/
-SadTalker/checkpoints/
-SadTalker/gfpgan/
-SadTalker/results/
+# Local external tools / personal generated media（仅根目录克隆体，勿误伤 scripts/sadtalker/）
+/SadTalker/
+/SadTalker/checkpoints/
+/SadTalker/gfpgan/
+/SadTalker/results/
 archive/
 face.png
 photo.png
