@@ -1,5 +1,14 @@
 # 打包 ONYX-OVERRIDE 到桌面 ZIP（不含 node_modules，体积可控）
 $ErrorActionPreference = "Stop"
+param(
+    [switch]$ConfirmPackage
+)
+
+if (-not $ConfirmPackage) {
+    Write-Host "BLOCKED: this script builds and writes ZIP artifacts to Desktop/C:." -ForegroundColor Red
+    Write-Host "Run only after explicit user approval: .\scripts\package-desktop-zip.ps1 -ConfirmPackage" -ForegroundColor Yellow
+    exit 2
+}
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $desktop = [Environment]::GetFolderPath("Desktop")
 $version = "1.1.0"

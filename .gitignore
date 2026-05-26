@@ -121,3 +121,17 @@ chrome_proxy.exe
 
 # Docker Scout demo clone (local only)
 scout-demo-service/
+
+# Local external tools / personal generated media
+SadTalker/
+face.png
+photo.png
+depth.png
+frontend/public/digital-human/photo.png
+frontend/public/digital-human/depth.png
+frontend/public/digital-human/*.png
+frontend/public/digital-human/*.jpg
+frontend/public/digital-human/*.jpeg
+frontend/public/blacklight_3d.html
+backend/skill_candidates/
+backend/super_memory/

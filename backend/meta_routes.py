@@ -60,6 +60,33 @@ def meta_habit_run_now():
     return run_habit_check(phase="manual")
 
 
+@router.get("/super-memory/status")
+def meta_super_memory_status():
+    from super_memory import super_memory_status
+
+    return super_memory_status()
+
+
+@router.post("/super-memory/reflect")
+def meta_super_memory_reflect(payload: dict):
+    from super_memory import reflect_on_user_turn
+
+    return reflect_on_user_turn(
+        session_id=str(payload.get("session_id") or "manual"),
+        message=str(payload.get("message") or ""),
+    )
+
+
+@router.post("/super-memory/learn-web")
+def meta_super_memory_learn_web(payload: dict):
+    from super_memory import learn_from_web
+
+    return learn_from_web(
+        query=str(payload.get("query") or ""),
+        goal=str(payload.get("goal") or ""),
+    )
+
+
 def _extra_model_ids() -> list[str]:
     raw = (os.environ.get("EXTRA_MODEL_IDS") or "").strip()
     return [x.strip() for x in raw.split(",") if x.strip()]
@@ -143,36 +170,103 @@ def _get_ollama_tags(base: str, *, allow_background: bool = False) -> dict[str, 
     return _refresh_ollama_tags(key)
 
 
-def _fetch_openai_compatible_models(base_url: str) -> list[dict[str, str]]:
-    """从 vLLM / LiteLLM 等 OpenAI 兼容网关读取 /v1/models（带 TTL 缓存，避免双次轮询）。"""
+def _resolve_openai_api_key_for_base(base_url: str) -> str:
+    """按网关 URL 选择 API_OPENAI_API_KEY 或 OPENAI_API_KEY。"""
+    base = (base_url or "").strip().rstrip("/")
+    api_base = (os.environ.get("API_OPENAI_BASE_URL") or "").strip().rstrip("/")
+    if api_base and base and (base == api_base or base.startswith(api_base)):
+        key = (os.environ.get("API_OPENAI_API_KEY") or "").strip()
+        if key:
+            return key
+    key = (os.environ.get("OPENAI_API_KEY") or "").strip()
+    if key:
+        return key
+    try:
+        from agent_runtime import get_runtime
+
+        return (get_runtime().openai_api_key or "").strip()
+    except Exception:
+        return ""
+
+
+def _probe_openai_compatible_gateway(base_url: str) -> dict[str, object]:
+    """探测 OpenAI 兼容网关 /v1/models（带 Bearer）。"""
     base = (base_url or "").strip().rstrip("/")
     if not base:
-        return []
+        return {"ok": False, "models": [], "error": "empty base url", "status_code": 0}
     now = time.monotonic()
+    cache_key = f"{base}|{bool(_resolve_openai_api_key_for_base(base))}"
     with _OPENAI_MODELS_CACHE_LOCK:
         if (
-            _OPENAI_MODELS_CACHE.get("key") == base
+            _OPENAI_MODELS_CACHE.get("key") == cache_key
             and (now - float(_OPENAI_MODELS_CACHE.get("fetched_at") or 0)) < _OPENAI_MODELS_TTL_SEC
         ):
-            return list(_OPENAI_MODELS_CACHE.get("payload") or [])
-    url = base if base.endswith("/v1") else f"{base}/v1"
-    try:
-        with httpx.Client(timeout=8.0) as client:
-            r = client.get(f"{url}/models")
-            r.raise_for_status()
-            data = r.json()
-        out: list[dict[str, str]] = []
-        for item in data.get("data") or []:
-            mid = item.get("id") if isinstance(item, dict) else None
-            if mid:
-                out.append({"id": str(mid), "source": "openai_compatible"})
-    except Exception:
-        out = []
+            cached = _OPENAI_MODELS_CACHE.get("probe")
+            if isinstance(cached, dict):
+                return dict(cached)
+
+    api_key = _resolve_openai_api_key_for_base(base)
+    if not api_key:
+        result = {
+            "ok": False,
+            "models": [],
+            "error": "未配置 OPENAI_API_KEY 或 API_OPENAI_API_KEY（inferaichat 等外部网关必填）",
+            "status_code": 0,
+        }
+    else:
+        url = base if base.endswith("/v1") else f"{base}/v1"
+        headers = {"Authorization": f"Bearer {api_key}"}
+        try:
+            with httpx.Client(timeout=12.0) as client:
+                r = client.get(f"{url}/models", headers=headers)
+            if r.status_code == 401:
+                result = {
+                    "ok": False,
+                    "models": [],
+                    "error": "401 Unauthorized：API Key 无效、过期或未开通该端点",
+                    "status_code": 401,
+                }
+            elif r.status_code == 503:
+                result = {
+                    "ok": False,
+                    "models": [],
+                    "error": "503 Service Unavailable：上游网关过载或维护，稍后重试或改走本地 GPU",
+                    "status_code": 503,
+                }
+            elif r.status_code >= 400:
+                result = {
+                    "ok": False,
+                    "models": [],
+                    "error": f"HTTP {r.status_code}: {(r.text or '')[:200]}",
+                    "status_code": r.status_code,
+                }
+            else:
+                r.raise_for_status()
+                data = r.json()
+                models: list[dict[str, str]] = []
+                for item in data.get("data") or []:
+                    mid = item.get("id") if isinstance(item, dict) else None
+                    if mid:
+                        models.append({"id": str(mid), "source": "openai_compatible"})
+                result = {"ok": True, "models": models, "error": "", "status_code": r.status_code}
+        except Exception as exc:
+            result = {"ok": False, "models": [], "error": str(exc), "status_code": 0}
+
     with _OPENAI_MODELS_CACHE_LOCK:
-        _OPENAI_MODELS_CACHE["key"] = base
+        _OPENAI_MODELS_CACHE["key"] = cache_key
         _OPENAI_MODELS_CACHE["fetched_at"] = time.monotonic()
-        _OPENAI_MODELS_CACHE["payload"] = out
-    return out
+        _OPENAI_MODELS_CACHE["probe"] = result
+        _OPENAI_MODELS_CACHE["payload"] = result.get("models") or []
+    return result
+
+
+def _fetch_openai_compatible_models(base_url: str) -> list[dict[str, str]]:
+    """从 vLLM / LiteLLM / inferaichat 等网关读取 /v1/models（带鉴权 + TTL 缓存）。"""
+    probe = _probe_openai_compatible_gateway(base_url)
+    models = probe.get("models")
+    if isinstance(models, list):
+        return [m for m in models if isinstance(m, dict)]
+    return []
 
 
 def _runtime_model_entries(rt) -> list[dict[str, str]]:
@@ -295,14 +389,21 @@ def _meta_doctor_payload(*, strict_probe: bool = True) -> dict[str, object]:
     else:
         url_set = bool((rt.openai_base_url or "").strip())
         add("openai_base_url", url_set, rt.openai_base_url or "(empty)")
+        key_set = bool(_resolve_openai_api_key_for_base(rt.openai_base_url or ""))
+        add(
+            "openai_api_key",
+            key_set,
+            "configured" if key_set else "missing — set OPENAI_API_KEY or API_OPENAI_API_KEY in backend/.env or %USERPROFILE%\\.bt\\secrets.env",
+        )
         if url_set:
-            remote = _fetch_openai_compatible_models(rt.openai_base_url)
-            gw_ok = bool(remote)
-            detail = (
-                f"{len(remote)} model(s) from /v1/models"
-                if gw_ok
-                else "网关不可达或未返回模型；Windows 原生上 vLLM 常不可用，建议改 LLM_BACKEND=ollama（Ollama 直连 GPU）或单独 Linux/WSL GPU 机上跑网关"
-            )
+            probe = _probe_openai_compatible_gateway(rt.openai_base_url)
+            remote = probe.get("models") or []
+            gw_ok = bool(probe.get("ok"))
+            err = str(probe.get("error") or "").strip()
+            if gw_ok:
+                detail = f"{len(remote)} model(s) from /v1/models (HTTP {probe.get('status_code', 200)})"
+            else:
+                detail = err or "网关不可达或未返回模型"
             add("openai_compatible_gateway", gw_ok, detail)
 
     for db_name in (
@@ -347,7 +448,7 @@ def _meta_doctor_payload(*, strict_probe: bool = True) -> dict[str, object]:
         add(
             "playwright",
             False,
-            "pip install playwright && playwright install chromium",
+            "optional; requires explicit user-approved install",
             optional=True,
         )
 
@@ -356,6 +457,13 @@ def _meta_doctor_payload(*, strict_probe: bool = True) -> dict[str, object]:
         pw_root = str(Path(os.environ.get("LOCALAPPDATA", "")) / "ms-playwright")
     chromium = list(Path(pw_root).glob("chromium-*")) if pw_root and Path(pw_root).is_dir() else []
     add("playwright_chromium", bool(chromium), pw_root or "(default)", optional=True)
+    add(
+        "computer_use_sandbox",
+        os.environ.get("COMPUTER_USE_SANDBOX_ENABLED", "0").strip().lower()
+        in ("1", "true", "yes", "on"),
+        os.environ.get("COMPUTER_USE_SANDBOX_URL", "not configured"),
+        optional=True,
+    )
 
     from media_fallback import local_sd_enabled, placeholder_enabled
 
@@ -776,3 +884,25 @@ def meta_run_graph_detail(run_id: str):
     if not detail:
         return {"ok": False, "error": "run not found"}
     return {"ok": True, "run": detail}
+
+
+@router.get("/execution-kernel/status")
+def meta_execution_kernel_status():
+    from execution_kernel import execution_kernel_status
+
+    return execution_kernel_status()
+
+
+@router.get("/llm-routes")
+def meta_llm_routes():
+    """双引擎状态：GPU 本地 + API 云端。"""
+    from llm_dual_route import dual_engine_status
+
+    return dual_engine_status()
+
+
+@router.get("/expert-roles")
+def meta_expert_roles():
+    from expert_roles import get_expert_roles_manifest
+
+    return get_expert_roles_manifest()

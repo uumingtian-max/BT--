@@ -3,15 +3,15 @@
  * 当前：LLM_BACKEND=openai_compatible，模型网关一般在 http://127.0.0.1:8001/v1
  */
 export const LOCKED_MODEL_ID = 'nemotron-omni';
-export const LOCKED_MODEL_LABEL = '黑光 · 动态多模态';
+export const LOCKED_MODEL_LABEL = 'Omni · 本地';
 
 export const UI_MODEL_OPTIONS = [{ id: LOCKED_MODEL_ID, label: LOCKED_MODEL_LABEL }];
 
 export const UI_MODEL_IDS = new Set([LOCKED_MODEL_ID]);
 
 const MODEL_ALIAS = [
-  [/^nemotron-omni$/i, '黑光 · 动态多模态'],
-  [/nemotron-3-nano-omni/i, '黑光 · 动态多模态'],
+  [/^nemotron-omni$/i, 'Omni · 本地'],
+  [/nemotron-3-nano-omni/i, 'Omni · 本地'],
   [/llama-3\.1-nemotron-safety-guard-8b-v3/i, '黑光 · 安全护栏'],
   [/gemma-4/i, '黑光 · Gemma 4'],
 ];

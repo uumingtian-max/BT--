@@ -253,3 +253,53 @@
   .dashboard-hero h1{font-size:34px}
   .dashboard-hero-metrics{grid-template-columns:1fr 1fr}
 }
+
+.noir-empty{
+  min-height:min(62vh, 520px);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  text-align:center;
+  padding:48px 24px;
+}
+
+.noir-empty-title{
+  margin:0;
+  font-size:1.35rem;
+  font-weight:600;
+  letter-spacing:.04em;
+  color:rgba(255,255,255,.92);
+}
+
+.noir-empty-hint{
+  margin:0;
+  max-width:420px;
+  font-size:.92rem;
+  line-height:1.55;
+  color:rgba(255,255,255,.48);
+}
+
+.noir-empty-btn{
+  margin-top:8px;
+  padding:10px 22px;
+  border-radius:999px;
+  border:1px solid rgba(34,211,238,.35);
+  background:rgba(34,211,238,.08);
+  color:rgba(255,255,255,.88);
+  cursor:pointer;
+  font-size:.9rem;
+}
+
+.noir-empty-btn:hover{
+  background:rgba(34,211,238,.14);
+}
+
+.sidebar-brand-compact .sidebar-brand-frame{
+  min-height:72px;
+}
+
+.sidebar-brand-compact .sidebar-brand-plate{
+  padding-left:4px;
+}

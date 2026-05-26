@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>黑光 · Maison Agent</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#050402;cursor:none;}
+#cv{display:block;position:fixed;top:0;left:0;width:100vw;height:100vh;}
+#ui{position:fixed;top:0;left:0;width:100vw;height:100vh;display:flex;flex-direction:column;pointer-events:none;font-family:"Georgia","Times New Roman",serif;}
+#top{display:flex;justify-content:space-between;align-items:flex-start;padding:40px 58px 0;}
+.wm{font-size:12px;letter-spacing:10px;color:rgba(212,184,118,0.88);}
+.tg{font-size:7px;letter-spacing:5px;color:rgba(185,155,88,0.22);font-family:"Courier New",monospace;margin-top:7px;}
+.sr{display:flex;gap:8px;align-items:center;margin-top:10px;}
+.sd{width:5px;height:5px;border-radius:50%;background:rgba(140,196,126,0.72);}
+.sl{font-size:7px;letter-spacing:3px;color:rgba(170,142,76,0.3);font-family:"Courier New",monospace;}
+#ht{margin:20px 58px 0;border:none;border-top:0.5px solid rgba(190,156,80,0.07);}
+#mid{flex:1;display:flex;}
+#lp{width:185px;padding:0 0 0 58px;display:flex;flex-direction:column;justify-content:center;gap:44px;}
+#rp{width:185px;padding:0 58px 0 0;display:flex;flex-direction:column;justify-content:center;gap:44px;align-items:flex-end;}
+#ct{flex:1;}
+.kk{font-size:7px;letter-spacing:4px;color:rgba(150,120,60,0.22);font-family:"Courier New",monospace;margin-bottom:5px;}
+.kv{font-size:9px;letter-spacing:2px;color:rgba(198,166,90,0.45);font-family:"Courier New",monospace;}
+.nb{text-align:right;}
+.nv{font-size:44px;font-weight:300;color:rgba(202,170,98,0.52);line-height:1;letter-spacing:-2px;}
+.nk{font-size:7px;letter-spacing:4px;color:rgba(146,116,56,0.22);font-family:"Courier New",monospace;margin-top:5px;}
+#bot{padding:0 58px 44px;}
+.db{border:none;border-top:0.5px solid rgba(190,156,80,0.07);margin-bottom:20px;}
+#al{font-size:10px;letter-spacing:3px;color:rgba(192,160,88,0.4);font-family:"Courier New",monospace;text-align:center;margin-bottom:20px;transition:opacity 1.4s;}
+#ib{display:flex;align-items:center;justify-content:space-between;border-top:0.5px solid rgba(190,156,80,0.09);padding-top:16px;pointer-events:auto;}
+#cmd{background:none;border:none;outline:none;font-size:10px;letter-spacing:3px;color:rgba(202,172,98,0.68);font-family:"Courier New",monospace;caret-color:rgba(202,172,98,0.8);flex:1;}
+#cmd::placeholder{color:rgba(178,146,70,0.16);}
+.bi{display:flex;gap:20px;align-items:center;opacity:0.32;}
+#snd{font-size:8px;letter-spacing:3px;color:rgba(190,156,76,0.5);font-family:"Courier New",monospace;cursor:pointer;}
+#cur{position:fixed;width:5px;height:5px;border-radius:50%;background:rgba(202,170,98,0.55);pointer-events:none;transform:translate(-50%,-50%);z-index:9999;transition:width .15s,height .15s;}
+#cur2{position:fixed;width:26px;height:26px;border-radius:50%;border:0.5px solid rgba(202,170,98,0.18);pointer-events:none;transform:translate(-50%,-50%);z-index:9998;transition:all 0.2s ease;}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="cur"></div><div id="cur2"></div>
+<div id="ui">
+  <div id="top">
+    <div>
+      <div class="wm">黑  光</div>
+      <div class="tg">M A I S O N &nbsp;&nbsp; A G E N T</div>
+    </div>
+    <div>
+      <div class="sr"><div class="sd"></div><span class="sl">OMNI · 8001</span></div>
+      <div class="sr" style="margin-top:8px"><div class="sd"></div><span class="sl">CLAUDE · API</span></div>
+    </div>
+  </div>
+  <hr id="ht">
+  <div id="mid">
+    <div id="lp">
+      <div><div class="kk">EXPRESSION</div><div class="kv">ATTENTIVE</div></div>
+      <div><div class="kk">VOICE</div><div class="kv">READY</div></div>
+      <div><div class="kk">MODE</div><div id="mv" class="kv">IDLE</div></div>
+      <div><div class="kk">DEPTH · 3D</div><div class="kv">LIVE</div></div>
+    </div>
+    <div id="ct"></div>
+    <div id="rp">
+      <div class="nb"><div class="nv">47</div><div class="nk">SESSIONS</div></div>
+      <div class="nb"><div class="nv">12</div><div class="nk">IMAGES</div></div>
+      <div class="nb"><div class="nv">5</div><div class="nk">SKILLS</div></div>
+    </div>
+  </div>
+  <div id="bot">
+    <hr class="db">
+    <div id="al">双引擎待命 · 随时指挥</div>
+    <div id="ib">
+      <input id="cmd" placeholder="指挥  ·  提问  ·  上传图片 / 视频 / 音频…"/>
+      <div class="bi">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(202,170,95,0.9)" stroke-width="1.2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(202,170,95,0.9)" stroke-width="1.2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+        <span id="snd">SEND —</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PHOTO_SRC = './digital-human/photo.png';
+
+let mx=0,my=0,tx=0,ty=0;
+document.addEventListener('mousemove',e=>{
+  mx=(e.clientX/innerWidth-0.5)*2;
+  my=(e.clientY/innerHeight-0.5)*2;
+  document.getElementById('cur').style.cssText+=`;left:${e.clientX}px;top:${e.clientY}px`;
+  document.getElementById('cur2').style.cssText+=`;left:${e.clientX}px;top:${e.clientY}px`;
+});
+
+// Load Three.js then boot
+const s=document.createElement('script');
+s.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+s.onload=boot;
+document.head.appendChild(s);
+
+function boot(){
+  const W=innerWidth,H=innerHeight;
+  const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('cv'),antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(W,H);
+  renderer.setClearColor(0x050402,1);
+
+  const scene=new THREE.Scene();
+  // Portrait: taller than wide — use aspect to fill screen
+  const aspect=W/H;
+  const camera=new THREE.PerspectiveCamera(45,aspect,0.1,100);
+  camera.position.z=2.6;
+
+  // Build portrait-optimized depth map from photo luminance + spatial priors
+  const img=new Image();
+  img.crossOrigin='anonymous';
+  img.onload=()=>{
+    // Depth canvas — synthesize from portrait heuristics
+    const dc=document.createElement('canvas');
+    dc.width=256;dc.height=320;
+    const dx=dc.getContext('2d');
+    dx.drawImage(img,0,0,256,320);
+    const id=dx.getImageData(0,0,256,320);
+    const d=id.data;
+
+    for(let y=0;y<320;y++){
+      for(let x=0;x<256;x++){
+        const i=(y*256+x)*4;
+        const r=d[i],g=d[i+1],b=d[i+2];
+        const lum=(r*.299+g*.587+b*.114)/255;
+
+        // Face region: upper-left of frame (this photo composition)
+        const fx=x/256, fy=y/320;
+        // Face center approximately at 0.35, 0.28 in UV
+        const fcx=fx-0.35, fcy=fy-0.28;
+        const faceProx=Math.max(0,1-Math.sqrt(fcx*fcx*3+fcy*fcy*2.5)*2.5);
+
+        // Skin warmth — warm pixels are near (face, arms)
+        const warmth=Math.max(0,(r-b)/255)*Math.max(0,(r-g*.7)/255)*2;
+
+        // Dress region — middle luminance warm = near
+        const dressNear=(lum>0.6&&lum<0.95&&warmth>0.1)?lum*0.5:0;
+
+        // Dark background = far
+        const bgFar=lum<0.15?0:1;
+
+        const depth=Math.min(1,
+          faceProx*0.55 +
+          warmth*0.28 +
+          dressNear*0.12 +
+          lum*0.05
+        )*bgFar;
+
+        const dv=Math.round(depth*255);
+        d[i]=dv;d[i+1]=dv;d[i+2]=dv;d[i+3]=255;
+      }
+    }
+    dx.putImageData(id,0,0);
+
+    // Blur depth slightly for smoother mesh
+    dx.filter='blur(6px)';
+    dx.drawImage(dc,0,0);
+
+    const depthTex=new THREE.CanvasTexture(dc);
+    const photoTex=new THREE.TextureLoader().load(PHOTO_SRC);
+
+    // Portrait plane — fill screen height
+    const planeH=2.2;
+    const planeW=planeH*(img.naturalWidth/img.naturalHeight);
+    const SEG=200;
+    const geo=new THREE.PlaneGeometry(planeW,planeH,SEG,Math.round(SEG*img.naturalHeight/img.naturalWidth));
+
+    const mat=new THREE.ShaderMaterial({
+      uniforms:{
+        uPhoto:{value:photoTex},
+        uDepth:{value:depthTex},
+        uMouse:{value:new THREE.Vector2(0,0)},
+        uTime:{value:0},
+        uStr:{value:0.14},
+      },
+      vertexShader:`
+        uniform sampler2D uDepth;
+        uniform vec2 uMouse;
+        uniform float uTime;
+        uniform float uStr;
+        varying vec2 vUv;
+        varying float vD;
+        void main(){
+          vUv=uv;
+          float d=texture2D(uDepth,uv).r;
+          vD=d;
+          vec3 p=position;
+          // Parallax XY shift driven by mouse × depth
+          p.x+=uMouse.x*d*uStr*1.1;
+          p.y+=-uMouse.y*d*uStr;
+          // Z pop — foreground lifts toward viewer
+          p.z+=d*0.28;
+          // Micro breathing
+          p.z+=sin(uTime*.7+uv.y*3.)*0.003*d;
+          gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);
+        }
+      `,
+      fragmentShader:`
+        uniform sampler2D uPhoto;
+        uniform vec2 uMouse;
+        uniform float uTime;
+        varying vec2 vUv;
+        varying float vD;
+        void main(){
+          // UV parallax offset — near pixels shift more
+          vec2 uv=vUv;
+          uv.x-=uMouse.x*vD*0.032;
+          uv.y+=uMouse.y*vD*0.032;
+          uv=clamp(uv,0.001,0.999);
+
+          vec4 col=texture2D(uPhoto,uv);
+
+          // Cinematic vignette — oval portrait shape
+          vec2 v=vUv-0.5; v.y*=0.85;
+          float vig=1.-clamp(dot(v,v)*2.8,0.,1.);
+          vig=pow(vig,.65);
+          col.rgb*=vig;
+
+          // Warm grade — golden hour push
+          col.r=min(1.,col.r*1.04);
+          col.b=min(1.,col.b*0.93);
+
+          // Far depth slight cool haze
+          float haze=(1.-vD)*0.08;
+          col.rgb=mix(col.rgb,vec3(0.02,0.015,0.01),haze);
+
+          gl_FragColor=col;
+        }
+      `,
+    });
+
+    const mesh=new THREE.Mesh(geo,mat);
+    scene.add(mesh);
+
+    // Dust particles
+    const pg=new THREE.BufferGeometry();
+    const pc=80, pp=new Float32Array(pc*3);
+    for(let i=0;i<pc;i++){pp[i*3]=(Math.random()-.5)*4;pp[i*3+1]=(Math.random()-.5)*5;pp[i*3+2]=(Math.random()-.5)*1.2;}
+    pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+    scene.add(new THREE.Points(pg,new THREE.PointsMaterial({color:0xc4a86a,size:0.004,transparent:true,opacity:0.2})));
+
+    window.addEventListener('resize',()=>{
+      renderer.setSize(innerWidth,innerHeight);
+      camera.aspect=innerWidth/innerHeight;
+      camera.updateProjectionMatrix();
+    });
+
+    let t=0;
+    (function animate(){
+      requestAnimationFrame(animate);
+      t+=0.016;
+      tx+=(mx-tx)*.038;
+      ty+=(my-ty)*.038;
+      mat.uniforms.uMouse.value.set(tx,ty);
+      mat.uniforms.uTime.value=t;
+      camera.position.x=tx*.03;
+      camera.position.y=-ty*.03;
+      camera.lookAt(0,0,0);
+      renderer.render(scene,camera);
+    })();
+  };
+  img.src=PHOTO_SRC;
+}
+
+// UI
+const modes=['IDLE','ANALYZING','ROUTING','THINKING','READY'];
+let mi=0;
+setInterval(()=>{mi=(mi+1)%modes.length;document.getElementById('mv').textContent=modes[mi];},4200);
+const lines=['双引擎待命  ·  随时指挥','图像走 Omni  ·  推理走 Claude','3D 视差  ·  鼠标驱动景深','SadTalker 接通  ·  真实面孔上线'];
+let li=0;
+function rl(){const el=document.getElementById('al');el.style.opacity='0';setTimeout(()=>{li=(li+1)%lines.length;el.textContent=lines[li];el.style.opacity='0.4';},1400);}
+setInterval(rl,6000);
+</script>
+</body>
+</html>

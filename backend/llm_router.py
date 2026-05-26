@@ -13,7 +13,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 
-from backend.llm_gateway_client import LLMGatewayClient, LLMGatewayConfig, LLMGatewayError
+from llm_gateway_client import LLMGatewayClient, LLMGatewayConfig, LLMGatewayError
 
 RouteName = str
 VALID_ROUTES = ("gpu", "npu", "api")

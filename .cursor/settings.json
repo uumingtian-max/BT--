@@ -63,5 +63,10 @@
     "C:\\Users\\ROG\\miniconda3\\envs\\bt-heiguang\\Lib",
     "C:\\Users\\ROG\\Desktop\\miniconda3",
     "C:\\Users\\ROG\\Desktop\\miniconda3\\envs\\bt-heiguang\\Lib"
-  ]
+  ],
+  "plugins": {
+    "omni-analytics": {
+      "enabled": true
+    }
+  }
 }

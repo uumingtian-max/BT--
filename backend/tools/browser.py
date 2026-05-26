@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
-import sys
 from pathlib import Path
 
 from safe_paths import safe_output_path
@@ -32,8 +30,10 @@ def _ensure_playwright() -> None:
     _normalize_playwright_env()
     if _playwright_available():
         return
-    subprocess.run([sys.executable, "-m", "pip", "install", "playwright", "-q"], check=False)
-    subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=False)
+    raise RuntimeError(
+        "Playwright is not installed. Browser automation is disabled until the user explicitly approves "
+        "`pip install playwright` and `python -m playwright install chromium`."
+    )
 
 
 def browser_navigate(url: str, wait_ms: int = 2000, screenshot: bool = False) -> str:

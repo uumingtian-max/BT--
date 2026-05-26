@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 set -e
+if [ "${BT_ALLOW_EXTERNAL_INSTALL:-0}" != "1" ]; then
+  echo "BLOCKED: this script runs apt-get and curl|sh installers."
+  echo "Run only after explicit approval: BT_ALLOW_EXTERNAL_INSTALL=1 bash scripts/hermes-wsl-setup.sh"
+  exit 2
+fi
 export PATH="$HOME/.local/bin:$PATH"
 source ~/.bashrc 2>/dev/null || true
 

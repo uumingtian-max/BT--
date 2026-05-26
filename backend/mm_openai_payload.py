@@ -129,9 +129,11 @@ def check_vllm_gateway_ready() -> tuple[bool, str]:
     rt = get_runtime()
     if rt.llm_backend != "openai_compatible":
         return False, "LLM_BACKEND 不是 openai_compatible，无法多模态理解附件"
-    base = (rt.openai_base_url or "").strip().rstrip("/")
+    base = (os.environ.get("GPU_OPENAI_BASE_URL") or "").strip().rstrip("/")
     if not base:
-        return False, "未配置 OPENAI_BASE_URL"
+        base = (rt.openai_base_url or "").strip().rstrip("/")
+    if not base:
+        return False, "未配置 GPU_OPENAI_BASE_URL 或 OPENAI_BASE_URL"
     root = base
     if root.endswith("/v1"):
         root = root[:-3]

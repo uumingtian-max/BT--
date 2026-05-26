@@ -1,0 +1,68 @@
+---
+description: BT deep optimization flow based on Atom workspace ideas and Hermes-style persistent agents
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# BT Deep Optimization Rule
+
+Before deep optimization work, read:
+
+- `AGENTS.md`
+- `CLAUDE.md`
+- `docs/CURSOR_DEEP_OPTIMIZATION_BRIEF.md`
+- `docs/DIGITAL_HUMAN_REFERENCE_BOARD.md`
+- `docs/BEYOND_MANUS_OPUS_AGENT_BLUEPRINT.md`
+- `docs/BAILONGMA_PLUS_3D_AGENT.md`
+- `git status --short --branch`
+
+Use this sequence:
+
+1. Read the current code and staged changes.
+2. Research only when the dependency, model, or external product behavior may have changed.
+3. Reason into a small acceptance checklist.
+4. Build the smallest useful patch.
+5. Verify with real commands.
+
+Priority order:
+
+- P0: observability and `/meta/doctor`
+- P1: Agent workspace UI with status panes
+- P2: controlled memory/skill candidate flow
+- P3: tool risk levels and confirmation gates
+- P4: role-based multi-agent orchestration
+- P5: digital-human pipeline verification
+- P6: Opus-level task harness with evidence, budgets, and reviewer pass
+- P7: artifact vault and private/generated asset separation
+- P8: conscious-loop UI: TICK, focus stack, super memory, candidate skills, and Brain UI observability
+
+External products are inspiration only:
+
+- Do not copy implementations, prompts, UI, prose, or repository structure from BaiLongma, Manus, Hermes Agent, OpenAI, Anthropic, LangGraph, CrewAI, AutoGen, MetaHuman, or luxury-brand websites.
+- Extract principles instead: conscious TICK loop, focus stack, memory injection, sandboxed execution, traceability, long-running task budgets, recoverable workflows, file memory, guarded computer use, tastefully restrained digital-human presentation.
+- Rewrite those principles into BT-native modules, docs, UI names, and acceptance tests.
+
+Digital-human visual standard:
+
+- Direction: Hermes / Bottega Veneta level restrained luxury, not cyberpunk and not game-character style.
+- Face first: use realistic portrait skin tone, soft facial volume, hair thickness, subtle eye highlights.
+- Lighting: warm top light, side rim light, and low-contrast shadow; avoid neon, scanning lines, and particle-heavy effects.
+- Palette: gold-brown, leather brown, silk ivory, copper accents; do not flood the UI with orange.
+- Typography: serif for maison/portrait labels, monospace for system status; avoid generic default UI type as the hero language.
+- Layout: the face is the first visual signal; edge information should feel like gallery labels, not dashboards.
+- Motion: slow breath, slight parallax, low-frequency light changes only.
+
+Do not:
+
+- import external repos wholesale;
+- submit generated media, model weights, `.env`, databases, logs, or `SadTalker/`;
+- auto-write long-term memory without a user-confirmable candidate step;
+- perform installs, deletes, publication, permission changes, or security bypasses without explicit approval.
+
+Default verification:
+
+- `python -m pytest backend\tests -q`
+- `node scripts\npm.cjs run build --prefix frontend`
+- `curl.exe -sS http://127.0.0.1:8000/health`
+- `curl.exe -sS http://127.0.0.1:8000/meta/doctor`

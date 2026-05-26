@@ -5,6 +5,12 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from skillhub import audit_skillhub, get_skillhub_record, list_skillhub_records, skillhub_summary
+from skill_evolution import (
+    approve_skill_candidate,
+    list_skill_candidates,
+    propose_skill_candidate,
+    reject_skill_candidate,
+)
 
 router = APIRouter()
 
@@ -39,3 +45,37 @@ def skillhub_skill_detail(skill_id: str):
     if not record:
         raise HTTPException(404, "skill not found")
     return {"ok": True, "skill": record.to_dict(include_content=True)}
+
+
+@router.get("/skillhub/candidates")
+def skillhub_candidates(status: str | None = None):
+    return {"ok": True, "candidates": list_skill_candidates(status=status)}
+
+
+@router.post("/skillhub/candidates")
+def skillhub_candidate_propose(payload: dict):
+    try:
+        return propose_skill_candidate(
+            summary=str(payload.get("summary") or ""),
+            evidence=[str(x) for x in (payload.get("evidence") or [])],
+            trigger_hints=[str(x) for x in (payload.get("trigger_hints") or [])],
+            title=str(payload.get("title") or "") or None,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@router.post("/skillhub/candidates/{candidate_id}/approve")
+def skillhub_candidate_approve(candidate_id: str):
+    try:
+        return approve_skill_candidate(candidate_id)
+    except KeyError as exc:
+        raise HTTPException(404, "candidate not found") from exc
+
+
+@router.post("/skillhub/candidates/{candidate_id}/reject")
+def skillhub_candidate_reject(candidate_id: str, payload: dict | None = None):
+    try:
+        return reject_skill_candidate(candidate_id, reason=str((payload or {}).get("reason") or ""))
+    except KeyError as exc:
+        raise HTTPException(404, "candidate not found") from exc

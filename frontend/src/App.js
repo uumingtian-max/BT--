@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import ReactMarkdown from 'react-markdown';
 import './App.css';
+import './AgentWorkbench.css';
+import { loadUiPrefs } from './ui_prefs';
+import { playStartupVoice } from './voiceLoop';
 import BrandLogo, { BrandHero } from './BrandLogo';
 import { DashboardPanel, SystemPanel, SkillsPanel, SchedulerPanel } from './OperatorPanels';
 import { LOCKED_MODEL_ID, LOCKED_MODEL_LABEL, labelForModel } from './modelCatalog';
@@ -17,7 +20,7 @@ const API =
   process.env.REACT_APP_API_URL ||
   'http://127.0.0.1:8000';
 const APP_NAME = 'BT（黑光）';
-const APP_TAGLINE = '本地 AI Agent 工作台';
+const APP_TAGLINE = '真执行 · 结果交付';
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const Icon = ({ name, size = 16 }) => {
@@ -149,21 +152,22 @@ function TimelineStep({ step, index, isLast }) {
   );
 }
 
-function ExecutionProgress({ steps, isRunning }) {
+function ExecutionProgress({ steps, isRunning, bossMode }) {
   const toolSteps = steps.filter((s) => s.type === 'tool_call');
   const resultSteps = steps.filter((s) => s.type === 'tool_result');
   const done = steps.some((s) => s.type === 'final_answer');
   const midCount = steps.filter((s) => s.type !== 'final_answer').length;
+  const showBusy = isRunning && !done && (!bossMode || toolSteps.length > 0);
 
   return (
     <div className="exec-progress">
       <div className="exec-status">
-        {isRunning && !done && (
+        {showBusy && (
           <span className="exec-running">
             <span className="exec-pulse" />
             {toolSteps.length > resultSteps.length
               ? `执行 ${toolSteps[toolSteps.length - 1]?.tool || '工具'}…`
-              : '推理中…'}
+              : '执行中…'}
           </span>
         )}
         {done && (
@@ -313,17 +317,16 @@ function formatBytes(size) {
   return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
 }
 
-function AgentStepsMessage({ msg, isStreaming }) {
+function AgentStepsMessage({ msg, isStreaming, bossMode, surfaceMode }) {
   const steps = msg.steps || [];
   const finalStep = steps.find((s) => s.type === 'final_answer');
   const otherSteps = steps.filter((s) => s.type !== 'final_answer');
-  const [timelineOpen, setTimelineOpen] = useState(true);
+  const [timelineOpen, setTimelineOpen] = useState(!bossMode);
+  const isWorkbench = surfaceMode === 'agent';
 
-  return (
-    <div className="msg msg-assistant">
-      <div className="agent-avatar"><Icon name="agent" size={14} /></div>
+  const inner = (
       <div className="agent-steps-wrap">
-        <ExecutionProgress steps={steps} isRunning={isStreaming && !finalStep} />
+        <ExecutionProgress steps={steps} isRunning={isStreaming && !finalStep} bossMode={bossMode} />
 
         {otherSteps.length > 0 && (
           <button type="button" className="tl-toggle" onClick={() => setTimelineOpen((o) => !o)}>
@@ -343,7 +346,9 @@ function AgentStepsMessage({ msg, isStreaming }) {
 
         {finalStep && (
           <div className="final-answer-card">
-            <div className="final-answer-label"><Icon name="zap" size={11} /> 回答</div>
+            <div className="final-answer-label">
+              <Icon name="zap" size={11} /> {isWorkbench ? '交付结果' : '回答'}
+            </div>
             <div className="final-answer-content">
               <ReactMarkdown components={markdownComponents}>{finalStep.content}</ReactMarkdown>
             </div>
@@ -354,12 +359,40 @@ function AgentStepsMessage({ msg, isStreaming }) {
           <div className="typing"><span /><span /><span /></div>
         )}
       </div>
+  );
+
+  if (isWorkbench) {
+    return (
+      <div className="work-deliverable">
+        <div className="work-deliverable-label">交付</div>
+        <div className="work-deliverable-panel">{inner}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="msg msg-assistant">
+      <div className="agent-avatar"><Icon name="agent" size={14} /></div>
+      {inner}
     </div>
   );
 }
 
-const Message = ({ msg, isStreaming }) => {
+const Message = ({ msg, isStreaming, bossMode, surfaceMode }) => {
+  const isWorkbench = surfaceMode === 'agent';
+
   if (msg.role === 'user') {
+    if (isWorkbench) {
+      return (
+        <div className="work-command">
+          <div className="work-command-label">指令</div>
+          <div className="work-command-body">
+            <div>{msg.content}</div>
+            <AttachmentPreview attachments={msg.attachments || []} />
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="msg msg-user">
         <div className="msg-bubble">
@@ -371,7 +404,25 @@ const Message = ({ msg, isStreaming }) => {
   }
 
   if (msg.role === 'agent-steps') {
-    return <AgentStepsMessage msg={msg} isStreaming={isStreaming} />;
+    return (
+      <AgentStepsMessage
+        msg={msg}
+        isStreaming={isStreaming}
+        bossMode={bossMode}
+        surfaceMode={surfaceMode}
+      />
+    );
+  }
+
+  if (isWorkbench) {
+    return (
+      <div className="work-deliverable">
+        <div className="work-deliverable-label">说明</div>
+        <div className="work-deliverable-panel">
+          <ReactMarkdown components={markdownComponents}>{msg.content}</ReactMarkdown>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -500,6 +551,8 @@ export default function App() {
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [schedForm, setSchedForm] = useState({ name: '定时任务', message: '', interval_sec: 3600, task_kind: 'agent' });
+  const [uiPrefs] = useState(() => loadUiPrefs());
+  const [bossMode, setBossMode] = useState(true);
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -744,6 +797,13 @@ export default function App() {
         ]);
         if (pr.ok) prefs = await pr.json();
         if (cr.ok) cfg = await cr.json();
+        try {
+          const er = await fetch(API + '/meta/expert-roles');
+          if (er.ok) {
+            const ej = await er.json();
+            if (typeof ej.boss_mode === 'boolean') setBossMode(ej.boss_mode);
+          }
+        } catch (_) { /* ignore */ }
 
         const backendModel = (health?.modelsJson?.models || [])
           .map((m) => (typeof m === 'string' ? m : m?.id || m?.model || m?.name))
@@ -754,6 +814,9 @@ export default function App() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ key: 'default_model', value: backendModel }),
           }).catch(() => {});
+        }
+        if (health && !health.backendDown) {
+          playStartupVoice(API).catch(() => {});
         }
       } catch (e) { /* ignore */ }
     })();
@@ -998,14 +1061,19 @@ export default function App() {
     }
   };
 
-  const sendAgent = async (text) => {
+  const sendAgent = async (text, sid) => {
     const steps = [];
+    const sessionId = sid || sessionIdRef.current || activeSession || undefined;
+    const ctrl = new AbortController();
+    const timeoutMs = 600000;
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     setMessages((prev) => [...prev, { role: 'agent-steps', steps: [], streaming: true }]);
     try {
       const res = await fetch(API + '/agent/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, model }),
+        body: JSON.stringify({ message: text, model, session_id: sessionId }),
+        signal: ctrl.signal,
       });
       if (!res.ok) {
         const t = await res.text();
@@ -1045,7 +1113,17 @@ export default function App() {
         }
       }
     } catch (e) {
-      steps.push({ type: 'final_answer', content: 'Error: ' + e.message });
+      const msg = e.name === 'AbortError' ? '请求超时（10 分钟），请缩短任务或重试。' : e.message;
+      steps.push({ type: 'final_answer', content: 'Error: ' + msg });
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!steps.some((s) => s.type === 'final_answer')) {
+      const lastTool = [...steps].reverse().find((s) => s.type === 'tool_result');
+      const fallback = lastTool?.result
+        ? String(lastTool.result).slice(0, 8000)
+        : '任务已结束但没有最终回答；请重试或换一种说法。';
+      steps.push({ type: 'final_answer', content: fallback });
     }
     setMessages((prev) => {
       const n = [...prev];
@@ -1057,8 +1135,8 @@ export default function App() {
 
   const placeholderForMode = () =>
     mode === 'agent'
-      ? '用自然语言说任务，Agent 会自动选工具执行…'
-      : '聊天模式：问答与建议（不会自动改文件/跑命令）。要搜网页、列目录请切到 Agent…';
+      ? '输入任务指令，回车执行（例：查显卡型号 / 整理桌面最近文件）…'
+      : '轻问答：只聊不改文件；要执行请点侧栏「返回工作台」…';
 
   const ollamaCheck = systemHealth?.doctor?.checks?.find((c) => c.name === 'ollama_reachable');
   const ollamaOk = ollamaCheck ? ollamaCheck.status === 'ok' : null;
@@ -1078,6 +1156,7 @@ export default function App() {
     return null;
   })();
   const agentBusy = loading && mode === 'agent';
+  const agentStatusLabel = agentBusy ? '执行中…' : APP_TAGLINE;
 
   const onKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1087,7 +1166,7 @@ export default function App() {
   };
 
   return (
-    <div className="app">
+    <div className={`app ${mode === 'agent' ? 'mode-agent' : 'mode-chat'}`}>
       <div className="titlebar">
         <div className="titlebar-drag">
           <BrandLogo className="titlebar-logo" size={22} alt="" />
@@ -1105,7 +1184,7 @@ export default function App() {
         <div className="sidebar">
           <button
             type="button"
-            className={`sidebar-brand sidebar-brand-button${agentBusy ? ' is-thinking' : ''}`}
+            className={`sidebar-brand sidebar-brand-button${agentBusy ? ' is-thinking' : ''}${uiPrefs.hideSidebarHero ? ' sidebar-brand-compact' : ''}`}
             onClick={() => {
               setPanel('chat');
               setShowToolPanel(false);
@@ -1113,17 +1192,43 @@ export default function App() {
             }}
           >
             <div className="sidebar-brand-frame">
-              <BrandHero className="sidebar-brand-hero" alt={APP_NAME} />
+              {!uiPrefs.hideSidebarHero && <BrandHero className="sidebar-brand-hero" alt={APP_NAME} />}
               <div className="sidebar-brand-plate">
                 <strong className="sidebar-brand-name">{APP_NAME}</strong>
-                <span className="sidebar-brand-tag">
-                  {agentBusy ? 'Agent 推理中，正在处理任务…' : APP_TAGLINE}
-                </span>
+                <span className="sidebar-brand-tag">{agentStatusLabel}</span>
               </div>
-              <span className="sidebar-brand-busy">{agentBusy ? '推理中' : '待命'}</span>
+              <span className="sidebar-brand-busy">{agentBusy ? '执行中' : '待命'}</span>
             </div>
           </button>
-          <button type="button" className="new-chat-btn" onClick={newSession}><Icon name="plus" size={14} /> New Chat</button>
+          <button type="button" className="new-chat-btn" onClick={newSession}>
+            <Icon name="plus" size={14} /> {mode === 'agent' ? '新任务' : '新对话'}
+          </button>
+
+          {mode === 'agent' ? (
+            <button
+              type="button"
+              className="sidebar-sub-btn sidebar-lite-chat-btn"
+              onClick={() => {
+                setMode('chat');
+                setPanel('chat');
+                setShowToolPanel(false);
+              }}
+            >
+              <Icon name="chat" size={12} /> 轻问答
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="sidebar-sub-btn sidebar-workbench-btn active"
+              onClick={() => {
+                setMode('agent');
+                setPanel('chat');
+              }}
+            >
+              <Icon name="agent" size={12} /> 返回工作台
+            </button>
+          )}
+
           <div className="mode-toggle">
             <button
               type="button"
@@ -1144,7 +1249,7 @@ export default function App() {
                 setPanel('chat');
               }}
             >
-              <Icon name="agent" size={13} /> Agent
+              <Icon name="agent" size={13} /> 工作台
             </button>
           </div>
 
@@ -1296,7 +1401,17 @@ export default function App() {
             </div>
           ) : (
             <>
-              {mode === 'agent' && latestAgentSteps.length > 0 && (
+              {mode === 'agent' && (
+                <div className="workspace-head">
+                  <span className="workspace-head-title">任务工作台</span>
+                  <span className="workspace-head-meta">{modelLabel}</span>
+                  <span className={`workspace-head-status${agentBusy ? ' busy' : ''}`}>
+                    {agentBusy ? '执行中' : '待命'}
+                  </span>
+                </div>
+              )}
+
+              {mode === 'agent' && uiPrefs.showAgentTopology && latestAgentSteps.length > 0 && (
                 <div className="chat-topology-wrap">
                   <ScreenStreamViewer apiBase={API} />
                   <WorkflowVisualization3D agentSteps={latestAgentSteps} />
@@ -1306,7 +1421,16 @@ export default function App() {
               )}
 
               <div className="messages">
-                {messages.length === 0 && (
+                {messages.length === 0 && uiPrefs.useNoirEmpty && (
+                  <div className="noir-empty">
+                    <p className="noir-empty-title">黑光待命</p>
+                    <p className="noir-empty-hint">直接说任务；#1 架构师在后台规划，默认走工具链交付结果。</p>
+                    <button type="button" className="noir-empty-btn" onClick={() => textareaRef.current?.focus()}>
+                      开始任务
+                    </button>
+                  </div>
+                )}
+                {messages.length === 0 && !uiPrefs.useNoirEmpty && (
                   <DashboardPanel
                     operatorDash={operatorDash}
                     logBundle={logBundle}
@@ -1320,6 +1444,8 @@ export default function App() {
                   <Message
                     key={i}
                     msg={msg}
+                    bossMode={bossMode}
+                    surfaceMode={mode}
                     isStreaming={loading && i === messages.length - 1 && msg.role === 'agent-steps'}
                   />
                 ))}
@@ -1342,7 +1468,7 @@ export default function App() {
                 <div ref={bottomRef} />
               </div>
 
-              <div className="input-area">
+              <div className={`input-area${mode === 'agent' ? ' command-deck' : ''}`}>
                 {attachments.length > 0 && (
                   <div className="pending-attachments">
                     {attachments.map((item, idx) => {

@@ -29,6 +29,7 @@ from hooks import notify_agent_completed
 from llm_client import chat_complete_async
 from self_evolve import distill_playbook_with_llm, ingest_review_lesson
 from skill_pack import build_skill_pack_context
+from super_memory import build_super_memory_context, reflect_on_user_turn
 from agent_session import (
     build_messages_with_history,
     persist_agent_answer,
@@ -94,6 +95,14 @@ def _build_system_prompt() -> str:
         "- 工具失败：贴 exit_code/错误摘要，说明卡在哪，不要给假选项。\n"
         "- 未授权入侵、批量隐私搜集、违法绕过类请求：拒绝并说明合规边界。"
     )
+    try:
+        from expert_roles import build_super_agent_system_addendum
+
+        addendum = build_super_agent_system_addendum()
+        if addendum:
+            parts.append(addendum)
+    except Exception:
+        pass
     return "\n\n".join(parts)
 
 
@@ -1263,6 +1272,13 @@ async def run_agent(
 
     async def emit_step(step: dict):
         steps.append(step)
+        try:
+            from expert_roles import should_emit_process_step
+
+            if not should_emit_process_step(str(step.get("type") or "")):
+                return
+        except Exception:
+            pass
         if on_step is None:
             return
         maybe_awaitable = on_step(step)
@@ -1290,6 +1306,7 @@ async def run_agent(
     user_text = (message or "").strip() or ("请分析我上传的附件。" if att_list else "")
     save_user_turn(sid, user_text)
     remember_from_message(sid, "user", message)
+    reflect_on_user_turn(sid, user_text)
     await emit_step(
         {
             "type": "thinking",
@@ -1303,6 +1320,7 @@ async def run_agent(
         evolution_context,
         workflow_context,
         playbook_context,
+        super_memory_context,
         skill_context,
     ) = await asyncio.gather(
         asyncio.to_thread(lambda: compress_for_llm(build_memory_context(message), mx, "memory")),
@@ -1310,6 +1328,7 @@ async def run_agent(
         asyncio.to_thread(lambda: compress_for_llm(get_evolution_profile_text(), mx, "evolution")),
         asyncio.to_thread(lambda: compress_for_llm(build_workflow_context(message), mx, "workflow")),
         asyncio.to_thread(lambda: compress_for_llm(build_playbook_context(message), mx, "playbook")),
+        asyncio.to_thread(lambda: compress_for_llm(build_super_memory_context(message), mx, "super_memory")),
         asyncio.to_thread(lambda: compress_for_llm(build_skill_pack_context(message), mx, "skills")),
     )
     system_context_parts = [SYSTEM_PROMPT]
@@ -1317,6 +1336,8 @@ async def run_agent(
         system_context_parts.append(memory_context)
     if playbook_context:
         system_context_parts.append(playbook_context)
+    if super_memory_context:
+        system_context_parts.append(super_memory_context)
     if skill_context:
         system_context_parts.append(skill_context)
     if knowledge_context:

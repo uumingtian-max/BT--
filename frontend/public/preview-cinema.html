@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>黑光 · 影院预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; background: #1d1f21; color: #abb2bf; font-family: Inter, system-ui, sans-serif; }
+    .bar { height: 38px; display: flex; align-items: center; padding: 0 14px; gap: 10px; background: #21252b; border-bottom: 1px solid rgba(97,108,125,.35); font-size: 12px; }
+    .bar strong { color: #e8dcc6; font-weight: 500; }
+    .stage { position: fixed; top: 38px; left: 0; right: 0; bottom: 0; --px: 0; --py: 0; }
+    .backdrop { position: absolute; inset: 0; overflow: hidden; }
+    .backdrop img {
+      position: absolute; inset: -6%; width: 112%; height: 112%;
+      object-fit: cover; object-position: center 22%;
+      filter: contrast(1.04) saturate(.92) brightness(.88);
+      transform: translate(calc(var(--px) * -1.2%), calc(var(--py) * -0.8%));
+    }
+    .shade {
+      position: absolute; inset: 0;
+      background:
+        linear-gradient(90deg, rgba(29,31,33,.92), transparent 18%, transparent 82%, rgba(29,31,33,.92)),
+        linear-gradient(180deg, rgba(29,31,33,.5), transparent 22%, transparent 72%, rgba(29,31,33,.95)),
+        radial-gradient(ellipse 55% 70% at 50% 38%, transparent, rgba(0,0,0,.35));
+    }
+    .rail {
+      position: absolute; top: 0; bottom: 28px; width: min(200px, 16vw); z-index: 8;
+      padding: 20px 16px; display: flex; flex-direction: column; gap: 10px;
+      background: linear-gradient(180deg, rgba(33,37,43,.82), rgba(33,37,43,.45));
+      border: 1px solid rgba(97,108,125,.35); backdrop-filter: blur(14px);
+    }
+    .rail-l { left: 0; border-left: none; }
+    .rail-r { right: 0; border-right: none; align-items: flex-end; text-align: right; }
+    .block { padding: 10px 12px; border-radius: 3px; background: rgba(40,44,52,.55); border: 1px solid rgba(97,108,125,.35); min-width: 140px; }
+    .kicker { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; letter-spacing: .2em; color: #e8dcc6; }
+    .muted { font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: #5c6370; margin-bottom: 4px; }
+    .val { font-size: .78rem; }
+    #viewport { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+    #viewport canvas { width: min(42vw, 520px) !important; height: min(68vh, 720px) !important; pointer-events: auto; filter: drop-shadow(0 24px 80px rgba(0,0,0,.55)); }
+    .statusbar {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 28px; z-index: 9;
+      display: flex; align-items: center; gap: 12px; padding: 0 14px;
+      background: #21252b; border-top: 1px solid rgba(97,108,125,.35); font-size: .7rem;
+    }
+    .statusbar .sp { flex: 1; }
+    .cta { border: 1px solid rgba(97,108,125,.35); background: rgba(201,166,107,.08); color: #e8dcc6; padding: 2px 14px; cursor: pointer; font-size: .68rem; letter-spacing: .12em; }
+    .hint { position: fixed; top: 48px; right: 12px; z-index: 20; font-size: 11px; color: #5c6370; background: rgba(33,37,43,.9); padding: 6px 10px; border-radius: 3px; border: 1px solid rgba(97,108,125,.35); }
+  </style>
+</head>
+<body>
+  <div class="bar"><strong>黑光</strong><span>影院预览 · Atom 内饰 + 肖像主视觉</span></div>
+  <p class="hint">拖动画面 · 有 depth.png 时中央为 3D</p>
+  <section class="stage" id="stage">
+    <div class="backdrop">
+      <img id="photo" src="./digital-human/photo.png" alt="" />
+      <div class="shade"></div>
+    </div>
+    <aside class="rail rail-l">
+      <div class="block"><div class="kicker">黑光</div><div class="muted">Presence</div></div>
+      <div class="block"><div class="muted">状态</div><div class="val" id="st">待命</div></div>
+      <div class="block"><div class="muted">引擎</div><div class="val">双引擎</div></div>
+    </aside>
+    <aside class="rail rail-r">
+      <div class="block"><div class="muted">本地</div><div class="val">Nemotron Omni</div></div>
+      <div class="block"><div class="muted">云端</div><div class="val">Claude Opus</div></div>
+      <div class="block"><div class="muted">深度</div><div class="val" id="depthLabel">检测中…</div></div>
+    </aside>
+    <div id="viewport"></div>
+    <footer class="statusbar">
+      <span>黑光 Agent</span><span>|</span><span id="st2">待命</span><span class="sp"></span>
+      <button type="button" class="cta" id="toggle">模拟执行</button>
+    </footer>
+  </section>
+  <script type="importmap">
+  { "imports": { "three": "https://unpkg.com/three@0.184.0/build/three.module.js" } }
+  </script>
+  <script type="module">
+    const stage = document.getElementById('stage');
+    let busy = false;
+    document.getElementById('toggle').onclick = () => {
+      busy = !busy;
+      const t = busy ? '执行' : '待命';
+      document.getElementById('st').textContent = t;
+      document.getElementById('st2').textContent = t;
+    };
+    stage.addEventListener('pointermove', (e) => {
+      const r = stage.getBoundingClientRect();
+      stage.style.setProperty('--px', ((e.clientX - r.left) / r.width - 0.5) * 2);
+      stage.style.setProperty('--py', ((e.clientY - r.top) / r.height - 0.5) * 2);
+    });
+
+    const depthOk = await fetch('./digital-human/depth.png', { method: 'HEAD' }).then((r) => r.ok).catch(() => false);
+    document.getElementById('depthLabel').textContent = depthOk ? '3D 置换' : '仅平面 · 缺 depth.png';
+
+    if (!depthOk) return;
+
+    const THREE = await import('three');
+    const mount = document.getElementById('viewport');
+    const w = mount.clientWidth, h = mount.clientHeight;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 100);
+    camera.position.z = 2.2;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(w, h);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    mount.appendChild(renderer.domElement);
+
+    const loader = new THREE.TextureLoader();
+    const colorMap = loader.load('./digital-human/photo.png');
+    const depthMap = loader.load('./digital-human/depth.png');
+    const uniforms = { uColor: { value: colorMap }, uDepth: { value: depthMap }, uDepthScale: { value: 0.18 }, uPointer: { value: new THREE.Vector2(0, 0) } };
+    const mat = new THREE.ShaderMaterial({
+      uniforms,
+      vertexShader: `uniform sampler2D uDepth; uniform float uDepthScale; uniform vec2 uPointer; varying vec2 vUv;
+        void main(){ vUv=uv; float d=texture2D(uDepth,uv).r; vec3 p=position; p.z+=(1.-d)*uDepthScale; p.x+=uPointer.x*.035*(1.-d); p.y+=uPointer.y*.035*(1.-d); gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.); }`,
+      fragmentShader: `uniform sampler2D uColor; varying vec2 vUv; void main(){ vec4 b=texture2D(uColor,vUv); gl_FragColor=b; }`,
+      transparent: true,
+    });
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 1.15, 200, 200), mat);
+    scene.add(mesh);
+  let px = 0, py = 0;
+  stage.addEventListener('pointermove', (e) => {
+    const r = stage.getBoundingClientRect();
+    px = ((e.clientX - r.left) / r.width - 0.5) * 2;
+    py = ((e.clientY - r.top) / r.height - 0.5) * 2;
+  });
+  (function loop() {
+    requestAnimationFrame(loop);
+    uniforms.uPointer.value.lerp(new THREE.Vector2(px, py), 0.08);
+    mesh.rotation.y = px * 0.06;
+    mesh.rotation.x = -py * 0.04;
+    renderer.render(scene, camera);
+  })();
+  </script>
+</body>
+</html>

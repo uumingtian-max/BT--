@@ -160,6 +160,16 @@ def validate_llm_config() -> list[str]:
         and not rt.openai_base_url.rstrip("/").endswith("/v1")
     ):
         warnings.append(f"OPENAI_BASE_URL 建议以 /v1 结尾（当前：{rt.openai_base_url}）。")
+    base = (rt.openai_base_url or "").lower()
+    if rt.llm_backend == "openai_compatible" and base and "127.0.0.1" not in base and "localhost" not in base:
+        if not (rt.openai_api_key or "").strip():
+            warnings.append(
+                "OPENAI_BASE_URL 指向外部网关但未设置 OPENAI_API_KEY，会出现 401/502；"
+                "请在 backend/.env 填写密钥，或改 OPENAI_BASE_URL 为本地 GPU（http://127.0.0.1:8001/v1）。"
+            )
+    api_base = _env_str("API_OPENAI_BASE_URL", "").strip()
+    if api_base and not _env_str("API_OPENAI_API_KEY", "").strip():
+        warnings.append("已配置 API_OPENAI_BASE_URL 但缺少 API_OPENAI_API_KEY（三路路由 api 席不可用）。")
     return warnings
 
 

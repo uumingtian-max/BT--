@@ -1,0 +1,219 @@
+/* Agent 模式：任务工作台 — 侧栏克制，不要「紫边按钮地摊」 */
+
+.app.mode-agent {
+  background: #1a1d21;
+}
+
+.app.mode-agent .layout,
+.app.mode-agent .main {
+  background: transparent;
+}
+
+.app.mode-agent .mode-toggle {
+  display: none;
+}
+
+/* 侧栏：Atom 式扁平导航 */
+.app.mode-agent .sidebar {
+  width: 188px;
+  padding: 10px 8px;
+  gap: 2px;
+  background: #1e2127;
+  border-right: 1px solid rgba(97, 108, 125, 0.22);
+}
+
+.app.mode-agent .sidebar-brand-button {
+  margin-bottom: 6px;
+}
+
+.app.mode-agent .new-chat-btn {
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(220, 220, 220, 0.92);
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.app.mode-agent .new-chat-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  box-shadow: none;
+  color: #fff;
+}
+
+.app.mode-agent .sidebar-sub-btn,
+.app.mode-agent .profile-entry {
+  width: 100%;
+  padding: 7px 10px;
+  margin: 0;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  color: rgba(171, 178, 191, 0.75);
+  font-size: 12px;
+  font-weight: 450;
+  letter-spacing: 0.01em;
+  box-shadow: none;
+}
+
+.app.mode-agent .sidebar-sub-btn svg,
+.app.mode-agent .new-chat-btn svg {
+  opacity: 0.45;
+  width: 13px;
+  height: 13px;
+}
+
+.app.mode-agent .sidebar-sub-btn:hover,
+.app.mode-agent .profile-entry:hover {
+  color: rgba(220, 220, 220, 0.95);
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+}
+
+.app.mode-agent .sidebar-sub-btn.active,
+.app.mode-agent .profile-entry.active {
+  color: rgba(220, 220, 220, 0.98);
+  background: rgba(255, 255, 255, 0.07);
+  border: none;
+}
+
+.app.mode-agent .sidebar-lite-chat-btn:hover,
+.app.mode-agent .sidebar-workbench-btn:hover {
+  border: none;
+  color: rgba(220, 220, 220, 0.95);
+}
+
+/* 底部模型：一行灰字，不要紫框 */
+.app.mode-agent .model-select.model-locked {
+  margin-top: 6px;
+  padding: 6px 10px 2px;
+  border: none;
+  background: transparent;
+}
+
+.app.mode-agent .model-locked-label {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: rgba(140, 148, 160, 0.55);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.app.mode-agent .sessions::before {
+  content: '任务';
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(140, 148, 160, 0.45);
+  padding: 10px 10px 4px;
+}
+
+.app.mode-agent .session-item.active {
+  border-left: 2px solid rgba(171, 178, 191, 0.35);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.app.mode-agent .workspace-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(8, 10, 18, 0.72);
+  flex-shrink: 0;
+}
+
+.app.mode-agent .workspace-head-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.app.mode-agent .workspace-head-meta {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.38);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.app.mode-agent .workspace-head-status {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.45);
+  background: transparent;
+}
+
+.app.mode-agent .workspace-head-status.busy {
+  color: rgba(212, 184, 118, 0.9);
+  border-color: rgba(212, 184, 118, 0.25);
+  background: rgba(212, 184, 118, 0.06);
+}
+
+.app.mode-agent .messages {
+  padding: 8px 0 24px;
+  gap: 14px;
+}
+
+.app.mode-agent .work-command,
+.app.mode-agent .work-deliverable {
+  max-width: min(920px, calc(100% - 56px));
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+.app.mode-agent .command-deck {
+  border-top: 1px solid rgba(97, 108, 125, 0.2);
+  background: #1e2127;
+}
+
+.app.mode-agent .command-deck textarea,
+.app.mode-agent .command-deck .input-box {
+  background: #282c34;
+  border-color: rgba(97, 108, 125, 0.25);
+}
+
+.app.mode-agent .command-deck .send-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(97, 108, 125, 0.3);
+  color: rgba(220, 220, 220, 0.9);
+  box-shadow: none;
+}
+
+.app.mode-agent .command-deck .send-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.app.mode-agent .command-deck .send-btn::after {
+  content: '执行';
+  margin-left: 2px;
+}
+
+.app.mode-agent .command-deck .send-btn svg {
+  display: none;
+}
+
+.app.mode-chat .sidebar-workbench-btn {
+  display: none;
+}
+
+.app.mode-agent .noir-empty-title {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+
+.app.mode-chat .workspace-head {
+  display: none;
+}

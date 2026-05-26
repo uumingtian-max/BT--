@@ -246,6 +246,15 @@ def route_model_profile(message: str, base: ModelProfile, evolution_context: str
 
 
 def _decompose_task(message: str, profile: ModelProfile, evolution_context: str = "") -> list[dict[str, str]]:
+    try:
+        from expert_council import build_expert_subtasks
+
+        kernel_subs = build_expert_subtasks(message, profile, evolution_context)
+        if kernel_subs:
+            return kernel_subs
+    except Exception:
+        pass
+
     text = message.lower()
     rt = get_runtime()
     workflow_context = compress_for_llm(build_workflow_context(message), rt.context_block_max_chars, "workflow")
@@ -439,18 +448,37 @@ def run_orchestration(message: str, payload: dict[str, Any] | None = None) -> di
                 }
             )
 
-    synthesis_prompt = (
-        f"原始任务：{message}\n\n"
-        "下面是多个本地模型子任务的结果，请汇总成中文执行结论。\n"
-        "要求：\n"
-        "1. 先给 3-6 条核心判断\n"
-        "2. 再给一个推荐的下一步\n"
-        "3. 不要解释你是怎么调用模型的\n\n"
-        + "\n\n".join(
-            f"[{item['kind']} | {item['model_name']} | {item['title']}]\n"
-            f"{compress_for_llm(str(item.get('output', '')), min(rt.tool_result_max_chars, 12000), item['kind'])}"
-            for item in results
+    try:
+        from execution_kernel import is_execution_kernel_enabled, kernel_synthesis_instructions
+
+        if is_execution_kernel_enabled():
+            synthesis_header = (
+                kernel_synthesis_instructions()
+                + f"\n\n原始任务：{message}\n\n各席结论片段：\n\n"
+            )
+        else:
+            synthesis_header = (
+                f"原始任务：{message}\n\n"
+                "下面是多个本地模型子任务的结果，请汇总成中文执行结论。\n"
+                "要求：\n"
+                "1. 先给 3-6 条核心判断\n"
+                "2. 再给一个推荐的下一步\n"
+                "3. 不要解释你是怎么调用模型的\n\n"
+            )
+    except Exception:
+        synthesis_header = (
+            f"原始任务：{message}\n\n"
+            "下面是多个本地模型子任务的结果，请汇总成中文执行结论。\n"
+            "要求：\n"
+            "1. 先给 3-6 条核心判断\n"
+            "2. 再给一个推荐的下一步\n"
+            "3. 不要解释你是怎么调用模型的\n\n"
         )
+
+    synthesis_prompt = synthesis_header + "\n\n".join(
+        f"[{item['kind']} | {item['model_name']} | {item['title']}]\n"
+        f"{compress_for_llm(str(item.get('output', '')), min(rt.tool_result_max_chars, 12000), item['kind'])}"
+        for item in results
     )
     synthesis_prompt = compress_for_llm(synthesis_prompt, rt.tool_result_max_chars * 2, "synthesis")
     final_text, retry_count = _call_with_retry(
