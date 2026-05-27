@@ -87,6 +87,22 @@ def build_kernel_subtasks(
                 "prompt": "你是【#4 多模态】。说明本任务需要的模态工具链（一段）。\n" + base_ctx,
             }
         )
+    try:
+        from expert_roles import is_monetize_experts_enabled, pick_monetize_kernel_subtask
+
+        if is_monetize_experts_enabled():
+            mon = pick_monetize_kernel_subtask(message)
+            if mon:
+                subs.insert(
+                    2,
+                    {
+                        **mon,
+                        "model_name": profile.planner_model,
+                        "prompt": mon["prompt"] + base_ctx,
+                    },
+                )
+    except Exception:
+        pass
     subs.append(
         {
             "kind": "expert_qa",
@@ -112,15 +128,20 @@ def kernel_synthesis_instructions() -> str:
 
 def execution_kernel_status() -> dict[str, Any]:
     try:
-        from expert_roles import is_super_agent_enabled
+        from expert_roles import get_expert_roles_manifest, is_super_agent_enabled
 
         super_on = is_super_agent_enabled()
+        manifest = get_expert_roles_manifest()
+        counts = manifest.get("counts") or {}
     except Exception:
         super_on = False
+        counts = {}
     return {
         "ok": True,
         "execution_kernel": is_execution_kernel_enabled(),
         "super_agent_eleven": super_on,
+        "monetize_27": counts.get("monetize_experts", 27),
+        "total_expert_roles": counts.get("total_roles", 39),
         "orchestration_mode": "execution_kernel" if is_execution_kernel_enabled() else "legacy",
         "first_seat": "#1 超级架构师·Pro",
         "max_llm_seats": 4,

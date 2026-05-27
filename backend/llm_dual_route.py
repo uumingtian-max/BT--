@@ -33,8 +33,12 @@ def _env(name: str, default: str = "") -> str:
 
 
 def _route_gpu() -> ResolvedEndpoint | None:
-    base = _env("GPU_OPENAI_BASE_URL")
-    model = _env("GPU_MODEL") or _env("BKLT_OMNI_MODEL") or _env("ORCH_VISION_MODEL")
+    base = (
+        _env("GPU_OPENAI_BASE_URL")
+        or _env("SGLANG_BASE_URL")
+        or "http://127.0.0.1:30000/v1"
+    )
+    model = _env("GPU_MODEL") or _env("LOCAL_GPU_MODEL") or _env("BKLT_OMNI_MODEL") or _env("ORCH_VISION_MODEL")
     if not base or not model:
         return None
     return ResolvedEndpoint(
