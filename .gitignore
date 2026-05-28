@@ -51,10 +51,6 @@ archive/_upgrade_staging/
 archive/_onyx_pack_desktop/
 archive/_onyx_pack_v1.1.0/
 
-# ── 本地虚拟环境（勿提交）────────────────────────────────────────────────────────
-.venv-f5/
-.venv/
-
 # ── Python ───────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
@@ -126,26 +122,17 @@ chrome_proxy.exe
 # Docker Scout demo clone (local only)
 scout-demo-service/
 
-# 下载中断残留
-**/*.partial
-**/*.part
+# ── 个人隐私文件 ────────────────────────────────────────────────────────────────
+backend/MEMORY.md
+backend/MEMORY_FULL.md
+backend/SOUL.md
+backend/USER.md
+backend/USER_PRIVATE.md
+backend/USER_PROFILE.json
+backend/consciousness.py
+backend/consciousness_routes.py
+backend/consciousness_log.jsonl
+backend/config.yaml
 
-# Local external tools / personal generated media（仅根目录克隆体，勿误伤 scripts/sadtalker/）
-/SadTalker/
-/SadTalker/checkpoints/
-/SadTalker/gfpgan/
-/SadTalker/results/
-archive/
-face.png
-photo.png
-depth.png
-frontend/public/digital-human/photo.png
-frontend/public/digital-human/depth.png
-frontend/public/digital-human/*.png
-frontend/public/digital-human/*.jpg
-frontend/public/digital-human/*.jpeg
-frontend/public/blacklight_3d.html
-backend/skill_candidates/
-backend/super_memory/
-backend/consciousness.db
-backend/consciousness.db-*
+# ── VRM模型（大文件）────────────────────────────────────────────────────────────
+frontend/public/models/

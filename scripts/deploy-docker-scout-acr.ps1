@@ -4,15 +4,8 @@ param(
     [string]$RegistryName = "bkltblacklight",
     [string]$EventGridTopicName = "docker-scout-repository-ACR-1-83b3",
     [string]$WebhookUrl = "https://api.dso.docker.com/webhook/658f1650-2b3f-4b83-8439-b0c7c721b68a",
-    [string]$AccessTokenName = "docker-scout-readonly-token-ACR-1-83b3",
-    [switch]$ConfirmExternalDeploy
+    [string]$AccessTokenName = "docker-scout-readonly-token-ACR-1-83b3"
 )
-
-if (-not $ConfirmExternalDeploy) {
-    Write-Host "BLOCKED: this script deploys Azure/EventGrid resources and prints an ACR token." -ForegroundColor Red
-    Write-Host "Run only after explicit user approval: .\scripts\deploy-docker-scout-acr.ps1 -ConfirmExternalDeploy" -ForegroundColor Yellow
-    exit 2
-}
 
 $az = "C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd"
 if (-not (Test-Path $az)) {

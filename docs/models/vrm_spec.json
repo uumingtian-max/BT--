@@ -1,0 +1,16 @@
+{
+  "asset": {
+    "version": "1.0",
+    "generator": "BT-Blacklight",
+    "copyright": "Private"
+  },
+  "extensions": {
+    "VRM": {
+      "meta": {
+        "title": "BT-Blacklight-Private",
+        "author": "Master",
+        "version": "2.0"
+      }
+    }
+  }
+}

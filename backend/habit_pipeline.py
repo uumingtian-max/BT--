@@ -319,20 +319,6 @@ def run_habit_check(*, phase: str = "manual", slot_key: str | None = None) -> di
         except Exception as e:
             logger.warning("habit webhook failed: %s", e)
 
-    voice_evolve: dict[str, Any] | None = None
-    try:
-        from voice_profile import maybe_evolve_from_habit
-
-        boss = os.environ.get("BKLT_BOSS_MODE", "1").strip().lower() not in (
-            "0",
-            "false",
-            "off",
-            "no",
-        )
-        voice_evolve = maybe_evolve_from_habit(summary=summary, boss_mode_hint=boss)
-    except Exception as e:
-        logger.debug("voice evolve skipped: %s", e)
-
     return {
         "ok": True,
         "phase": phase,
@@ -353,7 +339,6 @@ def run_habit_check(*, phase: str = "manual", slot_key: str | None = None) -> di
         "skill_quality": skill_q,
         "report_path": str(report_path),
         "evolve": evolve_result,
-        "voice_evolve": voice_evolve,
         "summary": summary,
     }
 

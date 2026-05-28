@@ -59,14 +59,14 @@ def get_backend_listen_port() -> int:
     return DEFAULT_BACKEND_PORT
 
 
-def _apply_dotenv_file(path: Path, *, overwrite_keys: frozenset[str] | None = None) -> None:
+def load_backend_dotenv() -> None:
+    path = Path(__file__).resolve().parent / ".env"
     if not path.is_file():
         return
     try:
         raw = path.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return
-    overwrite = overwrite_keys or frozenset()
     for line in raw.splitlines():
         s = line.strip()
         if not s or s.startswith("#"):
@@ -87,33 +87,7 @@ def _apply_dotenv_file(path: Path, *, overwrite_keys: frozenset[str] | None = No
             if v.isdigit():
                 os.environ[key] = v
             continue
-        if key in _DOTENV_OVERWRITE_KEYS or key in overwrite:
+        if key in _DOTENV_OVERWRITE_KEYS:
             os.environ[key] = val
         else:
             os.environ.setdefault(key, val)
-
-
-def load_user_secrets_dotenv() -> None:
-    """%USERPROFILE%\\.bt\\secrets.env — 仅填补未设置的密钥（不覆盖 backend/.env 已有值）。"""
-    path = Path.home() / ".bt" / "secrets.env"
-    _apply_dotenv_file(path)
-
-
-def load_backend_dotenv() -> None:
-    path = Path(__file__).resolve().parent / ".env"
-    _apply_dotenv_file(path)
-
-
-def apply_runtime_defaults() -> None:
-    """启动时注入执行内核 + 十一专家默认（可被 backend/.env 覆盖）。"""
-    try:
-        from execution_kernel import apply_execution_kernel_defaults
-
-        apply_execution_kernel_defaults()
-    except Exception:
-        try:
-            from expert_roles import apply_super_agent_defaults
-
-            apply_super_agent_defaults()
-        except Exception:
-            pass

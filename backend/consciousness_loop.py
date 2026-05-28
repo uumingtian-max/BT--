@@ -54,11 +54,31 @@ def init_consciousness_db() -> None:
 init_consciousness_db()
 
 
+_tick_running = False
+
+
+def tick_loop_running() -> bool:
+    return _tick_running or tick_enabled()
+
+
 def run_conscious_tick(*, phase: str = "manual") -> dict[str, Any]:
     """Run one local reflection pulse."""
     init_consciousness_db()
     signals = _collect_signals()
     summary = _build_summary(signals, phase=phase)
+    insight = ""
+    try:
+        insight = _run_tick_llm_insight_sync()
+        if insight:
+            summary = f"{summary} | 洞察: {insight[:120]}"
+    except Exception as exc:
+        signals.append(f"tick_llm_failed: {exc}")
+    try:
+        from super_memory import reflect_and_update
+
+        reflect_and_update()
+    except Exception as exc:
+        signals.append(f"reflect_failed: {exc}")
     proposed_skill_id = ""
 
     if _should_propose_skill(signals):
@@ -93,9 +113,41 @@ def run_conscious_tick(*, phase: str = "manual") -> dict[str, Any]:
         "ok": True,
         "phase": phase,
         "summary": summary,
+        "insight": insight,
         "signals": signals,
         "proposed_skill_id": proposed_skill_id,
     }
+
+
+def _run_tick_llm_insight_sync() -> str:
+    import asyncio
+
+    return asyncio.run(_tick_llm_insight_async())
+
+
+async def _tick_llm_insight_async() -> str:
+    from llm_dual_route import llm_quick_call
+    from memory_store import list_memories, store_memory
+
+    recent = list_memories(20)
+    if not recent:
+        return ""
+    blob = "; ".join(str(m.get("content", ""))[:80] for m in recent[:8])
+    insight = await llm_quick_call(
+        f"从这些记忆中找出一个模式或洞察，一句话：{blob[:500]}",
+        max_tokens=100,
+    )
+    insight = (insight or "").strip()
+    if insight and len(insight) > 4:
+        store_memory(f"[TICK洞察] {insight}", source_role="tick", force=True)
+    return insight
+
+
+def start_consciousness_loop(interval_seconds: int = 300) -> None:
+    """兼容任务单：与 background_consciousness_loop 并存，标记 TICK 常驻。"""
+    global _tick_running
+    _tick_running = True
+    print(f"[BT] 意识循环标记已启用（async 循环 interval={tick_interval_sec()}s）")
 
 
 def get_consciousness_status(limit: int = 12) -> dict[str, Any]:
@@ -140,6 +192,8 @@ def get_consciousness_status(limit: int = 12) -> dict[str, Any]:
 async def background_consciousness_loop() -> None:
     if not tick_enabled():
         return
+    global _tick_running
+    _tick_running = True
     await asyncio.sleep(max(10, int(os.environ.get("CONSCIOUS_TICK_STARTUP_DELAY_SEC", "45") or "45")))
     while True:
         try:

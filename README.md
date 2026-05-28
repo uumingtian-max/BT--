@@ -2,7 +2,7 @@
 
 **一个随时间成长的本地 AI Agent。每次对话、每次执行，都在让它更懂你。**
 
-[![CI](https://github.com/uumingtian-max/ai-agent-project/actions/workflows/ci.yml/badge.svg)](https://github.com/uumingtian-max/ai-agent-project/actions/workflows/ci.yml)
+[![CI](https://github.com/uumingtian-max/BT--/actions/workflows/ci.yml/badge.svg)](https://github.com/uumingtian-max/BT--/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)](https://python.org)
 [![Node](https://img.shields.io/badge/Node.js-18%2B-green?logo=node.js)](https://nodejs.org)
 [![Ollama](https://img.shields.io/badge/Ollama-ready-black?logo=ollama)](https://ollama.com)
@@ -19,7 +19,7 @@
 
 旧名 / 兼容名：BKLT 黑光、ONYX-OVERRIDE
 
-目录说明见 **[docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md)**；白龙马++ 方向见 **[docs/design/BAILONGMA_PLUS_3D_AGENT.md](docs/design/BAILONGMA_PLUS_3D_AGENT.md)**。Windows 一键启动见 **[`launcher/README.md`](launcher/README.md)**。AI 编程 Agent（Claude Code / Cursor）使用规范见 **[`CLAUDE.md`](./CLAUDE.md)**。
+目录说明见 **[docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md)**。Windows 一键启动见 **[`launcher/README.md`](launcher/README.md)**。AI 编程 Agent（Claude Code / Cursor）使用规范见 **[`CLAUDE.md`](./CLAUDE.md)**。
 
 ## 为什么选 BT（黑光）
 
@@ -105,8 +105,8 @@ npm run build --prefix frontend
 #### 命令行（跨平台）
 
 ```bash
-git clone https://github.com/uumingtian-max/ai-agent-project.git
-cd ai-agent-project
+git clone https://github.com/uumingtian-max/BT--.git
+cd BT--
 
 pip install -r requirements.txt
 npm install && npm install --prefix frontend
@@ -280,7 +280,7 @@ docker compose -f docs/deploy/docker-compose.yml down
 ## 目录结构
 
 ```text
-ai-agent-project/
+BT--/
 ├── backend/          FastAPI + Agent + 技能包
 ├── frontend/         React UI
 ├── electron/         桌面壳（splash.html、启动图标）

@@ -79,36 +79,7 @@ foreach ($n in $lnkNames) {
     }
 }
 
-# 桌面散落的 BT 文档/配置（不碰护照等私人文件）
-$btInbox = Join-Path $Workspace "BT-Desktop-Inbox"
-New-Item -ItemType Directory -Force -Path $btInbox | Out-Null
-foreach ($item in @(
-    "BT-AgentConsole-演示.jsx",
-    "BT-Agent对话全归档.txt",
-    "Cursor填这三项.txt",
-    "一键配置Cursor-Opus.bat"
-)) {
-    $from = Join-Path $Desktop $item
-    if (Test-Path $from) {
-        Move-Item -LiteralPath $from -Destination (Join-Path $btInbox $item) -Force
-    }
-}
-foreach ($n in @("黑光.lnk", "BT（黑光）.lnk", "打开 BT（黑光）.lnk")) {
-    $from = Join-Path $Desktop $n
-    if (Test-Path $from) {
-        $to = Join-Path $Shortcuts $n
-        if (-not (Test-Path $to)) { Move-Item -LiteralPath $from -Destination $to }
-        else { Remove-Item -LiteralPath $from -Force }
-    }
-}
-
-$btRoot = if (Test-Path (Join-Path $Projects "BT-Blacklight")) {
-    Join-Path $Projects "BT-Blacklight"
-} elseif (Test-Path (Join-Path $Desktop "ai-agent-project")) {
-    Join-Path $Desktop "ai-agent-project"
-} else {
-    Join-Path $Projects "BT-Blacklight"
-}
+$btRoot = Join-Path $Projects "BT-Blacklight"
 $icon = Join-Path $btRoot "electron\icon.ico"
 $startLnk = Join-Path $Shortcuts "Start-BT-Blacklight.lnk"
 if ((Test-Path $btRoot) -and -not (Test-Path $startLnk)) {

@@ -2,8 +2,6 @@
 import env_bootstrap
 
 env_bootstrap.load_backend_dotenv()
-env_bootstrap.load_user_secrets_dotenv()
-env_bootstrap.apply_runtime_defaults()
 env_bootstrap.configure_root_logging()
 _LISTEN_PORT = env_bootstrap.get_backend_listen_port()
 
@@ -18,7 +16,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from tts_routes import router as tts_router
 from a2a_bridge import router as a2a_router
 from agent import router as agent_router
 from automation_routes import router as automation_router
@@ -49,7 +46,7 @@ from agent_runtime import get_runtime, validate_llm_config
 from settings import get_settings, validate_startup_settings
 from screen_capture import init_screen_capture, shutdown_screen_capture
 from screen_routes import router as screen_router
-from skillhub_routes import router as skillhub_router
+from consciousness_routes import consciousness_router
 
 
 async def warmup_models() -> None:
@@ -107,6 +104,12 @@ async def lifespan(app: FastAPI):
     scheduler_task = asyncio.create_task(background_scheduler_loop())
     habit_task = asyncio.create_task(background_habit_loop())
     conscious_task = asyncio.create_task(background_consciousness_loop())
+    try:
+        from consciousness_loop import start_consciousness_loop
+
+        start_consciousness_loop(interval_seconds=300)
+    except Exception:
+        pass
     asyncio.create_task(warmup_models())
     yield
     # 关闭屏幕捕获
@@ -277,7 +280,6 @@ if request_log_enabled():
     app.add_middleware(RequestLogMiddleware)
 
 app.include_router(meta_router, prefix="/meta", tags=["meta"])
-app.include_router(skillhub_router, prefix="/meta", tags=["skillhub"])
 app.include_router(tool_registry_router, prefix="/meta", tags=["tools"])
 app.include_router(telegraf_router)
 app.include_router(notebook_router, prefix="/notebook", tags=["notebook"])
@@ -294,7 +296,7 @@ app.include_router(gateway_router, prefix="/gateway", tags=["gateway"])
 app.include_router(mcp_router, prefix="/mcp", tags=["mcp"])
 app.include_router(screen_router, prefix="/screen", tags=["screen"])
 app.include_router(local_agent_router)
-app.include_router(tts_router)
+app.include_router(consciousness_router)
 
 _static = Path(__file__).resolve().parent.parent / "static"
 _frontend_build = Path(__file__).resolve().parent.parent / "frontend" / "build"

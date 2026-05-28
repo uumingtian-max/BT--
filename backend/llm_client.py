@@ -13,14 +13,12 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 import threading
 from typing import Any, AsyncIterator
 
 import httpx
 
 from agent_runtime import get_runtime
-from http_proxy_env import httpx_proxy_url
 from ollama_pins import maybe_prepare_ollama_model, maybe_release_ollama_model, ollama_chat_body
 
 
@@ -44,23 +42,15 @@ def _make_limits() -> httpx.Limits:
     )
 
 
-def _httpx_client_kwargs() -> dict[str, Any]:
-    kw: dict[str, Any] = {
-        "limits": _make_limits(),
-        "timeout": httpx.Timeout(connect=60.0, read=None, write=60.0, pool=5.0),
-    }
-    proxy = httpx_proxy_url()
-    if proxy:
-        kw["proxy"] = proxy
-    return kw
-
-
 async def _get_async_client() -> httpx.AsyncClient:
     """返回共享 AsyncClient，按需创建（异步安全）。"""
     global _async_client
     async with _async_client_lock:
         if _async_client is None or _async_client.is_closed:
-            _async_client = httpx.AsyncClient(**_httpx_client_kwargs())
+            _async_client = httpx.AsyncClient(
+                limits=_make_limits(),
+                timeout=httpx.Timeout(connect=60.0, read=None, write=60.0, pool=5.0),
+            )
     return _async_client
 
 
@@ -69,7 +59,10 @@ def _get_sync_client() -> httpx.Client:
     global _sync_client
     with _sync_client_lock:
         if _sync_client is None or _sync_client.is_closed:
-            _sync_client = httpx.Client(**_httpx_client_kwargs())
+            _sync_client = httpx.Client(
+                limits=_make_limits(),
+                timeout=httpx.Timeout(connect=60.0, read=None, write=60.0, pool=5.0),
+            )
     return _sync_client
 
 
@@ -157,131 +150,21 @@ def _openai_chat_url_headers_body(
     *,
     temperature: float,
     stream: bool,
-    attachments: list[dict[str, Any]] | None = None,
 ) -> tuple[str, dict[str, str], dict[str, Any]]:
-    from llm_dual_route import dual_engine_enabled, resolve_openai_endpoint
-
-    if dual_engine_enabled() or (
-        os.environ.get("GPU_OPENAI_BASE_URL", "").strip()
-        and os.environ.get("API_OPENAI_BASE_URL", "").strip()
-    ):
-        ep = resolve_openai_endpoint(messages, model, attachments=attachments)
-        base = ep.base_url.rstrip("/")
-        if not base:
-            raise RuntimeError("未解析到 OpenAI 兼容网关（检查 GPU_/API_OPENAI_BASE_URL）")
-        url = (base if base.endswith("/v1") else f"{base}/v1") + "/chat/completions"
-        headers: dict[str, str] = {"Content-Type": "application/json"}
-        if ep.api_key:
-            headers["Authorization"] = f"Bearer {ep.api_key}"
-        body = {
-            "model": ep.model or model,
-            "messages": _openai_messages(messages),
-            "temperature": temperature,
-            "stream": stream,
-        }
-        return url, headers, body
-
     base = rt.openai_base_url.rstrip("/")
     if not base:
-        raise RuntimeError("LLM_BACKEND=openai_compatible 但未设置 OPENAI_BASE_URL（例如 http://127.0.0.1:8001/v1）")
-    url = (base if base.endswith("/v1") else f"{base}/v1") + "/chat/completions"
-    headers = {"Content-Type": "application/json"}
+        raise RuntimeError("LLM_BACKEND=openai_compatible 但未设置 OPENAI_BASE_URL（例如 http://127.0.0.1:8000/v1）")
+    url = base + "/chat/completions"
+    headers: dict[str, str] = {"Content-Type": "application/json"}
     if rt.openai_api_key:
         headers["Authorization"] = f"Bearer {rt.openai_api_key}"
-    body = {
+    body: dict[str, Any] = {
         "model": model,
         "messages": _openai_messages(messages),
         "temperature": temperature,
         "stream": stream,
     }
     return url, headers, body
-
-
-def _endpoint_to_openai_request(
-    ep: Any,
-    messages: list[dict[str, Any]],
-    model: str,
-    *,
-    temperature: float,
-    stream: bool,
-) -> tuple[str, dict[str, str], dict[str, Any]]:
-    base = ep.base_url.rstrip("/")
-    url = (base if base.endswith("/v1") else f"{base}/v1") + "/chat/completions"
-    headers: dict[str, str] = {"Content-Type": "application/json"}
-    if ep.api_key:
-        headers["Authorization"] = f"Bearer {ep.api_key}"
-    body: dict[str, Any] = {
-        "model": ep.model or model,
-        "messages": _openai_messages(messages),
-        "temperature": temperature,
-        "stream": stream,
-    }
-    return url, headers, body
-
-
-def _openai_chat_complete_sync(
-    rt: Any,
-    messages: list[dict[str, Any]],
-    model: str,
-    *,
-    temperature: float = 0.1,
-    http_timeout_sec: float | None = None,
-) -> str:
-    timeout_val = float(http_timeout_sec if http_timeout_sec is not None else rt.ollama_timeout_sec)
-    url, headers, body = _openai_chat_url_headers_body(
-        rt, messages, model, temperature=temperature, stream=False
-    )
-    client = _get_sync_client()
-    resp = client.post(url, headers=headers, json=body, timeout=timeout_val)
-    if resp.status_code in (401, 403):
-        alt = _openai_gpu_fallback_request(messages, model, temperature=temperature, stream=False)
-        if alt:
-            url, headers, body = alt
-            resp = client.post(url, headers=headers, json=body, timeout=timeout_val)
-    resp.raise_for_status()
-    return _openai_non_stream_content(resp.json())
-
-
-async def _openai_chat_complete_async(
-    rt: Any,
-    messages: list[dict[str, Any]],
-    model: str,
-    *,
-    temperature: float = 0.1,
-    timeout: float,
-) -> str:
-    url, headers, body = _openai_chat_url_headers_body(
-        rt, messages, model, temperature=temperature, stream=False
-    )
-    client = await _get_async_client()
-    resp = await client.post(url, headers=headers, json=body, timeout=timeout)
-    if resp.status_code in (401, 403):
-        alt = _openai_gpu_fallback_request(messages, model, temperature=temperature, stream=False)
-        if alt:
-            url, headers, body = alt
-            resp = await client.post(url, headers=headers, json=body, timeout=timeout)
-    resp.raise_for_status()
-    return _openai_non_stream_content(resp.json())
-
-
-def _openai_gpu_fallback_request(
-    messages: list[dict[str, Any]],
-    model: str,
-    *,
-    temperature: float,
-    stream: bool,
-) -> tuple[str, dict[str, str], dict[str, Any]] | None:
-    """API 因 IP/鉴权失败时，文字任务自动改走本地 GPU。"""
-    from llm_dual_route import _messages_need_gpu, _route_gpu, dual_engine_enabled
-
-    if not dual_engine_enabled() or _messages_need_gpu(messages):
-        return None
-    gpu = _route_gpu()
-    if not gpu:
-        return None
-    return _endpoint_to_openai_request(
-        gpu, messages, model, temperature=temperature, stream=stream
-    )
 
 
 def _openai_non_stream_content(data: dict[str, Any]) -> str:
@@ -310,9 +193,11 @@ def chat_complete_sync(
         timeout_val = min(timeout_val, max(5.0, float(http_timeout_sec)))
 
     if rt.llm_backend == "openai_compatible":
-        return _openai_chat_complete_sync(
-            rt, messages, model, temperature=temperature, http_timeout_sec=timeout_val
-        )
+        url, headers, body = _openai_chat_url_headers_body(rt, messages, model, temperature=temperature, stream=False)
+        client = _get_sync_client()
+        resp = client.post(url, headers=headers, json=body, timeout=timeout_val)
+        resp.raise_for_status()
+        return _openai_non_stream_content(resp.json())
 
     url = rt.ollama_chat_url()
     maybe_prepare_ollama_model(model)
@@ -350,9 +235,11 @@ async def chat_complete_async(
     timeout = rt.ollama_timeout_sec
 
     if rt.llm_backend == "openai_compatible":
-        return await _openai_chat_complete_async(
-            rt, messages, model, temperature=temperature, timeout=float(timeout)
-        )
+        url, headers, body = _openai_chat_url_headers_body(rt, messages, model, temperature=temperature, stream=False)
+        client = await _get_async_client()
+        resp = await client.post(url, headers=headers, json=body, timeout=float(timeout))
+        resp.raise_for_status()
+        return _openai_non_stream_content(resp.json())
 
     url = rt.ollama_chat_url()
     maybe_prepare_ollama_model(model)

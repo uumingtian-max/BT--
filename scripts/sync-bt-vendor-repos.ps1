@@ -1,14 +1,7 @@
 # Sync curated vendor repos for BT (reference only). Run from repo root.
 param(
-    [switch]$All,
-    [switch]$ConfirmNetworkSync
+    [switch]$All
 )
-
-if (-not $ConfirmNetworkSync) {
-    Write-Host "BLOCKED: this script clones/pulls external vendor repositories." -ForegroundColor Red
-    Write-Host "Run only after explicit user approval: .\scripts\sync-bt-vendor-repos.ps1 -ConfirmNetworkSync" -ForegroundColor Yellow
-    exit 2
-}
 
 $root = Split-Path -Parent $PSScriptRoot
 $manifestPath = Join-Path $root "vendor\repos.manifest.json"

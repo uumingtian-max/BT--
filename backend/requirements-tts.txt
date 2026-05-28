@@ -3,9 +3,6 @@
 # 或运行 launcher/INSTALL_F5_TTS.bat
 # 配置见 backend/.env.example 第 7 节（F5_TTS_*、REAL_TTS_URL）
 
-# 支付宝灵光 / Edge 神经语音（POST /edge_tts）
-edge-tts>=6.1.0
-
 f5-tts>=1.0.0
 torch>=2.0.0
 torchaudio>=2.0.0
