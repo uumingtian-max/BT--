@@ -22,7 +22,7 @@ _logger = logging.getLogger(__name__)
 # ─────────────────────────── 配置 ───────────────────────────
 SGLANG_BASE = os.environ.get("SGLANG_BASE_URL", "http://127.0.0.1:8001/v1")
 API_BASE     = os.environ.get("OPENAI_BASE_URL", "http://127.0.0.1:8001/v1")
-API_KEY=os.env...Y", "sk-local")
+API_KEY      = os.environ.get("OPENAI_API_KEY", "sk-local")
 
 # 超过此字符数才尝试摘要（避免小文本浪费推理资源）
 SUMMARY_THRESHOLD = 3000
