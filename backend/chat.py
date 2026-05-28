@@ -27,6 +27,8 @@ from memory_store import (
 
 from skill_pack import build_skill_pack_context
 
+from agent_prompts import get_system_prompt, detect_emotion, load_recent_tasks, load_habit_notes, load_file_memories
+
 router = APIRouter()
 # 会话与偏好单独使用 chat.db，避免与 memory.db（长期记忆）混在同一文件
 DB_PATH = os.path.join(os.path.dirname(__file__), "chat.db")
@@ -258,7 +260,19 @@ async def chat(req: ChatRequest):
         should_nudge_agent_mode,
     )
 
-    guard = (
+    _emotion = detect_emotion(user_text)
+
+    _recent_tasks = load_recent_tasks()
+
+    _habit_notes = load_habit_notes()
+
+    _file_memories = load_file_memories()
+
+    _private_mode = "黑光深度" in user_text
+
+    _enhanced_prefix = get_system_prompt(user_text, _private_mode)
+
+        guard = (
         f"你是 {_agent_name}，{_user_name} 本机 AI 工作台（BT/黑光）里的助手，不是泛用客服机器人。 "
         f"称呼用户为 {_user_name}。默认简体中文。\n"
         + (_model_desc + "\n" if _model_desc else "")
@@ -271,7 +285,7 @@ async def chat(req: ChatRequest):
         "回答要短：先结论，再依据（引用实测字段），不要长篇选项列表。\n"
         "配置 LLM：backend/.env，改后重启后端。"
     )
-    blocks: list[str] = [guard.strip()]
+    blocks: list[str] = [_enhanced_prefix, guard.strip()]
     blocks.append(
         "【会话上下文】紧随本段之后的 user/assistant 消息按时间从早到晚排列；"
         "请据此理解「刚才」「上面」「之前说的」等指代。最后一条 user 是用户当前输入。"
@@ -462,3 +476,5 @@ def get_memory_tree():
 @router.post("/memories/vault/export")
 def export_memory_vault_now():
     return export_memory_vault()
+
+
