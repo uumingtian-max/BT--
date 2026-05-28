@@ -19,3 +19,9 @@ ignore = ["E501"]
 "backend/tests/conftest.py" = ["E402"]
 "backend/tests/test_agent_run_events.py" = ["E402"]
 "backend/tests/test_automation_runner.py" = ["E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests", "tests"]
+asyncio_mode = "auto"
+timeout = 60
+addopts = ["-v", "--tb=short"]
