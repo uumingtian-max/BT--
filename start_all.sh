@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "====================================="
-echo "BT-Blacklight（黑光）启动"
+echo "ai-agent-project（黑光）启动"
 echo "====================================="
 echo "1. SGLang..."
 cd ./sglang && ./start_sglang_30B.sh &
