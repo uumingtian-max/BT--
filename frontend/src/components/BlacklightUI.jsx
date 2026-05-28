@@ -64,7 +64,7 @@ export function BlacklightOverlay({ mode, onStateChange, onEmotionChange, apiUrl
     setListening(true)
   }
 
-  const send
+  const send = () => {
     if (!input.trim()) return
     const msg = input.trim()
     window.dispatchEvent(new CustomEvent('bt-blacklight-cmd', { detail: msg }))
