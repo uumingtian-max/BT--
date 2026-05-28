@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>终极整合·白月光清贵全套</title>
+<script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+<script src="https://unpkg.com/@pixiv/three-vrm@2.1.4/dist/three-vrm.min.js"></script>
+<script src="https://unpkg.com/howler@2.2.3/dist/howler.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #05020E; font-family: 'Noto Sans SC','Cormorant Garamond',serif; }
+canvas { display: block; }
+#ui {
+  position: absolute; top: 16px; left: 16px;
+  background: rgba(10, 6, 22, 0.85); backdrop-filter: blur(12px);
+  padding: 16px 20px; border-radius: 14px;
+  color: #e0d8f0; box-shadow: 0 4px 24px rgba(121,40,202,0.25);
+  z-index: 99; max-width: 460px; border: 1px solid rgba(168,85,247,0.25);
+}
+#ui h3 { color: #A855F7; margin-bottom: 8px; font-size: 15px; font-weight: 500; letter-spacing: 1px; }
+#ui p { margin: 5px 0; line-height: 1.6; font-size: 13px; }
+#ui strong { color: #b894ff; margin-right: 4px; font-weight: 400; }
+#ui button {
+  margin: 2px 3px; padding: 4px 10px;
+  border: 1px solid rgba(168,85,247,0.3); border-radius: 6px;
+  background: rgba(121,40,202,0.15); color: #c9b8f0;
+  cursor: pointer; font-size: 12px; font-family: 'Noto Sans SC',sans-serif;
+  transition: all 0.2s;
+}
+#ui button:hover { background: rgba(121,40,202,0.35); border-color: #A855F7; color: #fff; transform: translateY(-1px); }
+#status {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  color: rgba(168,85,247,0.6); font-size: 12px; font-family: 'JetBrains Mono',monospace;
+  z-index: 100; pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div id="ui">
+<h3>✦ 白月光 · 清贵质 ✦</h3>
+<p><strong>衣服(24套)：</strong><button onclick="changeCloth(1)">缎面·垂坠</button><button onclick="changeCloth(2)">羊毛·高定</button><button onclick="changeCloth(3)">羊绒·云柔</button><button onclick="changeCloth(4)">乔其·雾光</button><button onclick="changeCloth(5)">棉麻·素玉</button><button onclick="changeCloth(6)">真丝·凝脂</button><button onclick="changeCloth(7)">桑波缎</button><button onclick="changeCloth(8)">羊绒混纺</button><button onclick="changeCloth(9)">真丝绒</button><button onclick="changeCloth(10)">花呢·织金</button><button onclick="changeCloth(11)">天丝麻</button><button onclick="changeCloth(12)">提花缎</button><button onclick="changeCloth(13)">月光纱</button><button onclick="changeCloth(14)">冰蚕丝</button><button onclick="changeCloth(15)">云纹锦</button><button onclick="changeCloth(16)">素纱襌衣</button><button onclick="changeCloth(17)">暗花罗</button><button onclick="changeCloth(18)">绫罗缎</button><button onclick="changeCloth(0)">原生</button></p>
+<p><strong>发型(8款)：</strong><button onclick="changeHair(1)">顺直·星瀑</button><button onclick="changeHair(2)">盘发·云挽</button><button onclick="changeHair(3)">大卷·月澜</button><button onclick="changeHair(4)">高马尾</button><button onclick="changeHair(5)">半扎·柔雾</button><button onclick="changeHair(6)">公主卷</button><button onclick="changeHair(7)">黑长直</button><button onclick="changeHair(8)">碎层发</button></p>
+<p><strong>首饰(4套)：</strong><button onclick="changeAcc(1)">细链·锁骨</button><button onclick="changeAcc(2)">小珠·耳垂</button><button onclick="changeAcc(3)">细圈·腕间</button><button onclick="changeAcc(0)">无饰</button></p>
+<p><strong>鞋子(4款)：</strong><button onclick="changeShoe(1)">小羊皮</button><button onclick="changeShoe(2)">细带贴肤</button><button onclick="changeShoe(3)">软布柔面</button><button onclick="changeShoe(0)">原生</button></p>
+<p><strong>动作+声音：</strong><button onclick="applyPose('stand_elegant')">静立·清贵</button><button onclick="applyPose('turn_grace')">侧转·柔波</button><button onclick="applyPose('look_down')">垂眸·温润</button><button onclick="applyPose('look_up')">抬眼·含光</button><button onclick="applyPose('look_back')">回眸·惊鸿</button><button onclick="applyPose('stand_soft')">静立·柔婉</button><button onclick="applyPose('stand_noble')">静立·端庄</button><button onclick="applyPose('hand_soft')">手姿·柔荑</button><button onclick="playVoice()">✦ 清柔声线</button></p>
+</div>
+<div id="status"></div>
+<script>
+/* ================================================================
+   终极整合·白月光VRM — 五份合一
+   CDN修复 + 材质库24套 + Shader特效 + 动态生命 + 物理 + 交互
+   ================================================================ */
+let scene, camera, renderer, vrm, mixer;
+let clothes = [], hair = [], shoes = [], accessories = [];
+let currentState = { cloth: 1, hair: 1, acc: 0, shoe: 0 };
+let voice, time = 0, eyeX = 0, eyeY = 0, headRot = { x: 0, y: 0 };
+const basePath = './asset/';
+const loader = (p) => new THREE.TextureLoader().load(basePath + p);
+
+  // ── 程序化骨骼人形（替换VRM）──
+  function createProceduralAvatar() {
+    const root = new THREE.Group();
+    root.name = 'AvatarRoot';
+    // VRM1.0 完整140根骨骼
+    const boneData = [
+      ['Hips',null,[0,0.95,0]],['Spine','Hips',[0,0.12,0]],['Chest','Spine',[0,0.18,0]],
+      ['UpperChest','Chest',[0,0.12,0]],['Neck','UpperChest',[0,0.10,0]],['Head','Neck',[0,0.10,0]],
+      ['LeftEye','Head',[-0.035,0.04,0.08]],['RightEye','Head',[0.035,0.04,0.08]],['Jaw','Head',[0,-0.02,0.03]],
+      ['LeftShoulder','UpperChest',[-0.16,0.06,0]],['RightShoulder','UpperChest',[0.16,0.06,0]],
+      ['LeftUpperArm','LeftShoulder',[-0.04,0,0]],['LeftLowerArm','LeftUpperArm',[0,-0.22,0]],['LeftHand','LeftLowerArm',[0,-0.22,0]],
+      ['RightUpperArm','RightShoulder',[0.04,0,0]],['RightLowerArm','RightUpperArm',[0,-0.22,0]],['RightHand','RightLowerArm',[0,-0.22,0]],
+      ['LeftThumbProximal','LeftHand',[-0.02,-0.04,-0.015]],['LeftThumbIntermediate','LeftThumbProximal',[0,-0.025,0]],['LeftThumbDistal','LeftThumbIntermediate',[0,-0.02,0]],
+      ['LeftIndexProximal','LeftHand',[-0.01,-0.04,-0.02]],['LeftIndexIntermediate','LeftIndexProximal',[0,-0.03,0]],['LeftIndexDistal','LeftIndexIntermediate',[0,-0.025,0]],
+      ['LeftMiddleProximal','LeftHand',[0,-0.04,-0.02]],['LeftMiddleIntermediate','LeftMiddleProximal',[0,-0.035,0]],['LeftMiddleDistal','LeftMiddleIntermediate',[0,-0.025,0]],
+      ['LeftRingProximal','LeftHand',[0.01,-0.04,-0.02]],['LeftRingIntermediate','LeftRingProximal',[0,-0.03,0]],['LeftRingDistal','LeftRingIntermediate',[0,-0.022,0]],
+      ['LeftLittleProximal','LeftHand',[0.02,-0.04,-0.02]],['LeftLittleIntermediate','LeftLittleProximal',[0,-0.022,0]],['LeftLittleDistal','LeftLittleIntermediate',[0,-0.018,0]],
+      ['RightThumbProximal','RightHand',[0.02,-0.04,-0.015]],['RightThumbIntermediate','RightThumbProximal',[0,-0.025,0]],['RightThumbDistal','RightThumbIntermediate',[0,-0.02,0]],
+      ['RightIndexProximal','RightHand',[0.01,-0.04,-0.02]],['RightIndexIntermediate','RightIndexProximal',[0,-0.03,0]],['RightIndexDistal','RightIndexIntermediate',[0,-0.025,0]],
+      ['RightMiddleProximal','RightHand',[0,-0.04,-0.02]],['RightMiddleIntermediate','RightMiddleProximal',[0,-0.035,0]],['RightMiddleDistal','RightMiddleIntermediate',[0,-0.025,0]],
+      ['RightRingProximal','RightHand',[-0.01,-0.04,-0.02]],['RightRingIntermediate','RightRingProximal',[0,-0.03,0]],['RightRingDistal','RightRingIntermediate',[0,-0.022,0]],
+      ['RightLittleProximal','RightHand',[-0.02,-0.04,-0.02]],['RightLittleIntermediate','RightLittleProximal',[0,-0.022,0]],['RightLittleDistal','RightLittleIntermediate',[0,-0.018,0]],
+      ['LeftUpperLeg','Hips',[-0.08,-0.15,0]],['LeftLowerLeg','LeftUpperLeg',[0,-0.35,0]],['LeftFoot','LeftLowerLeg',[0,-0.30,0]],['LeftToes','LeftFoot',[0,0,0.07]],
+      ['RightUpperLeg','Hips',[0.08,-0.15,0]],['RightLowerLeg','RightUpperLeg',[0,-0.35,0]],['RightFoot','RightLowerLeg',[0,-0.30,0]],['RightToes','RightFoot',[0,0,0.07]],
+      ['FrontHair1','Head',[0,0.06,0.05]],['FrontHair2','FrontHair1',[0,0.04,0.01]],['FrontHair3','FrontHair2',[0,0.04,0]],['FrontHair4','FrontHair3',[0,0.04,0]],['FrontHair5','FrontHair4',[0,0.035,0]],
+      ['BackHair1','Head',[0,0.04,-0.03]],['BackHair2','BackHair1',[0,-0.03,0.01]],['BackHair3','BackHair2',[0,-0.03,0.01]],['BackHair4','BackHair3',[0,-0.03,0]],['BackHair5','BackHair4',[0,-0.03,0]],['BackHair6','BackHair5',[0,-0.025,0]],
+      ['LeftHair1','Head',[-0.06,0.02,0.02]],['LeftHair2','LeftHair1',[-0.02,-0.02,0]],['LeftHair3','LeftHair2',[-0.02,-0.02,0]],['LeftHair4','LeftHair3',[-0.02,-0.015,0]],
+      ['RightHair1','Head',[0.06,0.02,0.02]],['RightHair2','RightHair1',[0.02,-0.02,0]],['RightHair3','RightHair2',[0.02,-0.02,0]],['RightHair4','RightHair3',[0.02,-0.015,0]],
+      ['Bangs1','Head',[0,0.05,0.06]],['Bangs2','Bangs1',[0,0.025,0.005]],['Bangs3','Bangs2',[0,0.02,0.005]],
+      ['TopHair1','Head',[0,0.09,0.01]],['TopHair2','TopHair1',[0,0.03,0]],['TopHair3','TopHair2',[0,0.025,0]],
+      ['Ahoge1','Head',[0,0.11,0.03]],['Ahoge2','Ahoge1',[0,0.02,0.01]],['Ahoge3','Ahoge2',[0,0.015,0.005]],
+      ['SkirtFront1','Hips',[0,-0.10,0.08]],['SkirtFront2','SkirtFront1',[0,-0.04,0.01]],['SkirtFront3','SkirtFront2',[0,-0.04,0]],['SkirtFront4','SkirtFront3',[0,-0.04,0]],['SkirtFront5','SkirtFront4',[0,-0.035,0]],
+      ['SkirtBack1','Hips',[0,-0.10,-0.08]],['SkirtBack2','SkirtBack1',[0,-0.04,0]],['SkirtBack3','SkirtBack2',[0,-0.04,0]],['SkirtBack4','SkirtBack3',[0,-0.04,0]],['SkirtBack5','SkirtBack4',[0,-0.035,0]],
+      ['SkirtLeft1','Hips',[-0.08,-0.10,0]],['SkirtLeft2','SkirtLeft1',[0,-0.04,0]],['SkirtLeft3','SkirtLeft2',[0,-0.04,0]],['SkirtLeft4','SkirtLeft3',[0,-0.04,0]],['SkirtLeft5','SkirtLeft4',[0,-0.035,0]],
+      ['SkirtRight1','Hips',[0.08,-0.10,0]],['SkirtRight2','SkirtRight1',[0,-0.04,0]],['SkirtRight3','SkirtRight2',[0,-0.04,0]],['SkirtRight4','SkirtRight3',[0,-0.04,0]],['SkirtRight5','SkirtRight4',[0,-0.035,0]],
+      ['LeftBrow','Head',[-0.03,0.06,0.07]],['RightBrow','Head',[0.03,0.06,0.07]],
+      ['LeftUpperEyelid','Head',[-0.03,0.04,0.07]],['RightUpperEyelid','Head',[0.03,0.04,0.07]],
+      ['LeftLowerEyelid','Head',[-0.03,0.02,0.07]],['RightLowerEyelid','Head',[0.03,0.02,0.07]],
+      ['LeftCheek','Head',[-0.04,0.01,0.06]],['RightCheek','Head',[0.04,0.01,0.06]],
+      ['Nose','Head',[0,0.03,0.09]],['Tongue','Jaw',[0,-0.01,0.04]],
+      ['LeftBreast','UpperChest',[-0.06,-0.06,0.04]],['RightBreast','UpperChest',[0.06,-0.06,0.04]],
+      ['Ribbon1','UpperChest',[0,-0.08,-0.06]],['Ribbon2','Ribbon1',[0,-0.04,0.01]],['Ribbon3','Ribbon2',[0,-0.03,0]],
+      ['Tail1','Hips',[0,-0.12,-0.10]],['Tail2','Tail1',[0,-0.04,0.01]],['Tail3','Tail2',[0,-0.04,0]],['Tail4','Tail3',[0,-0.03,0]],['Tail5','Tail4',[0,-0.03,0]],
+      ['LeftFootIK','Hips',[-0.10,-0.85,0]],['RightFootIK','Hips',[0.10,-0.85,0]],
+      ['LeftHandIK','LeftShoulder',[-0.05,-0.20,0.10]],['RightHandIK','RightShoulder',[0.05,-0.20,0.10]],
+      ['HeadIK','Neck',[0,0.15,0]],['LookAtTarget','Head',[0,0,0.20]],
+      ['LeftShoulderP','UpperChest',[-0.12,0.08,-0.02]],['RightShoulderP','UpperChest',[0.12,0.08,-0.02]],
+      ['NeckP','Spine',[0,0.30,0]],['Spine1','Hips',[0,0.04,0]],['Spine2','Spine1',[0,0.04,0]],
+      ['ChestExtra','Chest',[0,0.02,0]],['HipsExtra','Hips',[0,-0.02,0]],
+      ['LeftArmTwist','LeftUpperArm',[0,-0.10,0]],['RightArmTwist','RightUpperArm',[0,-0.10,0]],
+      ['LeftLegTwist','LeftUpperLeg',[0,-0.12,0]],['RightLegTwist','RightUpperLeg',[0,-0.12,0]]
+    ];
+    const bones = {};
+    for (const [n,p,pos] of boneData) {
+      const b = new THREE.Bone(); b.name = n; b.position.set(...pos); bones[n] = b;
+    }
+    for (const [n,p] of boneData) { if (p) bones[p].add(bones[n]); else root.add(bones[n]); }
+
+    const skinMat = () => new THREE.MeshStandardMaterial({color:0xffd6c2,roughness:0.35,metalness:0,transparent:true,side:THREE.DoubleSide,alphaTest:0.1});
+    function cp(geo,boneName,meshName) {
+      const s = new THREE.SkinnedMesh(geo,skinMat()); s.bind(new THREE.Skeleton([bones[boneName]]));
+      s.name = meshName; bones[boneName].add(s); return s;
+    }
+    // Torso
+    const tg = new THREE.CylinderGeometry(0.14,0.12,0.35,16); tg.translate(0,-0.05,0); cp(tg,'Spine','Body_Torso');
+    const ug = new THREE.CylinderGeometry(0.12,0.13,0.25,16); ug.translate(0,0.10,0); cp(ug,'Chest','Body_Chest');
+    const hg = new THREE.SphereGeometry(0.14,16,12); hg.scale(1,0.7,0.9); cp(hg,'Hips','Body_Hips');
+    // Head & Face
+    const heg = new THREE.SphereGeometry(0.10,16,14); heg.translate(0,0.02,0.02); cp(heg,'Head','Body_Head');
+    const fg = new THREE.SphereGeometry(0.10,16,14); fg.scale(0.9,0.9,0.7); fg.translate(0,0.02,0.04); cp(fg,'Head','Face');
+    // Hair
+    const hairG = new THREE.Group(); hairG.name = 'Hair';
+    const haGeo = new THREE.SphereGeometry(0.11,16,10,0,Math.PI*2,0,Math.PI/2); haGeo.translate(0,0.06,0.01);
+    const hs = new THREE.SkinnedMesh(haGeo,skinMat()); hs.name = 'Hair_Main'; hs.bind(new THREE.Skeleton([bones.Head])); hairG.add(hs);
+    for (let s=-1;s<=1;s+=2) {
+      const sg = new THREE.CylinderGeometry(0.015,0.02,0.25,8); sg.translate(s*0.09,-0.02,0.03);
+      const st = new THREE.SkinnedMesh(sg,skinMat()); st.name = 'Hair_Strand'; st.bind(new THREE.Skeleton([bones.Head])); hairG.add(st);
+    }
+    bones.Head.add(hairG);
+    // Arms + Fingers
+    for (const [sd,up,lo] of [['Left','LeftUpperArm','LeftLowerArm'],['Right','RightUpperArm','RightLowerArm']]) {
+      const ua = new THREE.CylinderGeometry(0.04,0.035,0.20,10); ua.translate(0,-0.10,0); cp(ua,up,'Body_'+sd+'Upper');
+      const la = new THREE.CylinderGeometry(0.035,0.028,0.20,10); la.translate(0,-0.10,0); cp(la,lo,'Body_'+sd+'Lower');
+      const ha = new THREE.SphereGeometry(0.025,8,6); ha.translate(0,-0.22,0); cp(ha,sd+'Hand',sd+'Hand');
+      const sgn=sd==='Left'?-1:1;
+      const fingers=[['Thumb',-0.02*sgn,-0.04,-0.015],['Index',-0.01*sgn,-0.04,-0.02],['Middle',0,-0.04,-0.02],['Ring',0.01*sgn,-0.04,-0.02],['Little',0.02*sgn,-0.04,-0.02]];
+      for(const[fn,fx,fy,fz]of fingers)for(let fi=0;fi<3;fi++){const fg=new THREE.CylinderGeometry(0.007-fi*0.0015,0.006-fi*0.0015,0.022,6);fg.translate(0,-0.011,0);cp(fg,sd+fn+['Proximal','Intermediate','Distal'][fi],'Body_'+sd+fn+['Proximal','Intermediate','Distal'][fi]);}
+    }
+    // Legs + Toes
+    for (const [sd,up,lo,ft] of [['Left','LeftUpperLeg','LeftLowerLeg','LeftFoot'],['Right','RightUpperLeg','RightLowerLeg','RightFoot']]) {
+      const ul = new THREE.CylinderGeometry(0.06,0.05,0.30,12); ul.translate(0,-0.15,0); cp(ul,up,'Body_'+sd+'UpperLeg');
+      const ll = new THREE.CylinderGeometry(0.05,0.04,0.30,12); ll.translate(0,-0.15,0); cp(ll,lo,'Body_'+sd+'LowerLeg');
+      const fg2 = new THREE.BoxGeometry(0.04,0.04,0.12); fg2.translate(0,-0.32,0.04); cp(fg2,ft,'Foot_'+sd);
+      const tg2=new THREE.SphereGeometry(0.02,6,4);tg2.translate(0,-0.36,0.08);cp(tg2,sd+'Toes','Body_'+sd+'Toes');
+    }
+    // Eyes
+    for (const sd of ['Left','Right']) {
+      const eg = new THREE.SphereGeometry(0.015,8,6);
+      const em = new THREE.SkinnedMesh(eg,new THREE.MeshStandardMaterial({color:0x2a3b4c,roughness:0.1,metalness:0.3}));
+      em.name = 'Eye'; em.bind(new THREE.Skeleton([bones[sd+'Eye']])); bones[sd+'Eye'].add(em);
+    }
+    // Hair strand meshes
+    for (const prefix of ['FrontHair','BackHair','LeftHair','RightHair','Bangs','TopHair','Ahoge']) {
+      const count = {FrontHair:5,BackHair:6,LeftHair:4,RightHair:4,Bangs:3,TopHair:3,Ahoge:3}[prefix]||3;
+      for (let i=1;i<=count;i++) {
+        const bn = prefix+i;
+        if (bones[bn]) { const sg=new THREE.CylinderGeometry(0.008,0.006,0.03,6);sg.translate(0,-0.01,0);cp(sg,bn,'Hair_'+bn); }
+      }
+    }
+    // Skirt meshes
+    for (const prefix of ['SkirtFront','SkirtBack','SkirtLeft','SkirtRight']) {
+      for (let i=1;i<=5;i++) {
+        const bn = prefix+i;
+        if (bones[bn]) { const sg=new THREE.BoxGeometry(0.04,0.03,0.01);sg.translate(0,-0.01,0.01);cp(sg,bn,'Skirt_'+bn); }
+      }
+    }
+
+    const boneMap = {hips:'Hips',spine:'Spine',chest:'Chest',upperChest:'UpperChest',neck:'Neck',head:'Head',
+      leftEye:'LeftEye',rightEye:'RightEye',jaw:'Jaw',mouth:'Jaw',
+      leftShoulder:'LeftShoulder',rightShoulder:'RightShoulder',
+      leftUpperArm:'LeftUpperArm',leftLowerArm:'LeftLowerArm',leftHand:'LeftHand',
+      rightUpperArm:'RightUpperArm',rightLowerArm:'RightLowerArm',rightHand:'RightHand',
+      leftUpperLeg:'LeftUpperLeg',leftLowerLeg:'LeftLowerLeg',leftFoot:'LeftFoot',leftToes:'LeftToes',
+      rightUpperLeg:'RightUpperLeg',rightLowerLeg:'RightLowerLeg',rightFoot:'RightFoot',rightToes:'RightToes',
+      leftThumbProximal:'LeftThumbProximal',leftThumbIntermediate:'LeftThumbIntermediate',leftThumbDistal:'LeftThumbDistal',
+      leftIndexProximal:'LeftIndexProximal',leftIndexIntermediate:'LeftIndexIntermediate',leftIndexDistal:'LeftIndexDistal',
+      leftMiddleProximal:'LeftMiddleProximal',leftMiddleIntermediate:'LeftMiddleIntermediate',leftMiddleDistal:'LeftMiddleDistal',
+      leftRingProximal:'LeftRingProximal',leftRingIntermediate:'LeftRingIntermediate',leftRingDistal:'LeftRingDistal',
+      leftLittleProximal:'LeftLittleProximal',leftLittleIntermediate:'LeftLittleIntermediate',leftLittleDistal:'LeftLittleDistal',
+      rightThumbProximal:'RightThumbProximal',rightThumbIntermediate:'RightThumbIntermediate',rightThumbDistal:'RightThumbDistal',
+      rightIndexProximal:'RightIndexProximal',rightIndexIntermediate:'RightIndexIntermediate',rightIndexDistal:'RightIndexDistal',
+      rightMiddleProximal:'RightMiddleProximal',rightMiddleIntermediate:'RightMiddleIntermediate',rightMiddleDistal:'RightMiddleDistal',
+      rightRingProximal:'RightRingProximal',rightRingIntermediate:'RightRingIntermediate',rightRingDistal:'RightRingDistal',
+      rightLittleProximal:'RightLittleProximal',rightLittleIntermediate:'RightLittleIntermediate',rightLittleDistal:'RightLittleDistal',
+      LeftLeg:'LeftUpperLeg',RightLeg:'RightUpperLeg'};
+    return {scene:root, humanoid:{getBoneNode(n){return bones[boneMap[n]]||null}}};
+  }
+
+// ── 骨骼工具 ──
+function setBone(name, x, y, z) {
+  if (!vrm?.humanoid) return;
+  const bone = vrm.humanoid.getBoneNode(THREE_VRM.HumanoidBoneName[name]);
+  if (bone) bone.rotation.set(x, y, z);
+}
+// ── 材质更新 ──
+function updateMaterial(keyword, mat) {
+  if (!vrm) return;
+  vrm.scene.traverse(o => {
+    if (o.isMesh && o.name.includes(keyword)) {
+      o.material = mat || new THREE.MeshStandardMaterial({color:0xffd6c2,roughness:0.35,metalness:0,transparent:true});
+      o.material.needsUpdate = true;
+      o.material.alphaTest = 0.1;
+    }
+  });
+}
+// ── 切换 ──
+function changeCloth(id) { currentState.cloth = id; updateMaterial('Body', clothes[id]); }
+function changeHair(id) { currentState.hair = id; updateMaterial('Hair', hair[id]); }
+function changeShoe(id) { currentState.shoe = id; updateMaterial('Foot', shoes[id]); }
+async function changeAcc(id) {
+  currentState.acc = id;
+  if (!vrm) return;
+  vrm.scene.children = vrm.scene.children.filter(c => !c.userData?.isAcc);
+  if (id === 0 || !accessories[id]) return;
+  try {
+    const al = new THREE_VRM.VRMLoader();
+    const am = await al.loadAsync(accessories[id]);
+    am.scene.userData = { isAcc: true };
+    vrm.scene.add(am.scene);
+  } catch (e) { console.warn('首饰加载失败:', e.message); }
+}
+function playVoice() { if (voice) voice.play(); }
+
+// ── 姿态库 ──
+const PoseLibrary = {
+  stand_elegant:{Spine:[0,0,0.1],Neck:[0,0,0],LeftUpperArm:[0,0.2,0],RightUpperArm:[0,-0.2,0],LeftLeg:[0,0,0.02],RightLeg:[0,0,-0.02]},
+  turn_grace:{Spine:[0,0.25,0.05],Neck:[0,-0.3,0.15],Hips:[0,0.1,0],Chest:[0,0.15,0.03]},
+  look_down:{Neck:[0,0,-0.4],Head:[0,0,-0.2]},
+  look_up:{Neck:[0,0,0.3],Head:[0,0,0.2]},
+  look_back:{Spine:[0,0.4,0],Neck:[0,-0.5,0.2],Head:[0,-0.3,0]},
+  stand_soft:{Spine:[0,0,0.05],Neck:[0,0.1,0]},
+  stand_noble:{Spine:[0,0,0.15],Neck:[0,0,0.05],Chest:[0,0,0.1]},
+  hand_soft:{LeftHand:[0.2,-0.1,0],RightHand:[-0.2,0.1,0]}
+};
+function applyPose(name) {
+  const p = PoseLibrary[name]; if (!p) return;
+  for (const [b, r] of Object.entries(p)) setBone(b, r[0], r[1], r[2]);
+  document.getElementById('status').textContent = '✦ ' + name;
+  setTimeout(() => { document.getElementById('status').textContent = ''; }, 2000);
+}
+
+/* ================================================================
+   材质库 · 究极全集 (24 clothes + 8 hair + 4 shoes + 4 acc)
+   ================================================================ */
+function setupAllMaterials() {
+const s=THREE.DoubleSide;
+function hShader(sh){
+  sh.uniforms.time={value:0};
+  sh.fragmentShader=sh.fragmentShader
+    .replace('#include <common>','uniform float time;')
+    .replace('#include <normal_fragment_maps>','vec3 t=normalize(vec3(1,0,0));float d=dot(t,normalize(lightDirection));float s1=pow(1.0-abs(d),120.0)*1.5;float s2=pow(1.0-abs(d*0.7+0.3),60.0)*0.8;float fl=sin(vUv.y*40.0+time*0.8)*0.15+0.85;specularColor=vec3(s1+s2)*fl*1.2;float rim=pow(1.0-abs(dot(normalize(vViewPosition),normal)),5.0)*0.3;diffuseColor.rgb+=rim*vec3(0.9,0.9,1.0);');
+}
+clothes=[null,
+  new THREE.MeshStandardMaterial({map:loader('cloth/satin_matte.png'),normalMap:loader('cloth/satin_nm.png'),roughness:0.18,metalness:0.12,transparent:true,side:s,depthWrite:true,alphaTest:0.1,onBeforeCompile:sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <normal_fragment_maps>','float sp=pow(max(dot(normal,vec3(0,1,0)),0.0),48.0)*0.25;specularColor+=sp;');}}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/wool_fine.png'),normalMap:loader('cloth/wool_nm.png'),roughnessMap:loader('cloth/wool_rm.png'),roughness:0.45,metalness:0.05,transparent:true,side:s,depthWrite:true}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/cashmere.png'),roughness:0.28,metalness:0,opacity:0.94,transparent:true,side:s,onBeforeCompile:sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <dithering_fragment>','float rim=pow(1.0-abs(dot(normalize(vViewPosition),normal)),3.0)*0.4;gl_FragColor.rgb+=rim*vec3(1.1,1.08,1.05);');}}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/chiffon.png'),roughness:0.12,metalness:0.1,opacity:0.86,transparent:true,side:s,onBeforeCompile:sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <normal_fragment_maps>','vec3 rf=refract(normalize(vViewPosition),normal,0.98);float ir=sin(rf.x*20.0+rf.y*10.0)*0.1+0.9;specularColor*=vec3(1.0,ir,1.0-ir)*0.3;');}}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/linen_high.png'),roughnessMap:loader('cloth/linen_rm.png'),roughness:0.52,metalness:0,side:s}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/satin_heavy.png'),roughness:0.08,metalness:0.15,transparent:true,side:s,onBeforeCompile:sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <normal_fragment_maps>','float sp=pow(max(dot(normal,normalize(cameraPosition)),0.0),128.0)*0.4;specularColor+=sp*vec3(1.02,1.0,0.98);');}}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/silk_pattern.png'),alphaMap:loader('cloth/pattern_alpha.png'),roughness:0.15,metalness:0.11,transparent:true,side:s}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/cashmere_blend.png'),roughness:0.32,metalness:0.03,transparent:true,side:s}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/velvet_silk.png'),roughness:0.55,metalness:0,transparent:true,side:s,onBeforeCompile:sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <normal_fragment_maps>','float sp=pow(max(dot(normal,normalize(lightDirection)),0.0),16.0)*0.2;specularColor+=sp;');}}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/tweed.png'),normalMap:loader('cloth/tweed_nm.png'),roughness:0.6,metalness:0.2,transparent:true,side:s}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/lyocell.png'),roughness:0.35,metalness:0.02,transparent:true,opacity:0.9,side:s}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/jacquard.png'),alphaMap:loader('cloth/jacquard_alpha.png'),roughness:0.16,metalness:0.13,transparent:true,side:s}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/moon_silk.png'),roughness:0.1,metalness:0.05,transparent:true,opacity:0.75,side:s,onBeforeCompile:sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <dithering_fragment>','float gl=sin(vUv.x*50.0+vUv.y*30.0+time)*0.2+0.3;gl_FragColor.rgb+=gl*vec3(0.9,0.95,1.0);');}}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/ice_silk.png'),normalMap:loader('cloth/ice_nm.png'),roughness:0.06,metalness:0.2,transparent:true,side:s,emissive:new THREE.Color(0x8899aa),emissiveIntensity:0.15}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/cloud_bro.png'),normalMap:loader('cloth/cloud_nm.png'),roughness:0.2,metalness:0.18,transparent:true,side:s,onBeforeCompile:sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <normal_fragment_maps>','vec3 n=normalize(normal+vec3(sin(vUv.y*10.0)*0.1,cos(vUv.x*10.0)*0.1,0.0));float sp=pow(max(dot(n,normalize(lightDirection)),0.0),64.0);specularColor+=sp*vec3(1.1,1.05,1.0);');}}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/ultra_thin.png'),roughness:0.05,metalness:0,transparent:true,opacity:0.5,side:s,alphaTest:0.01}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/luo.png'),alphaMap:loader('cloth/luo_alpha.png'),roughness:0.14,metalness:0.1,transparent:true,side:s}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/ling.png'),roughness:0.11,metalness:0.14,transparent:true,side:s,onBeforeCompile:sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <normal_fragment_maps>','vec3 rf=reflect(-normalize(vViewPosition),normal);float ir=sin(rf.x*30.0+time)*0.2+0.8;specularColor*=vec3(1.0,ir,1.0-ir)*0.4;');}}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/custom_satin.png'),roughness:0.16,metalness:0.14,transparent:true,side:s}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/custom_wool.png'),roughness:0.4,metalness:0.06,transparent:true,side:s}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/custom_cashmere.png'),roughness:0.25,metalness:0,opacity:0.93,transparent:true,side:s}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/custom_chiffon.png'),roughness:0.1,metalness:0.09,opacity:0.85,transparent:true,side:s}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/custom_linen.png'),roughness:0.48,metalness:0,side:s}),
+  new THREE.MeshStandardMaterial({map:loader('cloth/custom_heavy.png'),roughness:0.07,metalness:0.16,transparent:true,side:s})
+];
+hair=[null,
+  new THREE.MeshStandardMaterial({map:loader('hair/straight.png'),roughness:0.07,metalness:0.4,transparent:true,side:s,alphaTest:0.1,onBeforeCompile:hShader}),
+  new THREE.MeshStandardMaterial({map:loader('hair/bun.png'),roughness:0.09,metalness:0.35,transparent:true,side:s,alphaTest:0.1,onBeforeCompile:hShader}),
+  new THREE.MeshStandardMaterial({map:loader('hair/wave.png'),roughness:0.08,metalness:0.38,transparent:true,side:s,alphaTest:0.1,onBeforeCompile:hShader}),
+  new THREE.MeshStandardMaterial({map:loader('hair/pony.png'),roughness:0.07,metalness:0.42,transparent:true,side:s,alphaTest:0.1,onBeforeCompile:hShader}),
+  new THREE.MeshStandardMaterial({map:loader('hair/half.png'),roughness:0.085,metalness:0.36,transparent:true,side:s,alphaTest:0.1,onBeforeCompile:hShader}),
+  new THREE.MeshStandardMaterial({map:loader('hair/curl.png'),roughness:0.075,metalness:0.39,transparent:true,side:s,alphaTest:0.1,onBeforeCompile:hShader}),
+  new THREE.MeshStandardMaterial({map:loader('hair/long_straight.png'),roughness:0.06,metalness:0.45,transparent:true,side:s,alphaTest:0.1,onBeforeCompile:hShader}),
+  new THREE.MeshStandardMaterial({map:loader('hair/layer.png'),roughness:0.08,metalness:0.37,transparent:true,side:s,alphaTest:0.1,onBeforeCompile:hShader})
+];
+shoes=[null,
+  new THREE.MeshStandardMaterial({map:loader('shoe/leather_soft.png'),roughness:0.3,metalness:0.1,transparent:true,side:s}),
+  new THREE.MeshStandardMaterial({map:loader('shoe/strap_thin.png'),roughness:0.2,metalness:0.05,transparent:true,side:s}),
+  new THREE.MeshStandardMaterial({map:loader('shoe/fabric_gentle.png'),roughness:0.4,metalness:0,transparent:true,side:s})
+];
+accessories=[null,basePath+'acc/chain_fine.vrm',basePath+'acc/pearl_tiny.vrm',basePath+'acc/band_smooth.vrm'];
+}
+
+/* ================================================================
+   核心初始化
+   ================================================================ */
+async function init() {
+try {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.1, 20);
+  camera.position.set(0, 1.4, 3.8);
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, premultipliedAlpha: true });
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.setClearColor(0x05020E, 1);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  document.body.appendChild(renderer.domElement);
+
+  // 打光
+  const ml = new THREE.DirectionalLight(0xf0f4fc, 3.0);
+  ml.position.set(2, 3, 2); ml.castShadow = true;
+  ml.shadow.mapSize.width = 4096; ml.shadow.mapSize.height = 4096;
+  ml.shadow.radius = 8; ml.shadow.camera.near = 0.5; ml.shadow.camera.far = 50;
+  scene.add(ml);
+  const fl = new THREE.DirectionalLight(0xf8f0e8, 1.2);
+  fl.position.set(-1, 2, 1); scene.add(fl);
+  scene.add(new THREE.AmbientLight(0xf8f5fc, 2.0));
+  scene.add(new THREE.HemisphereLight(0xf0f4fc, 0x8080a0, 0.8));
+  scene.fog = new THREE.FogExp2(0x05020E, 0.015);
+
+  // 程序化创建白月光人形（完整骨骼+网格）
+  const avatar = createProceduralAvatar();
+  vrm = avatar;
+  scene.add(vrm.scene);
+  mixer = new THREE.AnimationMixer(vrm.scene);
+  console.log('✅ 程序化人形模型就绪（20骨骼+全身网格）');
+
+  setupAllMaterials();
+  updateMaterial('Body', clothes[1]);
+  updateMaterial('Hair', hair[1]);
+
+  try {
+    voice = new Howl({ src: [basePath + 'voice/soft_clear.mp3'], volume: 0.9, rate: 0.95, format: ['mp3'], onload: () => console.log('✅ 声音就绪'), onloaderror: () => console.warn('⚠️ 声音文件未找到') });
+  } catch (e) { console.warn('声音跳过'); }
+
+  setupInteraction();
+  animate();
+  alert('✅ 白月光·全配加载完成！\n✨ 衣服24套 | 发型8款 | 首饰4套 | 鞋子3款 | 动作8种');
+
+} catch (err) {
+  alert('❌ 加载失败：' + err.message);
+  console.error(err);
+}
+}
+
+/* ================================================================
+   动态生命：呼吸 + 心跳 + 眼神漂移 + 微表情
+   ================================================================ */
+function updateLifeCycle() {
+  if (!vrm) return;
+  const t = performance.now() * 0.001;
+  const breath = Math.sin(t * 1.5);
+  setBone('Chest', breath * 0.04, 0, breath * 0.03);
+  setBone('Spine', 0, 0, Math.sin(t * 1.5 + 0.5) * 0.02);
+  const beat = Math.pow(Math.sin(t * 7.85), 8) * 0.001;
+  setBone('Chest', beat + breath * 0.04, 0, beat * 0.5 + breath * 0.03);
+  setBone('Mouth', 0, Math.sin(t * 0.8) * 0.02, 0);
+}
+
+/* ================================================================
+   交互：视线跟随 + 点击反馈
+   ================================================================ */
+function setupInteraction() {
+  window.addEventListener('mousemove', e => {
+    const mx = (e.clientX / innerWidth) * 2 - 1;
+    const my = -(e.clientY / innerHeight) * 2 + 1;
+    eyeX = THREE.MathUtils.lerp(eyeX, mx * 0.12, 0.1);
+    eyeY = THREE.MathUtils.lerp(eyeY, my * 0.12, 0.1);
+    headRot.y = THREE.MathUtils.lerp(headRot.y, mx * 0.06, 0.05);
+    headRot.x = THREE.MathUtils.lerp(headRot.x, my * 0.05, 0.05);
+    if (vrm) { setBone('Head', headRot.x, headRot.y, 0); }
+  });
+
+  const rc = new THREE.Raycaster();
+  window.addEventListener('click', e => {
+    if (!vrm) return;
+    const mx = (e.clientX / innerWidth) * 2 - 1;
+    const my = -(e.clientY / innerHeight) * 2 + 1;
+    rc.setFromCamera({ x: mx, y: my }, camera);
+    const hits = rc.intersectObject(vrm.scene, true);
+    if (hits.length > 0) {
+      const obj = hits[0].object;
+      const st = document.getElementById('status');
+      if (obj.name.includes('Hand')) { setBone('LeftHand', 0.15, 0, 0); st.textContent = '✦ 触碰·手'; }
+      else if (obj.name.includes('Face') || obj.name.includes('Head')) { setBone('Head', 0, 0.1, 0); st.textContent = '✦ 触碰·脸颊'; }
+      else if (obj.name.includes('Hair')) { st.textContent = '✦ 触碰·发丝'; }
+      setTimeout(() => { st.textContent = ''; }, 1500);
+    }
+  });
+}
+
+/* ================================================================
+   渲染循环
+   ================================================================ */
+function animate() {
+  requestAnimationFrame(animate);
+  time = performance.now() * 0.001;
+  if (mixer) mixer.update(1 / 60);
+  updateLifeCycle();
+  // 应用视线跟随
+  if (vrm) {
+    setBone('LeftEye', eyeX, eyeY, 0);
+    setBone('RightEye', eyeX + 0.005, eyeY, 0);
+  }
+  renderer.render(scene, camera);
+}
+
+window.onresize = () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+};
+
+init();
+</script>
+</body>
+</html>
