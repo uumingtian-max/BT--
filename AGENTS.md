@@ -83,3 +83,63 @@ powershell -ExecutionPolicy Bypass -File scripts/test-app.ps1
 2. 真实跑了什么验证
 3. 结果是什么
 4. 还剩什么风险或下一步
+
+## Cursor Cloud specific instructions
+
+### Environment overview
+
+| Service | Start command | Port | Notes |
+|---------|--------------|------|-------|
+| Backend (FastAPI) | `cd backend && python3 -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload` | 8000 | `--reload` for dev hot-reload |
+| Frontend (Vite) | `npm run dev --prefix frontend` | 3000 | React dev server |
+
+### .env gotcha
+
+`backend/.env.example` uses inline comments after values (e.g. `BACKEND_PORT=8000  # comment`). Pydantic-settings treats the trailing comment as part of the value, causing `ValidationError`. When creating `backend/.env`, strip inline comments from all non-quoted values or use a script to clean them:
+
+```bash
+python3 -c "
+import re
+with open('backend/.env.example') as f: lines = f.readlines()
+out = []
+for l in lines:
+    s = l.strip()
+    if not s or s.startswith('#') or '=' not in s:
+        out.append(l); continue
+    k, _, v = s.partition('=')
+    if v and v[0] in ('\"', \"'\"):
+        out.append(l)
+    else:
+        m = re.match(r'^([^#]*?)(\s+#.*)?$', v)
+        out.append(f'{k}={m.group(1).rstrip()}\n' if m else l)
+with open('backend/.env', 'w') as f: f.writelines(out)
+"
+```
+
+### Running without Ollama
+
+The backend starts and all APIs work without Ollama, but chat/agent responses require an LLM. The `/health` endpoint returns `{"status":"ok"}` regardless. Use `/meta/doctor` to check LLM connectivity status.
+
+### Test expectations
+
+- `python3 -m pytest backend/tests/ -q` — expect ~189 pass, ~6 known failures:
+  - `test_win_path_to_vllm_file_url` — Windows-only path logic
+  - `test_lingguang_tts` (2) — require optional `edge-tts` package
+  - `test_first_seat_is_architect`, `test_run_agent_webhook_task_runs_with_drain`, `test_operator_dashboard` — require DB tables created by first backend startup (run tests after starting the backend once)
+- Frontend lint: `npm run lint --prefix frontend` — warnings only (no errors)
+- Frontend build: `npm run build --prefix frontend` — succeeds
+
+### Key commands reference
+
+```bash
+# Lint
+python3 -m ruff check backend/
+npm run lint --prefix frontend
+
+# Test
+python3 -m pytest backend/tests/ -q
+npm run test --prefix frontend
+
+# Build
+npm run build --prefix frontend
+```
