@@ -1,0 +1,26 @@
+Full test checklist
+
+Command: PYTHONPATH=. pytest -q
+Result: 8 passed in 1.66s
+
+Covered:
+- health check
+- real-name registration
+- login
+- super admin
+- manager account without real-name registration
+- recharge
+- chat messages
+- mute rule: receive only, cannot send
+- ban rule: cannot login, same identity cannot register again
+- red packet send and claim rules
+- global and single-user notice
+- simulated push
+- simulated speech-to-text
+- simulated video room token
+- device rule
+- backup
+- audit logs
+
+Not connected to third-party providers yet:
+SMS, real identity verification, production push service, speech SDK, video SDK, domain, HTTPS and object storage.
