@@ -1,0 +1,12 @@
+Windows 手动上传最短步骤：
+
+1. 下载 ChatGPT 里的 xiangcun-github-upload-ready.zip
+2. 打开 GitHub 仓库：uumingtian-max/BT--
+3. 进入 xiangcun-archive 文件夹
+4. 点击 Add file -> Upload files
+5. 拖入 xiangcun-github-upload-ready.zip
+6. 点击 Commit changes
+
+校验：
+SHA256: f679dfee5c4c923a268637aa1a084c37e7c0e81f46bb607f49f359fe5bcb3c38
+SIZE: 302792 bytes
