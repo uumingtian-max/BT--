@@ -180,6 +180,36 @@ class PreferenceUpdate(BaseModel):
     value: str
 
 
+def _strip_tool_blocks_from_content(content: str) -> str:
+    """DB 里若存了 Claude API 原生 content 数组（含 tool_use/tool_result），提取纯文本。
+
+    inferaichat.com 代理有时将 tool_use 块透传到响应，导致这类 JSON 字符串
+    被存入数据库。下次带历史请求时代理会重新解析为 tool_result 块，引发 API 校验错误。
+    """
+    text = (content or "").strip()
+    if not text.startswith("["):
+        return text
+    try:
+        blocks = json.loads(text)
+    except (json.JSONDecodeError, ValueError):
+        return text
+    if not isinstance(blocks, list):
+        return text
+    _TOOL_TYPES = {"tool_use", "tool_result"}
+    parts: list[str] = []
+    for block in blocks:
+        if not isinstance(block, dict):
+            continue
+        btype = block.get("type")
+        if btype == "text":
+            parts.append(block.get("text") or "")
+        elif btype not in _TOOL_TYPES:
+            # image_url 等媒体块无法还原，留个占位说明
+            parts.append(f"[{btype}]")
+        # tool_use / tool_result 直接丢弃
+    return " ".join(p for p in parts if p).strip()
+
+
 def get_history(session_id: str, limit: int | None = None):
     if limit is None:
         limit = get_runtime().chat_history_max_messages
@@ -189,7 +219,7 @@ def get_history(session_id: str, limit: int | None = None):
         (session_id, limit),
     ).fetchall()
     conn.close()
-    return [{"role": r[0], "content": r[1]} for r in reversed(rows)]
+    return [{"role": r[0], "content": _strip_tool_blocks_from_content(r[1])} for r in reversed(rows)]
 
 
 def _cap_message_content(content: str) -> str:
@@ -414,6 +444,26 @@ def delete_session(session_id: str):
     conn.commit()
     conn.close()
     return {"ok": True}
+
+
+@router.post("/maintenance/strip-tool-blocks")
+def strip_tool_blocks_from_db():
+    """清理数据库里因 Claude API 代理透传 tool_use 块导致的脏消息。
+
+    将所有 content 为 JSON 数组（含 tool_use / tool_result 块）的历史消息
+    原地替换为提取出的纯文本，消除下次请求时的 invalid_request_error。
+    """
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute("SELECT id, content FROM messages WHERE content LIKE '[%'").fetchall()
+    fixed = 0
+    for row_id, raw_content in rows:
+        cleaned = _strip_tool_blocks_from_content(raw_content)
+        if cleaned != raw_content:
+            conn.execute("UPDATE messages SET content=? WHERE id=?", (cleaned or "(已清理)", row_id))
+            fixed += 1
+    conn.commit()
+    conn.close()
+    return {"ok": True, "fixed": fixed}
 
 
 @router.get("/preferences")
