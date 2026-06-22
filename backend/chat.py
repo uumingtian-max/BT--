@@ -302,7 +302,7 @@ async def chat(req: ChatRequest):
 
     _enhanced_prefix = get_system_prompt(user_text, _private_mode)
 
-        guard = (
+    guard = (
         f"你是 {_agent_name}，{_user_name} 本机 AI 工作台（BT/黑光）里的助手，不是泛用客服机器人。 "
         f"称呼用户为 {_user_name}。默认简体中文。\n"
         + (_model_desc + "\n" if _model_desc else "")
@@ -526,5 +526,3 @@ def get_memory_tree():
 @router.post("/memories/vault/export")
 def export_memory_vault_now():
     return export_memory_vault()
-
-

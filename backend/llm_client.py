@@ -97,10 +97,7 @@ _OPENAI_RETRY_DELAYS = (1.0, 3.0, 8.0)
 
 
 def _openai_transient_error_message(url: str, exc: Exception) -> str:
-    return (
-        f"连接 LLM 网关（{url}）失败：{exc}。"
-        "已重试 3 次，请检查网络或 OPENAI_BASE_URL 配置。"
-    )
+    return f"连接 LLM 网关（{url}）失败：{exc}。已重试 3 次，请检查网络或 OPENAI_BASE_URL 配置。"
 
 
 def _openai_timeout_message(url: str, exc: Exception) -> str:
@@ -187,9 +184,7 @@ def _sanitize_content_for_api(content: Any) -> Any:
         return str(content) if content is not None else ""
     _TOOL_TYPES = {"tool_use", "tool_result"}
     _MEDIA_TYPES = {"image_url", "video_url", "input_audio"}
-    filtered: list[dict[str, Any]] = [
-        b for b in content if isinstance(b, dict) and b.get("type") not in _TOOL_TYPES
-    ]
+    filtered: list[dict[str, Any]] = [b for b in content if isinstance(b, dict) and b.get("type") not in _TOOL_TYPES]
     if not filtered:
         return ""
     has_media = any(b.get("type") in _MEDIA_TYPES for b in filtered)
