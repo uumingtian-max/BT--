@@ -157,15 +157,62 @@ def _ollama_chat_options(temperature: float) -> dict[str, Any]:
     return opts
 
 
+def _extract_text_from_content(content: Any) -> str:
+    """Claude API 可能返回 content 为数组（含 tool_use 块），提取纯文本。"""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts: list[str] = []
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+            btype = block.get("type")
+            if btype == "text":
+                parts.append(block.get("text") or "")
+            # tool_use / tool_result 块直接丢弃，不进消息历史
+        return " ".join(p for p in parts if p).strip()
+    return str(content) if content is not None else ""
+
+
+def _sanitize_content_for_api(content: Any) -> Any:
+    """发给 API 前净化 content：数组里的 tool_use/tool_result 块会触发 Claude 校验错误。
+
+    - 纯文本 → 原样
+    - 数组有 image_url/video_url/input_audio → 保留媒体块，剥掉 tool 块
+    - 数组只有 text/tool 块 → 合并成纯字符串
+    """
+    if isinstance(content, str):
+        return content
+    if not isinstance(content, list):
+        return str(content) if content is not None else ""
+    _TOOL_TYPES = {"tool_use", "tool_result"}
+    _MEDIA_TYPES = {"image_url", "video_url", "input_audio"}
+    filtered: list[dict[str, Any]] = [
+        b for b in content if isinstance(b, dict) and b.get("type") not in _TOOL_TYPES
+    ]
+    if not filtered:
+        return ""
+    has_media = any(b.get("type") in _MEDIA_TYPES for b in filtered)
+    if has_media:
+        return filtered
+    # 只剩 text 块，合并为字符串
+    return " ".join((b.get("text") or "") for b in filtered if b.get("type") == "text").strip()
+
+
 def _openai_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     from mm_openai_payload import apply_multimodal_to_messages
 
     merged = apply_multimodal_to_messages(messages)
     out: list[dict[str, Any]] = []
     for m in merged:
-        if m.get("content") is None:
+        raw_content = m.get("content")
+        if raw_content is None:
             continue
-        out.append({"role": m["role"], "content": m.get("content", "")})
+        clean = _sanitize_content_for_api(raw_content)
+        if clean == "" and m.get("role") == "assistant":
+            # assistant 消息内容为空（全是 tool 块）时跳过，避免空消息报错
+            continue
+        out.append({"role": m["role"], "content": clean})
     return out
 
 
@@ -198,7 +245,7 @@ def _openai_non_stream_content(data: dict[str, Any]) -> str:
     if not choices:
         return ""
     msg = choices[0].get("message") or {}
-    return (msg.get("content") or "").strip()
+    return _extract_text_from_content(msg.get("content")).strip()
 
 
 # ---------------------------------------------------------------------------
@@ -353,7 +400,9 @@ async def chat_stream_async(
                             continue
                         choice0 = choices[0]
                         delta = choice0.get("delta") or {}
-                        chunk = delta.get("content") or ""
+                        raw_chunk = delta.get("content")
+                        # Claude API 代理有时返回数组 content，提取文本
+                        chunk = _extract_text_from_content(raw_chunk) if raw_chunk is not None else ""
                         if chunk:
                             yield chunk
                         if choice0.get("finish_reason") or obj.get("done"):
