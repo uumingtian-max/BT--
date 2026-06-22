@@ -82,3 +82,60 @@ Provider error: [invalid_request_error] messages.0.content.1: unexpected `tool_u
 
 分支：`claude/black-construction-site-8qj5sz`  
 仓库：`uumingtian-max/BT--`
+
+---
+
+## blackgod iOS App — 问题分析与修复
+
+仓库：`uumingtian-max/blackgod`（Swift/SwiftUI，已公开）
+
+### 已识别 Bug
+
+#### Bug 1（已修复）：每次 API 调用不携带对话历史
+**文件**：`ChatViewModel.swift`，`callAPI()` 方法，约第 112 行
+
+**问题**：原代码只发当前一条消息：
+```swift
+let body: [String: Any] = [
+    "messages": [["role": "user", "content": message]]
+]
+```
+AI 每次回复都没有上下文，相当于每轮都是全新对话。
+
+**修复**（已在本地 commit `23b96d4`，需 push 到 blackgod 仓库）：
+```swift
+// messages 数组在 callAPI 调用前已 append 了当前用户消息，所以 dropLast()
+let history = messages.dropLast()
+    .filter { $0.type == .text }
+    .suffix(20)
+    .map { ["role": $0.isUser ? "user" : "assistant", "content": $0.text] as [String: Any] }
+let apiMessages: [[String: Any]] = history + [["role": "user", "content": message]]
+let body: [String: Any] = ["messages": apiMessages]
+```
+
+#### Bug 2：语音输入按钮无效
+**文件**：`ContentView.swift`，`InputBarView`，约第 268 行
+
+```swift
+Button(action: { showVoiceInput = true }) {
+    Image(systemName: "mic.fill")
+    ...
+}
+```
+`showVoiceInput` 状态从未被任何 `.sheet` 消费，点击无任何反应。
+
+**修复方案**：要么实现 SFSpeechRecognizer 录音 sheet，要么移除此按钮避免误导用户。
+
+#### Bug 3：图片消息混入 API 历史
+**影响**：Bug 1 修复后，`type == .image` 的消息 `text` 是 `"🎨 图片已生成"`，若不过滤会污染上下文。已在修复中加了 `.filter { $0.type == .text }`。
+
+### 部署说明（其他代理执行）
+
+```bash
+# 在 blackgod 本地仓库执行（需有写权限）
+git pull origin main
+# 将 Bug 1 的修复合并后
+git push origin main
+```
+
+修复文件只有 `ChatViewModel.swift`，改动 ~7 行，不影响其他功能。
