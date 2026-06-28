@@ -54,9 +54,27 @@ class LLMRouter:
         legacy_key = os.getenv("OPENAI_API_KEY", "local")
         legacy_model = os.getenv("AGENT_DEFAULT_MODEL", os.getenv("BKLT_MODEL_ID", "nvidia/Gemma-4-26B-A4B-NVFP4"))
         routes = {
-            "gpu": LLMRoute("gpu", os.getenv("GPU_OPENAI_BASE_URL", legacy_base), os.getenv("GPU_OPENAI_API_KEY", legacy_key), os.getenv("GPU_MODEL", legacy_model), timeout),
-            "npu": LLMRoute("npu", os.getenv("NPU_OPENAI_BASE_URL", "http://127.0.0.1:8002/v1"), os.getenv("NPU_OPENAI_API_KEY", "local"), os.getenv("NPU_MODEL", ""), timeout),
-            "api": LLMRoute("api", os.getenv("API_OPENAI_BASE_URL", ""), os.getenv("API_OPENAI_API_KEY", ""), os.getenv("API_MODEL", ""), timeout),
+            "gpu": LLMRoute(
+                "gpu",
+                os.getenv("GPU_OPENAI_BASE_URL", legacy_base),
+                os.getenv("GPU_OPENAI_API_KEY", legacy_key),
+                os.getenv("GPU_MODEL", legacy_model),
+                timeout,
+            ),
+            "npu": LLMRoute(
+                "npu",
+                os.getenv("NPU_OPENAI_BASE_URL", "http://127.0.0.1:8002/v1"),
+                os.getenv("NPU_OPENAI_API_KEY", "local"),
+                os.getenv("NPU_MODEL", ""),
+                timeout,
+            ),
+            "api": LLMRoute(
+                "api",
+                os.getenv("API_OPENAI_BASE_URL", ""),
+                os.getenv("API_OPENAI_API_KEY", ""),
+                os.getenv("API_MODEL", ""),
+                timeout,
+            ),
         }
         return cls(routes, parse_fallback_order(os.getenv("BKLT_LLM_FALLBACK_ORDER", "gpu,npu,api")))
 
@@ -87,7 +105,15 @@ class LLMRouter:
         data["route"] = selected.name
         return data
 
-    def chat(self, prompt: str, *, route: RouteName = "auto", system: str = "You are BKLT 黑光, a local AI agent workspace.", temperature: float = 0.2, max_tokens: int = 512) -> str:
+    def chat(
+        self,
+        prompt: str,
+        *,
+        route: RouteName = "auto",
+        system: str = "You are BKLT 黑光, a local AI agent workspace.",
+        temperature: float = 0.2,
+        max_tokens: int = 512,
+    ) -> str:
         if route != "auto":
             return self.client(route).chat(prompt, system=system, temperature=temperature, max_tokens=max_tokens)
         errors: List[str] = []
@@ -98,13 +124,25 @@ class LLMRouter:
                 errors.append(f"{name}: {exc}")
         raise LLMGatewayError("All LLM routes failed: " + " | ".join(errors))
 
-    def chat_messages(self, messages: Iterable[Mapping[str, str]], *, route: RouteName = "auto", temperature: float = 0.2, max_tokens: int = 512, extra: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+    def chat_messages(
+        self,
+        messages: Iterable[Mapping[str, str]],
+        *,
+        route: RouteName = "auto",
+        temperature: float = 0.2,
+        max_tokens: int = 512,
+        extra: Optional[Mapping[str, Any]] = None,
+    ) -> Dict[str, Any]:
         if route != "auto":
-            return self.client(route).chat_messages(messages, temperature=temperature, max_tokens=max_tokens, extra=extra)
+            return self.client(route).chat_messages(
+                messages, temperature=temperature, max_tokens=max_tokens, extra=extra
+            )
         errors: List[str] = []
         for name in self.fallback_order:
             try:
-                return self.client(name).chat_messages(messages, temperature=temperature, max_tokens=max_tokens, extra=extra)
+                return self.client(name).chat_messages(
+                    messages, temperature=temperature, max_tokens=max_tokens, extra=extra
+                )
             except Exception as exc:
                 errors.append(f"{name}: {exc}")
         raise LLMGatewayError("All LLM routes failed: " + " | ".join(errors))
