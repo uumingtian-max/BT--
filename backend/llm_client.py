@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import json
 import threading
+import time
 from typing import Any, AsyncIterator
 
 import httpx
@@ -39,6 +40,7 @@ def _make_limits() -> httpx.Limits:
         max_connections=20,
         max_keepalive_connections=10,
         keepalive_expiry=30.0,
+        # pool_timeout 默认 5s 在并发请求时太容易触发 PoolTimeout，改为 30s
     )
 
 
@@ -49,7 +51,7 @@ async def _get_async_client() -> httpx.AsyncClient:
         if _async_client is None or _async_client.is_closed:
             _async_client = httpx.AsyncClient(
                 limits=_make_limits(),
-                timeout=httpx.Timeout(connect=60.0, read=None, write=60.0, pool=5.0),
+                timeout=httpx.Timeout(connect=60.0, read=None, write=60.0, pool=30.0),
             )
     return _async_client
 
@@ -61,7 +63,7 @@ def _get_sync_client() -> httpx.Client:
         if _sync_client is None or _sync_client.is_closed:
             _sync_client = httpx.Client(
                 limits=_make_limits(),
-                timeout=httpx.Timeout(connect=60.0, read=None, write=60.0, pool=5.0),
+                timeout=httpx.Timeout(connect=60.0, read=None, write=60.0, pool=30.0),
             )
     return _sync_client
 
@@ -82,6 +84,27 @@ async def close_shared_clients() -> None:
 # ---------------------------------------------------------------------------
 # Helper utilities (unchanged)
 # ---------------------------------------------------------------------------
+
+
+_OPENAI_RETRYABLE = (
+    httpx.ConnectError,
+    httpx.ConnectTimeout,
+    httpx.PoolTimeout,
+    httpx.RemoteProtocolError,
+)
+_OPENAI_MAX_RETRIES = 3
+_OPENAI_RETRY_DELAYS = (1.0, 3.0, 8.0)
+
+
+def _openai_transient_error_message(url: str, exc: Exception) -> str:
+    return f"连接 LLM 网关（{url}）失败：{exc}。已重试 3 次，请检查网络或 OPENAI_BASE_URL 配置。"
+
+
+def _openai_timeout_message(url: str, exc: Exception) -> str:
+    return (
+        f"LLM 网关（{url}）响应超时：{exc}。"
+        "可调大 OLLAMA_TIMEOUT_SEC / BKLT_LLM_TIMEOUT_SECONDS 环境变量，或检查网络质量。"
+    )
 
 
 def _ollama_connection_message(url: str, exc: Exception) -> str:
@@ -131,15 +154,60 @@ def _ollama_chat_options(temperature: float) -> dict[str, Any]:
     return opts
 
 
+def _extract_text_from_content(content: Any) -> str:
+    """Claude API 可能返回 content 为数组（含 tool_use 块），提取纯文本。"""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts: list[str] = []
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+            btype = block.get("type")
+            if btype == "text":
+                parts.append(block.get("text") or "")
+            # tool_use / tool_result 块直接丢弃，不进消息历史
+        return " ".join(p for p in parts if p).strip()
+    return str(content) if content is not None else ""
+
+
+def _sanitize_content_for_api(content: Any) -> Any:
+    """发给 API 前净化 content：数组里的 tool_use/tool_result 块会触发 Claude 校验错误。
+
+    - 纯文本 → 原样
+    - 数组有 image_url/video_url/input_audio → 保留媒体块，剥掉 tool 块
+    - 数组只有 text/tool 块 → 合并成纯字符串
+    """
+    if isinstance(content, str):
+        return content
+    if not isinstance(content, list):
+        return str(content) if content is not None else ""
+    _TOOL_TYPES = {"tool_use", "tool_result"}
+    _MEDIA_TYPES = {"image_url", "video_url", "input_audio"}
+    filtered: list[dict[str, Any]] = [b for b in content if isinstance(b, dict) and b.get("type") not in _TOOL_TYPES]
+    if not filtered:
+        return ""
+    has_media = any(b.get("type") in _MEDIA_TYPES for b in filtered)
+    if has_media:
+        return filtered
+    # 只剩 text 块，合并为字符串
+    return " ".join((b.get("text") or "") for b in filtered if b.get("type") == "text").strip()
+
+
 def _openai_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     from mm_openai_payload import apply_multimodal_to_messages
 
     merged = apply_multimodal_to_messages(messages)
     out: list[dict[str, Any]] = []
     for m in merged:
-        if m.get("content") is None:
+        raw_content = m.get("content")
+        if raw_content is None:
             continue
-        out.append({"role": m["role"], "content": m.get("content", "")})
+        clean = _sanitize_content_for_api(raw_content)
+        if clean == "" and m.get("role") == "assistant":
+            # assistant 消息内容为空（全是 tool 块）时跳过，避免空消息报错
+            continue
+        out.append({"role": m["role"], "content": clean})
     return out
 
 
@@ -172,7 +240,7 @@ def _openai_non_stream_content(data: dict[str, Any]) -> str:
     if not choices:
         return ""
     msg = choices[0].get("message") or {}
-    return (msg.get("content") or "").strip()
+    return _extract_text_from_content(msg.get("content")).strip()
 
 
 # ---------------------------------------------------------------------------
@@ -195,9 +263,20 @@ def chat_complete_sync(
     if rt.llm_backend == "openai_compatible":
         url, headers, body = _openai_chat_url_headers_body(rt, messages, model, temperature=temperature, stream=False)
         client = _get_sync_client()
-        resp = client.post(url, headers=headers, json=body, timeout=timeout_val)
-        resp.raise_for_status()
-        return _openai_non_stream_content(resp.json())
+        req_timeout = httpx.Timeout(connect=60.0, read=timeout_val, write=60.0, pool=30.0)
+        last_exc: Exception | None = None
+        for attempt in range(_OPENAI_MAX_RETRIES):
+            try:
+                resp = client.post(url, headers=headers, json=body, timeout=req_timeout)
+                resp.raise_for_status()
+                return _openai_non_stream_content(resp.json())
+            except httpx.ReadTimeout as e:
+                raise RuntimeError(_openai_timeout_message(url, e)) from e
+            except _OPENAI_RETRYABLE as e:
+                last_exc = e
+                if attempt < _OPENAI_MAX_RETRIES - 1:
+                    time.sleep(_OPENAI_RETRY_DELAYS[attempt])
+        raise RuntimeError(_openai_transient_error_message(url, last_exc)) from last_exc
 
     url = rt.ollama_chat_url()
     maybe_prepare_ollama_model(model)
@@ -237,9 +316,20 @@ async def chat_complete_async(
     if rt.llm_backend == "openai_compatible":
         url, headers, body = _openai_chat_url_headers_body(rt, messages, model, temperature=temperature, stream=False)
         client = await _get_async_client()
-        resp = await client.post(url, headers=headers, json=body, timeout=float(timeout))
-        resp.raise_for_status()
-        return _openai_non_stream_content(resp.json())
+        req_timeout = httpx.Timeout(connect=60.0, read=float(timeout), write=60.0, pool=30.0)
+        last_exc: Exception | None = None
+        for attempt in range(_OPENAI_MAX_RETRIES):
+            try:
+                resp = await client.post(url, headers=headers, json=body, timeout=req_timeout)
+                resp.raise_for_status()
+                return _openai_non_stream_content(resp.json())
+            except httpx.ReadTimeout as e:
+                raise RuntimeError(_openai_timeout_message(url, e)) from e
+            except _OPENAI_RETRYABLE as e:
+                last_exc = e
+                if attempt < _OPENAI_MAX_RETRIES - 1:
+                    await asyncio.sleep(_OPENAI_RETRY_DELAYS[attempt])
+        raise RuntimeError(_openai_transient_error_message(url, last_exc)) from last_exc
 
     url = rt.ollama_chat_url()
     maybe_prepare_ollama_model(model)
@@ -279,35 +369,47 @@ async def chat_stream_async(
     if rt.llm_backend == "openai_compatible":
         url, headers, body = _openai_chat_url_headers_body(rt, messages, model, temperature=temperature, stream=True)
         client = await _get_async_client()
-        async with client.stream(
-            "POST",
-            url,
-            headers=headers,
-            json=body,
-            timeout=_streaming_http_timeout(float(timeout)),
-        ) as resp:
-            resp.raise_for_status()
-            async for line in resp.aiter_lines():
-                if not line or not line.startswith("data:"):
-                    continue
-                payload = line[5:].strip()
-                if payload == "[DONE]":
-                    break
-                try:
-                    obj = json.loads(payload)
-                except json.JSONDecodeError:
-                    continue
-                choices = obj.get("choices") or []
-                if not choices:
-                    continue
-                choice0 = choices[0]
-                delta = choice0.get("delta") or {}
-                chunk = delta.get("content") or ""
-                if chunk:
-                    yield chunk
-                if choice0.get("finish_reason") or obj.get("done"):
-                    break
-        return
+        last_exc: Exception | None = None
+        for attempt in range(_OPENAI_MAX_RETRIES):
+            try:
+                async with client.stream(
+                    "POST",
+                    url,
+                    headers=headers,
+                    json=body,
+                    timeout=_streaming_http_timeout(float(timeout)),
+                ) as resp:
+                    resp.raise_for_status()
+                    async for line in resp.aiter_lines():
+                        if not line or not line.startswith("data:"):
+                            continue
+                        payload = line[5:].strip()
+                        if payload == "[DONE]":
+                            return
+                        try:
+                            obj = json.loads(payload)
+                        except json.JSONDecodeError:
+                            continue
+                        choices = obj.get("choices") or []
+                        if not choices:
+                            continue
+                        choice0 = choices[0]
+                        delta = choice0.get("delta") or {}
+                        raw_chunk = delta.get("content")
+                        # Claude API 代理有时返回数组 content，提取文本
+                        chunk = _extract_text_from_content(raw_chunk) if raw_chunk is not None else ""
+                        if chunk:
+                            yield chunk
+                        if choice0.get("finish_reason") or obj.get("done"):
+                            return
+                return
+            except httpx.ReadTimeout as e:
+                raise RuntimeError(_openai_timeout_message(url, e)) from e
+            except _OPENAI_RETRYABLE as e:
+                last_exc = e
+                if attempt < _OPENAI_MAX_RETRIES - 1:
+                    await asyncio.sleep(_OPENAI_RETRY_DELAYS[attempt])
+        raise RuntimeError(_openai_transient_error_message(url, last_exc)) from last_exc
 
     url = rt.ollama_chat_url()
     maybe_prepare_ollama_model(model)

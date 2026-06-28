@@ -12,6 +12,15 @@ from fastapi import APIRouter
 DB_PATH = os.path.join(os.path.dirname(__file__), "workflow.db")
 router = APIRouter()
 
+_schema_initialized = False
+
+
+def _ensure_schema() -> None:
+    global _schema_initialized
+    if not _schema_initialized:
+        init_workflow_store()
+        _schema_initialized = True
+
 
 def _now_ts() -> int:
     return int(time.time())
@@ -196,6 +205,7 @@ def _derive_lessons(task_text: str, status: str, tool_name: str, final_answer: s
 
 
 def _match_template(task_text: str) -> dict[str, Any] | None:
+    _ensure_schema()
     lower = (task_text or "").lower()
     conn = sqlite3.connect(DB_PATH)
     rows = conn.execute(
@@ -221,6 +231,7 @@ def _match_template(task_text: str) -> dict[str, Any] | None:
 
 
 def touch_template_usage(name: str) -> None:
+    _ensure_schema()
     conn = sqlite3.connect(DB_PATH)
     conn.execute(
         "UPDATE workflow_templates SET usage_count = usage_count + 1, updated_at = ? WHERE name = ?",
@@ -275,6 +286,7 @@ def record_task_review(
 
 
 def list_task_reviews(limit: int = 50) -> list[dict[str, Any]]:
+    _ensure_schema()
     conn = sqlite3.connect(DB_PATH)
     rows = conn.execute(
         """
@@ -301,6 +313,7 @@ def list_task_reviews(limit: int = 50) -> list[dict[str, Any]]:
 
 
 def list_templates() -> list[dict[str, Any]]:
+    _ensure_schema()
     conn = sqlite3.connect(DB_PATH)
     rows = conn.execute(
         """

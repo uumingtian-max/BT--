@@ -24,6 +24,10 @@ def test_normalize_attachments():
     assert len(normalize_attachments(raw)) == 1
 
 
+@pytest.mark.skipif(
+    not (Path("/mnt/c").exists() or Path("C:\\").exists()),
+    reason="Windows/WSL path conversion only tested on Windows or WSL",
+)
 def test_win_path_to_vllm_file_url(tmp_path: Path):
     f = tmp_path / "a.png"
     f.write_bytes(b"x")

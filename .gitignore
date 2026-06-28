@@ -23,6 +23,7 @@ outputs/
 tmp/pytest-cache/
 tmp/pytest-tmp/
 tmp/
+onyx-pytest/
 CLINE_MEMORY.md
 backend/.skill_embedding_index.json
 backend/.memory_vector_index.json
