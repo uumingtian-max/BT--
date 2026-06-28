@@ -126,3 +126,32 @@ def get_system_prompt(user_input: str = "", private_mode: bool = False) -> str:
         if priv:
             parts.append("【私密人格层·已解锁】\n" + priv)
     return "\n\n".join(parts)
+
+
+# ---------------------------------------------------------------------------
+# Module-level constants expected by agent.py and tests
+# ---------------------------------------------------------------------------
+
+SYSTEM_PROMPT_BASE: str = (
+    "你是 BT黑光，一个本地优先、持久记忆的 AI Agent。\n"
+    "你拥有工具调用能力，可以搜索、执行代码、操作文件、浏览网页等。\n"
+    "始终优先调用工具获取真实信息，不要凭空猜测。\n"
+)
+
+
+def build_tools_desc() -> str:
+    """Build a tools description string from the tool registry."""
+    try:
+        from tool_registry import TOOL_DESCRIPTIONS, all_tool_names
+
+        names = all_tool_names()
+        lines = ["\n## 可用工具"]
+        for name in names:
+            desc = TOOL_DESCRIPTIONS.get(name, "")
+            lines.append(f"- **{name}**: {desc}")
+        return "\n".join(lines)
+    except Exception:
+        return ""
+
+
+TOOLS_DESC: str = build_tools_desc()

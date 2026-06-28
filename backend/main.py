@@ -46,7 +46,11 @@ from agent_runtime import get_runtime, validate_llm_config
 from settings import get_settings, validate_startup_settings
 from screen_capture import init_screen_capture, shutdown_screen_capture
 from screen_routes import router as screen_router
-from consciousness_routes import consciousness_router
+
+try:
+    from consciousness_routes import consciousness_router as consciousness_router
+except ImportError:
+    consciousness_router = None  # type: ignore[assignment]
 
 
 async def warmup_models() -> None:
@@ -296,7 +300,8 @@ app.include_router(gateway_router, prefix="/gateway", tags=["gateway"])
 app.include_router(mcp_router, prefix="/mcp", tags=["mcp"])
 app.include_router(screen_router, prefix="/screen", tags=["screen"])
 app.include_router(local_agent_router)
-app.include_router(consciousness_router)
+if consciousness_router is not None:
+    app.include_router(consciousness_router)
 
 _static = Path(__file__).resolve().parent.parent / "static"
 _frontend_build = Path(__file__).resolve().parent.parent / "frontend" / "build"

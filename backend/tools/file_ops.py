@@ -109,7 +109,7 @@ def _clean_user_path(raw_path: str) -> str:
     text = text.replace("上的", os.sep).replace("里的", os.sep).replace("中的", os.sep)
     if text in {"桌面上", "文档上", "下载上", "图片上", "视频上"}:
         text = text[:-1]
-    return text.strip().strip("\\/")
+    return text.strip().rstrip("\\/")
 
 
 def _search_named_target(name: str):
